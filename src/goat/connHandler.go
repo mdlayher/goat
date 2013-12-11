@@ -32,7 +32,7 @@ func (h HttpConnHandler) Handle(c net.Conn) bool {
 	}
 
 	// Write response
-	c.Write(strings.Join(res, ""))
+	c.Write([]byte(strings.Join(res, "")))
 	c.Close()
 
 	return true
