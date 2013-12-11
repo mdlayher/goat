@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func LogMng(doneChan chan bool, logChan chan string) {
+func LogManager(doneChan chan bool, logChan chan string) {
 	// Create log directory and file, and pull current date to add to logfile name
 	now := time.Now()
 	os.Mkdir("logs", os.ModeDir|os.ModePerm)

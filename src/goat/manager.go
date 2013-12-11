@@ -6,7 +6,7 @@ func Manager(killChan chan bool, exitChan chan int) {
 	// Set up logger
 	logChan := make(chan string)
 	doneChan := make(chan bool)
-	go LogMng(doneChan, logChan)
+	go LogManager(doneChan, logChan)
 
 	// Load configuration
 	config := LoadConfig()
