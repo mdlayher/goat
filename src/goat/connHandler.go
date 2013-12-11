@@ -1,24 +1,26 @@
 package goat
 
 import (
-	"io"
-	"net/http"
+	"net"
 )
 
+// ConnHandler interface method Handle defines how to handle incoming network connections
 type ConnHandler interface {
-	Listen()
+	Handle(net.Conn) bool
 }
 
-func announce(res http.ResponseWriter, req *http.Request) {
-	io.WriteString(res, "announce successful")
+// HttpConnHandler handles incoming HTTP (TCP) network connections
+type HttpConnHandler struct {
 }
 
-// Tracker scrape handling
-func scrape(res http.ResponseWriter, req *http.Request) {
-	io.WriteString(res, "scrape successful")
+func (h HttpConnHandler) Handle(http net.Conn) bool {
+	return true
 }
 
-// Tracker statistics output
-func statistics(res http.ResponseWriter, req *http.Request) {
-	io.WriteString(res, "statistics")
+// UdpConnHandler handles incoming UDP network connections
+type UdpConnHandler struct {
+}
+
+func (u UdpConnHandler) Handle(udp net.Conn) bool {
+	return true
 }
