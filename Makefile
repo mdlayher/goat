@@ -1,5 +1,5 @@
 GO=/usr/bin/go
-BIN=go-tracker
+BIN=goat
 PATH=src/${BIN}/
 
 ${BIN}:
