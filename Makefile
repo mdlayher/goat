@@ -1,6 +1,6 @@
 GO=/usr/bin/go
 BIN=goat
-PATH=src/${BIN}/
+PATH=src/
 
 ${BIN}:
 	${GO} build -o bin/${BIN} ${PATH}main.go
