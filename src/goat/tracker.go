@@ -2,6 +2,8 @@ package goat
 
 import (
 	"bencode"
+	"encoding/binary"
+	"net"
 )
 
 // Tracker announce request
@@ -52,4 +54,14 @@ func fakeAnnounceResponse() []byte {
 			}),
 		}),
 	})
+}
+
+// Save for later: Generate a compact peer list in binary format
+func compactPeerList() []byte {
+	ip := [4]byte{}
+	binary.BigEndian.PutUint32(ip[:], binary.BigEndian.Uint32(net.ParseIP("255.255.255.255").To4()))
+	port := [2]byte{}
+	binary.BigEndian.PutUint16(port[:], 8080)
+
+	return append(ip[:], port[:]...)
 }
