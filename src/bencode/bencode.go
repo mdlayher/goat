@@ -15,7 +15,7 @@ func EncInt(i int) []byte {
 
 // Bencode a byte string
 func EncBytes(a []byte) []byte {
-	return []byte(fmt.Sprintf("%d:%s",len(a),a))
+	return []byte(fmt.Sprintf("%d:%s", len(a), a))
 }
 
 // Bencode a string
@@ -25,34 +25,34 @@ func EncString(s string) []byte {
 
 // Bencode a list of bencoded values
 func EncList(list [][]byte) []byte {
-	b := make([]byte,0,2)
-	b = append(b,'l')
+	b := make([]byte, 0, 2)
+	b = append(b, 'l')
 	for _, value := range list {
-		b = append(b,value...)
+		b = append(b, value...)
 	}
-	b = append(b,'e')
+	b = append(b, 'e')
 	return b
 }
 
 // Bencode a dictionary of key:value pairs given as a list
 func EncDict(dict [][]byte) []byte {
-	b := make([]byte,0,2)
-	b = append(b,'d')
+	b := make([]byte, 0, 2)
+	b = append(b, 'd')
 	for _, value := range dict {
-		b = append(b,value...)
+		b = append(b, value...)
 	}
-	b = append(b,'e')
+	b = append(b, 'e')
 	return b
 }
 
 // Bencode a dictionary of key:value pairs given as a map
 func EncDictMap(dict map[string][]byte) []byte {
-	b := make([]byte,0,2)
-	b = append(b,'d')
+	b := make([]byte, 0, 2)
+	b = append(b, 'd')
 	for key, value := range dict {
-		b = append(b,EncBytes([]byte(key))...)
-		b = append(b,value...)
+		b = append(b, EncBytes([]byte(key))...)
+		b = append(b, value...)
 	}
-	b = append(b,'e')
+	b = append(b, 'e')
 	return b
 }
