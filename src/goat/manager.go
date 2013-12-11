@@ -1,9 +1,5 @@
 package goat
 
-import (
-	"fmt"
-)
-
 const APP = "goat"
 
 func Manager(killChan chan bool, exitChan chan int, config Config) {
