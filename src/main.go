@@ -46,7 +46,6 @@ func load_config() goat.Config {
 		conf.Port = "8080"
 		conf.Http = true
 		conf.Udp = false
-
 	}
 
 	return conf

@@ -35,7 +35,7 @@ func (h HttpListener) Listen(port string, logChan chan string) {
 // Parse HTTP request to be handled by standard tracker functions
 func parseHttp(w http.ResponseWriter, r *http.Request) {
 	// Add header identifying server
-	w.Header().Add("Server", APP + "-git")
+	w.Header().Add("Server", APP+"-git")
 	w.Write([]byte("announce successful"))
 }
 
