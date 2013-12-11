@@ -1,6 +1,7 @@
 package goat
 
 import (
+	"bencode"
 	"net"
 	"net/http"
 )
@@ -29,7 +30,14 @@ func (h HttpConnHandler) Handle(l net.Listener, logChan chan string) bool {
 // Parse incoming HTTP connections before making tracker calls
 func parseHttp(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Server", APP+"-git")
-	w.Write([]byte("announce successful"))
+
+	// Failure response for announce to wrong location
+	res := map[string][]byte {
+		"failure reason": bencode.EncBytes([]byte("Malformed announce")),
+		"min interval": bencode.EncInt(1800),
+		"interval": bencode.EncInt(3600),
+	}
+	w.Write(bencode.EncDictMap(res))
 }
 
 // UdpConnHandler handles incoming UDP network connections
