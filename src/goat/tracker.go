@@ -5,7 +5,15 @@ import (
 )
 
 // Tracker announce request
-func TrackerAnnounce(resChan chan []byte) {
+func TrackerAnnounce(query map[string][]string, resChan chan []byte) {
+	// Validate required parameter input
+	required := []string{"info_hash", "peer_id", "ip", "port", "uploaded", "downloaded", "left"}
+	for _, r := range required {
+		if _, ok := query[r]; !ok {
+			TrackerError(resChan, "missing required parameter: "+r)
+		}
+	}
+
 	resChan <- bencode.EncString("announce successful")
 }
 

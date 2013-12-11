@@ -36,7 +36,7 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Path {
 	// Tracker announce
 	case "/announce":
-		go TrackerAnnounce(resChan)
+		go TrackerAnnounce(r.URL.Query(), resChan)
 	// Any undefined handlers
 	default:
 		go TrackerError(resChan, "Malformed announce")
