@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"goat"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -18,6 +19,7 @@ func main() {
 	// Launch manager via goroutine
 	killChan := make(chan bool)
 	doneChan := make(chan int)
+	log.Println("hello")
 	go goat.Manager(killChan, doneChan, conf.Port)
 
 	// Gracefully handle termination via UNIX signal
