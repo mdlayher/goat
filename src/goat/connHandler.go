@@ -5,8 +5,8 @@ import (
 	"net/http"
 )
 
-func ConnHandler() {
-
+type ConnHandler interface {
+	Listen()
 }
 
 func announce(res http.ResponseWriter, req *http.Request) {
