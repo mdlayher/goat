@@ -1,5 +1,0 @@
-package goat
-
-func IoWorker() {
-
-}
