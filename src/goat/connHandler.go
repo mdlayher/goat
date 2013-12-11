@@ -6,14 +6,14 @@ import (
 
 // ConnHandler interface method Handle defines how to handle incoming network connections
 type ConnHandler interface {
-	Handle(net.Conn) bool
+	Handle(c net.Conn) bool
 }
 
 // HttpConnHandler handles incoming HTTP (TCP) network connections
 type HttpConnHandler struct {
 }
 
-func (h HttpConnHandler) Handle(http net.Conn) bool {
+func (h HttpConnHandler) Handle(c net.Conn) bool {
 	return true
 }
 
@@ -21,6 +21,6 @@ func (h HttpConnHandler) Handle(http net.Conn) bool {
 type UdpConnHandler struct {
 }
 
-func (u UdpConnHandler) Handle(udp net.Conn) bool {
+func (u UdpConnHandler) Handle(c net.Conn) bool {
 	return true
 }
