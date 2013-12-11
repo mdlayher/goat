@@ -1,4 +1,4 @@
 goat
 ====
 
-Goat: _Go_ _A_wesome _T_racker.  BitTorrent tracker implementation, written in Go.  MIT Licensed.
+Goat: __Go__ __A__wesome __T__racker.  BitTorrent tracker implementation, written in Go.  MIT Licensed.
