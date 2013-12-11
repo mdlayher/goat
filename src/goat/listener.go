@@ -2,7 +2,6 @@ package goat
 
 import (
 	"net"
-	"net/http"
 )
 
 // Listener interface method Listen defines a network listener which accepts connections
@@ -14,29 +13,16 @@ type Listener interface {
 type HttpListener struct {
 }
 
-// Listen on specified TCP port, accept and handle connections
+// Listen and handle HTTP (TCP) connections
 func (h HttpListener) Listen(port string, logChan chan string) {
+	// Listen on specified TCP port
 	l, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		logChan <- err.Error()
 	}
-	for {
-		// Tracker announce requests
-		http.HandleFunc("/announce", parseHttp)
 
-		// Start listening and serving HTTP requests
-		err := http.Serve(l, nil)
-		if err != nil {
-			logChan <- err.Error()
-		}
-	}
-}
-
-// Parse HTTP request to be handled by standard tracker functions
-func parseHttp(w http.ResponseWriter, r *http.Request) {
-	// Add header identifying server
-	w.Header().Add("Server", APP+"-git")
-	w.Write([]byte("announce successful"))
+	// Send listener to HttpConnHandler
+	go new(HttpConnHandler).Handle(l, logChan)
 }
 
 // UdpListener listens for UDP connections
