@@ -1,6 +1,7 @@
 package goat
 
 type Config struct {
-	Port      string
-	Protocals []string
+	Port string
+	Http,
+	Udp bool
 }

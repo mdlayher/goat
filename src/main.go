@@ -33,7 +33,7 @@ func main() {
 }
 
 // Load configuration
-func load_config() (goat.Config) {
+func load_config() goat.Config {
 	// Read in JSON file
 	var conf goat.Config
 	configFile, err := os.Open("config.json")
@@ -44,7 +44,9 @@ func load_config() (goat.Config) {
 	if err != nil {
 		fmt.Println(APP, ": config.json could not be read, using default configuration")
 		conf.Port = "8080"
-		conf.Protocols = ["tcp", "udp"]
+		conf.Http = true
+		conf.Udp = false
+
 	}
 
 	return conf
