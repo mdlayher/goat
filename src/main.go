@@ -44,6 +44,7 @@ func load_config() (goat.Config) {
 	if err != nil {
 		fmt.Println(APP, ": config.json could not be read, using default configuration")
 		conf.Port = "8080"
+		conf.Protocols = ["tcp", "udp"]
 	}
 
 	return conf
