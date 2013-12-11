@@ -20,6 +20,7 @@ func main() {
 	if err != nil {
 		fmt.Println("config.json was unable to be found \nusing default port of 8080")
 		conf.Port = "8080"
+		conf.Protocals = ["tcp","udp"]
 	}
 	// Create goroutine to handle termination via UNIX signal
 	killChan := make(chan bool)
