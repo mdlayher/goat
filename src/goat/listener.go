@@ -1,7 +1,6 @@
 package goat
 
 import (
-	"fmt"
 	"net"
 )
 
