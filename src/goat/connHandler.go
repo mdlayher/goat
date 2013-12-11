@@ -3,8 +3,8 @@ package goat
 import (
 	"fmt"
 	"net"
-	"strings"
 	"net/url"
+	"strings"
 )
 
 // ConnHandler interface method Handle defines how to handle incoming network connections
@@ -69,12 +69,12 @@ func (u UdpConnHandler) Handle(c net.Conn) bool {
 }
 
 // Create a byte array of headers with specified HTTP response and content length
-func http_header(res string, length int) ([]byte) {
+func http_header(res string, length int) []byte {
 	return []byte(fmt.Sprintf("HTTP/1.1 %s\r\nServer: %s\r\nContent-Type: text/plain\r\nContent-Length: %d\r\nConnection: close\r\n\r\n", res, APP, length))
 }
 
 // Create a byte array of a full HTTP response with headers and a 200 OK status
-func http_response(body string) ([]byte) {
+func http_response(body string) []byte {
 	return append(http_header("200 OK", len(body))[:], []byte(body)[:]...)
 }
 
