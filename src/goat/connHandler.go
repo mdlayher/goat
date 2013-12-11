@@ -3,6 +3,7 @@ package goat
 import (
 	"net"
 	"net/http"
+	"strings"
 )
 
 // ConnHandler interface method Handle defines how to handle incoming network connections
@@ -32,11 +33,21 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 	// Create channel to return bencoded response to client on
 	resChan := make(chan []byte)
 
+	// Parse querystring
+	query := r.URL.Query()
+
+	// Check if IP was previously set
+	if _, ok := query["ip"]; !ok {
+		// If no IP set, detect and store it in query map
+		query["ip"] = []string{""}
+		query["ip"][0] = strings.Split(r.RemoteAddr, ":")[0]
+	}
+
 	// Handle tracker functions via different URLs
 	switch r.URL.Path {
 	// Tracker announce
 	case "/announce":
-		go TrackerAnnounce(r.URL.Query(), resChan)
+		go TrackerAnnounce(query, resChan)
 	// Any undefined handlers
 	default:
 		go TrackerError(resChan, "Malformed announce")
