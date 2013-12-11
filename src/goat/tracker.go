@@ -43,10 +43,10 @@ func TrackerError(resChan chan []byte, err string) {
 func fakeAnnounceResponse(compact bool) []byte {
 	res := map[string][]byte{
 		// complete, downloaded, incomplete: used to report client download statistics
+		// min interval, interval: used to tell clients how often to announce
 		"complete":     bencode.EncInt(99),
 		"downloaded":   bencode.EncInt(200),
 		"incomplete":   bencode.EncInt(1),
-		// min interval, interval: used to tell clients how often to announce
 		"min interval": bencode.EncInt(1800),
 		"interval":     bencode.EncInt(3600),
 	}
