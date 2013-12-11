@@ -1,4 +1,5 @@
 GO=/usr/bin/go
+RM=/bin/rm
 BIN=goat
 PATH=src/
 GOPATH=${PWD}
@@ -12,4 +13,4 @@ run:
 	${GO} run ${PATH}main.go
 
 clean:
-	/bin/rm bin/${BIN}
+	${RM} -r bin/ pkg/
