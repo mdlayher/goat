@@ -2,11 +2,14 @@ package goat
 
 const APP = "goat"
 
-func Manager(killChan chan bool, exitChan chan int, config Config) {
+func Manager(killChan chan bool, exitChan chan int) {
 	// Set up logger
 	logChan := make(chan string)
 	doneChan := make(chan bool)
 	go LogMng(doneChan, logChan)
+
+	// Load configuration
+	config := LoadConfig()
 
 	// Launch listeners as configured
 	if config.Http {

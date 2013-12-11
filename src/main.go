@@ -11,13 +11,10 @@ import (
 const APP = "goat"
 
 func main() {
-	// Read configuration
-	conf := goat.LoadConfig()
-
 	// Launch manager via goroutine
 	killChan := make(chan bool)
 	exitChan := make(chan int)
-	go goat.Manager(killChan, exitChan, conf)
+	go goat.Manager(killChan, exitChan)
 
 	// Gracefully handle termination via UNIX signal
 	sigc := make(chan os.Signal, 1)
