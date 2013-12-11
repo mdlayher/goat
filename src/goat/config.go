@@ -1,5 +1,6 @@
 package goat
 
 type Config struct {
-	Port string
+	Port      string
+	Protocals []string
 }
