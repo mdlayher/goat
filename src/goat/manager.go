@@ -4,7 +4,9 @@ import (
 	"fmt"
 )
 
-func Manager(killChan chan bool, doneChan chan int) {
+func Manager(killChan chan bool, doneChan chan int, port string) {
+	go new(HttpListener).Listen(port)
+
 	for {
 		select {
 		case <-killChan:
@@ -14,6 +16,7 @@ func Manager(killChan chan bool, doneChan chan int) {
 			// case freeWorker := <-ioReturn:
 
 		}
+
 	}
 
 }
