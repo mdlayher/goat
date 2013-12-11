@@ -11,9 +11,9 @@ func TrackerAnnounce(resChan chan []byte) {
 
 // Report a bencoded []byte response as specified by input string
 func TrackerError(resChan chan []byte, err string) {
-	resChan <- bencode.EncDictMap(map[string][]byte {
+	resChan <- bencode.EncDictMap(map[string][]byte{
 		"failure reason": bencode.EncString(err),
-		"min interval": bencode.EncInt(1800),
-		"interval": bencode.EncInt(3600),
+		"min interval":   bencode.EncInt(1800),
+		"interval":       bencode.EncInt(3600),
 	})
 }
