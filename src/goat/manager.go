@@ -6,21 +6,26 @@ import (
 
 const APP = "goat"
 
-func Manager(killChan chan bool, exitChan chan int, port string) {
-	// Launch listeners
+func Manager(killChan chan bool, exitChan chan int, config Config) {
+	// Set up logger
 	logChan := make(chan string)
 	doneChan := make(chan bool)
-	go new(HttpListener).Listen(port, logChan)
-	go new(UdpListener).Listen(port, logChan)
 	go LogMng(doneChan, logChan)
 
-	fmt.Println(APP, ": HTTP and UDP listeners launched on port "+port)
+	// Launch listeners as configured
+	if config.Http {
+		go new(HttpListener).Listen(config.Port, logChan)
+		logChan <- "HTTP listener launched on port " + config.Port
+	}
+	if config.Udp {
+		go new(UdpListener).Listen(config.Port, logChan)
+		logChan <- "UDP listener launched on port " + config.Port
+	}
 
 	for {
 		select {
 		case <-killChan:
-			//change this to kill workers gracefully and exit
-			fmt.Println("done")
+			// Change this to kill workers gracefully and exit
 			exitChan <- 0
 		}
 	}

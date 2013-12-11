@@ -22,13 +22,14 @@ func LogMng(doneChan chan bool, logChan chan string) {
 	amIDone := false
 	msg := ""
 
-	// wait for errer to be passed on the logChan channel or the done chan
+	// Wait for error to be passed on the logChan channel, or termination signal on doneChan
 	for !amIDone {
 		select {
 		case amIDone = <-doneChan:
 			logFile.Close()
 		case msg = <-logChan:
-			logger.Println(msg)
+			logger.Println(APP, ":", msg)
+			fmt.Println(APP, ":", msg)
 		}
 	}
 }

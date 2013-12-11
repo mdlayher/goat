@@ -18,7 +18,7 @@ func main() {
 	// Launch manager via goroutine
 	killChan := make(chan bool)
 	exitChan := make(chan int)
-	go goat.Manager(killChan, exitChan, conf.Port)
+	go goat.Manager(killChan, exitChan, conf)
 
 	// Gracefully handle termination via UNIX signal
 	sigc := make(chan os.Signal, 1)
