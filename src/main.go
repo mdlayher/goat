@@ -17,8 +17,8 @@ func main() {
 
 	// Launch manager via goroutine
 	killChan := make(chan bool)
-	doneChan := make(chan int)
-	go goat.Manager(killChan, doneChan, conf.Port)
+	exitChan := make(chan int)
+	go goat.Manager(killChan, exitChan, conf.Port)
 
 	// Gracefully handle termination via UNIX signal
 	sigc := make(chan os.Signal, 1)
@@ -27,13 +27,13 @@ func main() {
 	for sig := range sigc {
 		fmt.Println(APP, ": caught signal:", sig)
 		killChan <- true
-		hold := <-doneChan
+		hold := <-exitChan
 		os.Exit(hold)
 	}
 }
 
 // Load configuration
-func load_config() (goat.Config) {
+func load_config() goat.Config {
 	// Read in JSON file
 	var conf goat.Config
 	configFile, err := os.Open("config.json")
@@ -44,7 +44,9 @@ func load_config() (goat.Config) {
 	if err != nil {
 		fmt.Println(APP, ": config.json could not be read, using default configuration")
 		conf.Port = "8080"
-		conf.Protocols = ["tcp", "udp"]
+		conf.Http = true
+		conf.Udp = false
+
 	}
 
 	return conf

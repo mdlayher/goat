@@ -6,20 +6,22 @@ import (
 
 const APP = "goat"
 
-func Manager(killChan chan bool, doneChan chan int, port string) {
+func Manager(killChan chan bool, exitChan chan int, port string) {
 	// Launch listeners
-	go new(HttpListener).Listen(port)
-	go new(UdpListener).Listen(port)
+	logChan := make(chan string)
+	doneChan := make(chan bool)
+	go new(HttpListener).Listen(port, logChan)
+	go new(UdpListener).Listen(port, logChan)
+	go LogMng(doneChan, logChan)
 
-	fmt.Println(APP, ": HTTP and UDP listeners launched on port " + port)
+	fmt.Println(APP, ": HTTP and UDP listeners launched on port "+port)
 
 	for {
 		select {
 		case <-killChan:
 			//change this to kill workers gracefully and exit
 			fmt.Println("done")
-			doneChan <- 0
-			// case freeWorker := <-ioReturn:
+			exitChan <- 0
 		}
 	}
 }
