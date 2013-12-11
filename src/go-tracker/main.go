@@ -4,9 +4,23 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
+	// Create goroutine to handle termination via UNIX signal
+	sigc := make(chan os.Signal, 1)
+	signal.Notify(sigc, os.Interrupt)
+	signal.Notify(sigc, syscall.SIGTERM)
+	go func() {
+		for sig := range sigc {
+			fmt.Println("Got signal:", sig)
+			os.Exit(0)
+		}
+	}()
+
 	// Set up HTTP routes for various tracker functions
 	http.HandleFunc("/announce", announce)
 	http.HandleFunc("/scrape", scrape)
@@ -17,6 +31,7 @@ func main() {
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		fmt.Println("go-tracker: failed to start: ", err)
+		os.Exit(-1)
 	}
 }
 
