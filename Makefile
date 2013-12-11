@@ -1,10 +1,12 @@
+GO=/usr/bin/go
 BIN=go-tracker
+PATH=src/${BIN}/
 
 ${BIN}:
-	go build -o ${BIN} src/main.go
+	${GO} build -o bin/${BIN} ${PATH}main.go
 
 run:
-	go run src/main.go
+	${GO} run ${PATH}main.go
 
 clean:
-	rm ${BIN}
+	/bin/rm bin/${BIN}
