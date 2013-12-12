@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"goat"
 	"os"
@@ -12,13 +11,10 @@ import (
 const APP = "goat"
 
 func main() {
-	// Read configuration
-	conf := load_config()
-
 	// Launch manager via goroutine
 	killChan := make(chan bool)
 	exitChan := make(chan int)
-	go goat.Manager(killChan, exitChan, conf.Port)
+	go goat.Manager(killChan, exitChan)
 
 	// Gracefully handle termination via UNIX signal
 	sigc := make(chan os.Signal, 1)
@@ -30,24 +26,4 @@ func main() {
 		hold := <-exitChan
 		os.Exit(hold)
 	}
-}
-
-// Load configuration
-func load_config() goat.Config {
-	// Read in JSON file
-	var conf goat.Config
-	configFile, err := os.Open("config.json")
-	read := json.NewDecoder(configFile)
-
-	// Decode JSON
-	err = read.Decode(&conf)
-	if err != nil {
-		fmt.Println(APP, ": config.json could not be read, using default configuration")
-		conf.Port = "8080"
-		conf.Http = true
-		conf.Udp = false
-
-	}
-
-	return conf
 }

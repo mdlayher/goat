@@ -13,19 +13,16 @@ type Listener interface {
 type HttpListener struct {
 }
 
-// Listen on specified TCP port, accept and handle connections
+// Listen and handle HTTP (TCP) connections
 func (h HttpListener) Listen(port string, logChan chan string) {
+	// Listen on specified TCP port
 	l, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		logChan <- err.Error()
 	}
-	for {
-		conn, err := l.Accept()
-		if err != nil {
-			logChan <- err.Error()
-		}
-		go new(HttpConnHandler).Handle(conn)
-	}
+
+	// Send listener to HttpConnHandler
+	go new(HttpConnHandler).Handle(l, logChan)
 }
 
 // UdpListener listens for UDP connections

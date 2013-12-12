@@ -8,25 +8,28 @@ import (
 	"time"
 )
 
-func LogMng(doneChan chan bool, logChan chan string) {
-	// create log file and pull current time to add to logfile name
-	currentTime := time.Now().String()
-	logFile, err := os.Create("GoatLog" + currentTime + ".log")
+func LogManager(doneChan chan bool, logChan chan string) {
+	// Create log directory and file, and pull current date to add to logfile name
+	now := time.Now()
+	os.Mkdir("logs", os.ModeDir|os.ModePerm)
+	logFile, err := os.Create(fmt.Sprintf("logs/goat-%d-%d-%d.log", now.Year(), now.Month(), now.Day()))
 	if err != nil {
 		fmt.Println(err)
 	}
-	writer := bufio.NewWriter(logFile)
+
 	// create a logger that will use the writer created above
-	logger := log.New(writer, "", log.Lmicroseconds|log.Lshortfile)
+	logger := log.New(bufio.NewWriter(logFile), "", log.Lmicroseconds|log.Lshortfile)
 	amIDone := false
 	msg := ""
-	// wait for errer to be passed on the logChan channel or the done chan
+
+	// Wait for error to be passed on the logChan channel, or termination signal on doneChan
 	for !amIDone {
 		select {
 		case amIDone = <-doneChan:
 			logFile.Close()
 		case msg = <-logChan:
-			logger.Println(msg)
+			logger.Println(APP, ":", msg)
+			fmt.Println(APP, ":", msg)
 		}
 	}
 }

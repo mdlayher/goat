@@ -1,47 +1,69 @@
 package goat
 
 import (
-	"fmt"
 	"net"
+	"net/http"
 	"strings"
 )
 
 // ConnHandler interface method Handle defines how to handle incoming network connections
 type ConnHandler interface {
-	Handle(c net.Conn) bool
+	Handle(l net.Listener, logChan chan string)
 }
 
 // HttpConnHandler handles incoming HTTP (TCP) network connections
 type HttpConnHandler struct {
 }
 
-// Handle an incoming HTTP request and provide a HTTP response
-func (h HttpConnHandler) Handle(c net.Conn) bool {
-	// Read in data from socket
-	var buf = make([]byte, 1024)
-	c.Read(buf)
+// Handle incoming HTTP connections and serve
+func (h HttpConnHandler) Handle(l net.Listener, logChan chan string) {
+	// Set up HTTP routes for handling functions
+	http.HandleFunc("/", parseHttp)
+	http.HandleFunc("/announce", parseHttp)
 
-	// TODO: remove temporary printing and fake response
-	fmt.Println("http: ", string(buf))
-	res := []string {
-		"HTTP/1.1 200 OK\r\n",
-		"Content-Type: text/plain\r\n",
-		"Content-Length: 4\r\n",
-		"Connection: close\r\n\r\n",
-		"goat\r\n",
+	// Serve HTTP requests
+	err := http.Serve(l, nil)
+	if err != nil {
+		logChan <- err.Error()
+	}
+}
+
+// Parse incoming HTTP connections before making tracker calls
+func parseHttp(w http.ResponseWriter, r *http.Request) {
+	// Create channel to return bencoded response to client on
+	resChan := make(chan []byte)
+
+	// Parse querystring
+	query := r.URL.Query()
+
+	// Check if IP was previously set
+	if _, ok := query["ip"]; !ok {
+		// If no IP set, detect and store it in query map
+		query["ip"] = []string{""}
+		query["ip"][0] = strings.Split(r.RemoteAddr, ":")[0]
 	}
 
-	// Write response
-	c.Write([]byte(strings.Join(res, "")))
-	c.Close()
+	// Handle tracker functions via different URLs
+	switch r.URL.Path {
+	// Tracker announce
+	case "/announce":
+		go TrackerAnnounce(query, resChan)
+	// Any undefined handlers
+	default:
+		go TrackerError(resChan, "Malformed announce")
+	}
 
-	return true
+	// Add header to identify goat
+	w.Header().Add("Server", APP+"-git")
+
+	// Wait for response, and send it when ready
+	w.Write(<-resChan)
 }
 
 // UdpConnHandler handles incoming UDP network connections
 type UdpConnHandler struct {
 }
 
-func (u UdpConnHandler) Handle(c net.Conn) bool {
-	return true
+// Handle incoming UDP connections and return response
+func (u UdpConnHandler) Handle(l net.Listener, logChan chan string) {
 }
