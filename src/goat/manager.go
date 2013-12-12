@@ -8,6 +8,9 @@ func Manager(killChan chan bool, exitChan chan int) {
 	doneChan := make(chan bool)
 	go LogManager(doneChan, logChan)
 
+	// Print startup status banner
+	go PrintStatusBanner(logChan)
+
 	// Load configuration
 	config := LoadConfig()
 

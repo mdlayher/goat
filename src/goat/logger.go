@@ -22,6 +22,9 @@ func LogManager(doneChan chan bool, logChan chan string) {
 	amIDone := false
 	msg := ""
 
+	// Start the system status logger
+	go StatusLogger(logChan)
+
 	// Wait for error to be passed on the logChan channel, or termination signal on doneChan
 	for !amIDone {
 		select {
@@ -30,6 +33,21 @@ func LogManager(doneChan chan bool, logChan chan string) {
 		case msg = <-logChan:
 			logger.Println(APP, ":", msg)
 			fmt.Println(APP, ":", msg)
+		}
+	}
+}
+
+// Log and display system status every minute
+func StatusLogger(logChan chan string) {
+	// Poll status every 30 seconds
+	ticker := time.NewTicker(30 * time.Second)
+
+	// Loop infinitely, trigger events via ticker
+	for {
+		select {
+		case <- ticker.C:
+			// Fetch status, log it
+			go PrintCurrentStatus(logChan)
 		}
 	}
 }
