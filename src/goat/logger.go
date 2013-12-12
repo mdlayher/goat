@@ -31,8 +31,9 @@ func LogManager(doneChan chan bool, logChan chan string) {
 		case amIDone = <-doneChan:
 			logFile.Close()
 		case msg = <-logChan:
-			logger.Println(APP, ":", msg)
-			fmt.Println(APP, ":", msg)
+			now := time.Now()
+			logger.Printf("%s : [%2d:%2d:%2d] %s\n", APP, now.Hour(), now.Minute(), now.Second(), msg)
+			fmt.Printf("%s : [%2d:%2d:%2d] %s\n", APP, now.Hour(), now.Minute(), now.Second(), msg)
 		}
 	}
 }
