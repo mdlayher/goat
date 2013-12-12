@@ -18,8 +18,8 @@ func main() {
 
 	// Gracefully handle termination via UNIX signal
 	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigc, os.Interrupt)
-	signal.Notify(sigc, syscall.SIGTERM)
+	signal.Notify(sigChan, os.Interrupt)
+	signal.Notify(sigChan, syscall.SIGTERM)
 	for sig := range sigChan {
 		// Trigger manager shutdown
 		fmt.Println(APP, ": caught signal:", sig)
