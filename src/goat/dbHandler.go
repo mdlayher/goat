@@ -17,7 +17,10 @@ type DbHandler interface {
 }
 
 // MapDb is a key value storage database
+// Id will be an identification for sharding
 type MapDb struct {
+	Id int
+	Db map[string]string
 }
 
 // Handle data MapDb requests
