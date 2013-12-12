@@ -24,6 +24,7 @@ func Manager(killChan chan bool, exitChan chan int) {
 		logChan <- "UDP listener launched on port " + config.Port
 	}
 
+	// Wait for shutdown signal
 	for {
 		select {
 		case <-killChan:

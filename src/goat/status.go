@@ -9,13 +9,13 @@ import (
 
 // Struct to be serialized, containing information about the system running goat
 type ServerStatus struct {
-	Pid int
-	Hostname string
-	Platform string
+	Pid          int
+	Hostname     string
+	Platform     string
 	Architecture string
-	NumCpu int
+	NumCpu       int
 	NumGoroutine int
-	MemoryMb float64
+	MemoryMb     float64
 }
 
 // Tracker status request

@@ -47,7 +47,7 @@ func StatusLogger(logChan chan string) {
 	// Loop infinitely, trigger events via ticker
 	for {
 		select {
-		case <- ticker.C:
+		case <-ticker.C:
 			// Fetch status, log it
 			go PrintCurrentStatus(logChan)
 		}

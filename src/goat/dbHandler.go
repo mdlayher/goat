@@ -1,12 +1,12 @@
 package goat
 
-//holds information for request from database
+// Holds information for request from database
 type Request struct {
 	Query        string
 	ResponseChan chan Response
 }
 
-//holds information for response from databaseS
+// Holds information for response from database
 type Response struct {
 	Data, Id string
 }

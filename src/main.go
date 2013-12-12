@@ -17,13 +17,15 @@ func main() {
 	go goat.Manager(killChan, exitChan)
 
 	// Gracefully handle termination via UNIX signal
-	sigc := make(chan os.Signal, 1)
+	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigc, os.Interrupt)
 	signal.Notify(sigc, syscall.SIGTERM)
-	for sig := range sigc {
+	for sig := range sigChan {
+		// Trigger manager shutdown
 		fmt.Println(APP, ": caught signal:", sig)
 		killChan <- true
-		hold := <-exitChan
-		os.Exit(hold)
+
+		// Exit with specified code from manager
+		os.Exit(<-exitChan)
 	}
 }
