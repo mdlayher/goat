@@ -49,7 +49,7 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 		go TrackerAnnounce(query, resChan)
 	// Tracker status
 	case "/status":
-		go TrackerStatus(resChan)
+		go GetServerStatus(resChan)
 	// Any undefined handlers
 	default:
 		go TrackerError(resChan, "Malformed announce")
