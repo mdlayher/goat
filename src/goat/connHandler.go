@@ -19,7 +19,6 @@ type HttpConnHandler struct {
 func (h HttpConnHandler) Handle(l net.Listener, logChan chan string) {
 	// Set up HTTP routes for handling functions
 	http.HandleFunc("/", parseHttp)
-	http.HandleFunc("/announce", parseHttp)
 
 	// Serve HTTP requests
 	err := http.Serve(l, nil)
@@ -48,6 +47,9 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 	// Tracker announce
 	case "/announce":
 		go TrackerAnnounce(query, resChan)
+	// Tracker status
+	case "/status":
+		go TrackerStatus(resChan)
 	// Any undefined handlers
 	default:
 		go TrackerError(resChan, "Malformed announce")

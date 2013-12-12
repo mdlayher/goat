@@ -3,7 +3,10 @@ package goat
 import (
 	"bencode"
 	"encoding/binary"
+	"encoding/json"
 	"net"
+	"os"
+	"runtime"
 )
 
 // Tracker announce request
@@ -28,6 +31,39 @@ func TrackerAnnounce(query map[string][]string, resChan chan []byte) {
 
 	// Fake tracker announce response
 	resChan <- fakeAnnounceResponse(compact)
+}
+
+type ServerStatus struct {
+	Pid int
+	Hostname string
+	Platform string
+	Architecture string
+	NumCpu int
+	NumGoroutine int
+	/*
+	CpuPercent float32,
+	MemoryMb float32,
+	*/
+}
+
+// Tracker status request
+func TrackerStatus(resChan chan []byte) {
+	// Get system hostname
+	hostname, _ := os.Hostname()
+
+	res, err := json.Marshal(ServerStatus{
+		os.Getpid(),
+		hostname,
+		runtime.GOOS,
+		runtime.GOARCH,
+		runtime.NumCPU(),
+		runtime.NumGoroutine(),
+	})
+	if err != nil {
+		resChan <- nil
+	}
+
+	resChan <- res
 }
 
 // Report a bencoded []byte response as specified by input string
