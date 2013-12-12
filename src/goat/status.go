@@ -16,6 +16,8 @@ type ServerStatus struct {
 	NumCpu       int
 	NumGoroutine int
 	MemoryMb     float64
+	HttpTotal    int
+	HttpCurrent  int
 }
 
 // Tracker status request
@@ -38,6 +40,8 @@ func GetServerStatus(resChan chan []byte) {
 		runtime.NumCPU(),
 		runtime.NumGoroutine(),
 		memMb,
+		Static.Http.Total,
+		Static.Http.Current,
 	})
 	if err != nil {
 		resChan <- nil
@@ -48,7 +52,7 @@ func GetServerStatus(resChan chan []byte) {
 }
 
 // Log the startup status banner
-func PrintStatusBanner(logChan chan string) {
+func PrintStatusBanner() {
 	// Grab initial server status
 	statChan := make(chan []byte)
 	go GetServerStatus(statChan)
@@ -57,15 +61,15 @@ func PrintStatusBanner(logChan chan string) {
 	var stat ServerStatus
 	err := json.Unmarshal(<-statChan, &stat)
 	if err != nil {
-		logChan <- "could not parse server status"
+		Static.LogChan <- "could not parse server status"
 	}
 
 	// Startup banner
-	logChan <- fmt.Sprintf("%s - %s_%s (%d CPU) [pid: %d]", stat.Hostname, stat.Platform, stat.Architecture, stat.NumCpu, stat.Pid)
+	Static.LogChan <- fmt.Sprintf("%s - %s_%s (%d CPU) [pid: %d]", stat.Hostname, stat.Platform, stat.Architecture, stat.NumCpu, stat.Pid)
 }
 
 // Log the regular status check banner
-func PrintCurrentStatus(logChan chan string) {
+func PrintCurrentStatus() {
 	// Grab server status
 	statChan := make(chan []byte)
 	go GetServerStatus(statChan)
@@ -74,9 +78,17 @@ func PrintCurrentStatus(logChan chan string) {
 	var stat ServerStatus
 	err := json.Unmarshal(<-statChan, &stat)
 	if err != nil {
-		logChan <- "could not parse server status"
+		Static.LogChan <- "could not parse server status"
 	}
 
 	// Regular status banner
-	logChan <- fmt.Sprintf("status - [goroutines: %d] [memory: %02.3f MB]", stat.NumGoroutine, stat.MemoryMb)
+	Static.LogChan <- fmt.Sprintf("status - [goroutines: %d] [memory: %02.3f MB]", stat.NumGoroutine, stat.MemoryMb)
+
+	// HTTP stats
+	if Static.Config.Http {
+		Static.LogChan <- fmt.Sprintf("  http - [current: %d] [total: %d]", Static.Http.Current, Static.Http.Total)
+
+		// Reset current HTTP counter
+		Static.Http.Current = 0
+	}
 }

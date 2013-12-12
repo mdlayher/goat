@@ -8,7 +8,7 @@ import (
 
 // ConnHandler interface method Handle defines how to handle incoming network connections
 type ConnHandler interface {
-	Handle(l net.Listener, logChan chan string)
+	Handle(l net.Listener)
 }
 
 // HttpConnHandler handles incoming HTTP (TCP) network connections
@@ -16,19 +16,23 @@ type HttpConnHandler struct {
 }
 
 // Handle incoming HTTP connections and serve
-func (h HttpConnHandler) Handle(l net.Listener, logChan chan string) {
+func (h HttpConnHandler) Handle(l net.Listener) {
 	// Set up HTTP routes for handling functions
 	http.HandleFunc("/", parseHttp)
 
 	// Serve HTTP requests
 	err := http.Serve(l, nil)
 	if err != nil {
-		logChan <- err.Error()
+		Static.LogChan <- err.Error()
 	}
 }
 
 // Parse incoming HTTP connections before making tracker calls
 func parseHttp(w http.ResponseWriter, r *http.Request) {
+	// Count incoming connections
+	Static.Http.Current++
+	Static.Http.Total++
+
 	// Create channel to return bencoded response to client on
 	resChan := make(chan []byte)
 
@@ -67,5 +71,5 @@ type UdpConnHandler struct {
 }
 
 // Handle incoming UDP connections and return response
-func (u UdpConnHandler) Handle(l net.Listener, logChan chan string) {
+func (u UdpConnHandler) Handle(l net.Listener) {
 }

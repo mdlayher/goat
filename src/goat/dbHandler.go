@@ -13,7 +13,7 @@ type Response struct {
 
 // DbHandler interface method HandleDb defines a database handler which handles requests
 type DbHandler interface {
-	HandleDb(logChan chan string)
+	HandleDb()
 }
 
 // MapDb is a key value storage database
@@ -24,7 +24,7 @@ type MapDb struct {
 }
 
 // Handle data MapDb requests
-func (m MapDb) HandleDb(logChan chan string) {
+func (m MapDb) HandleDb() {
 
 }
 
@@ -33,6 +33,6 @@ type SqlDb struct {
 }
 
 // Handle Sql based requests
-func (s SqlDb) HandleDb(logChan chan string) {
+func (s SqlDb) HandleDb() {
 
 }
