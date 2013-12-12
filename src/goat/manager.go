@@ -20,7 +20,8 @@ func Manager(killChan chan bool, exitChan chan int, port string) {
 		select {
 		case <-killChan:
 			//change this to kill workers gracefully and exit
-			fmt.Println("done")
+			logChan <- "done"
+			doneChan <- true
 			exitChan <- 0
 		}
 	}
