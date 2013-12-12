@@ -1,41 +1,30 @@
 package goat
 
-//holds information for request from database
+// Holds information for request from database
 type Request struct {
-	Id           string
+	Query        string
 	ResponseChan chan Response
 }
 
-//holds information for response from databaseS
+// Holds information for response from database
 type Response struct {
-	Id   string
-	Data interface{}
+	Data, Id string
 }
 
-// DbManager interface method ManageDb defines a database Manager which Manages requests
-type DbManager interface {
-	ManageDb(logChan chan string)
+// DbHandler interface method HandleDb defines a database handler which handles requests
+type DbHandler interface {
+	HandleDb()
 }
 
 // MapDb is a key value storage database
 // Id will be an identification for sharding
 type MapDb struct {
-	DbId string
-	//this will change once we have a data structure, but for now is a generic interface
-	Db map[string]interface{}
+	Id int
+	Db map[string]string
 }
 
-// Manage data MapDb requests
-func (m MapDb) ManageDb(logChan chan string, requestChan chan Request) {
-	var shards [100]MapDb
-
-	for {
-		select {
-		case hold <- requestChan:
-			go IoWorker(Request, shards[Request.Id[0:2]])
-		}
-	}
-
+// Handle data MapDb requests
+func (m MapDb) HandleDb() {
 
 }
 
@@ -43,7 +32,7 @@ func (m MapDb) ManageDb(logChan chan string, requestChan chan Request) {
 type SqlDb struct {
 }
 
-// Manage Sql based requests
-func (s SqlDb) ManageDb(logChan chan string) {
+// Handle Sql based requests
+func (s SqlDb) HandleDb() {
 
 }

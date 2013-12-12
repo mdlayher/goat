@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func LogManager(doneChan chan bool, logChan chan string) {
+func LogManager(doneChan chan bool) {
 	// Create log directory and file, and pull current date to add to logfile name
 	now := time.Now()
 	os.Mkdir("logs", os.ModeDir|os.ModePerm)
@@ -22,14 +22,34 @@ func LogManager(doneChan chan bool, logChan chan string) {
 	amIDone := false
 	msg := ""
 
+	// Start the system status logger
+	go StatusLogger()
+
 	// Wait for error to be passed on the logChan channel, or termination signal on doneChan
 	for !amIDone {
 		select {
 		case amIDone = <-doneChan:
 			logFile.Close()
-		case msg = <-logChan:
-			logger.Println(APP, ":", msg)
-			fmt.Println(APP, ":", msg)
+		case msg = <-Static.LogChan:
+			now := time.Now()
+			log := fmt.Sprintf("%s : [%4d-%02d-%02d %02d:%02d:%02d] %s\n", APP, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second(), msg)
+			logger.Print(log)
+			fmt.Print(log)
+		}
+	}
+}
+
+// Log and display system status every minute
+func StatusLogger() {
+	// Poll status every 30 seconds
+	ticker := time.NewTicker(30 * time.Second)
+
+	// Loop infinitely, trigger events via ticker
+	for {
+		select {
+		case <-ticker.C:
+			// Fetch status, log it
+			go PrintCurrentStatus()
 		}
 	}
 }
