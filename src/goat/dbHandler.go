@@ -1,13 +1,51 @@
 package goat
 
+import (
+	"time"
+)
+
 func DbManager(RequestChan chan Request) {
+	var hold Request
+	SqlRequestChan := make(chan Request)
+	MapRequesChan := make(chan Request)
+	time.mi
+	// launch databases
 	if Static.Config.Map {
+
 		go new(MapDb).HandleDb(RequestChan)
 		Static.LogChan <- "MapDb instance launched"
 	}
 	if Static.Config.Sql {
 		go new(SqlDb).HandleDb(RequestChan)
 		Static.LogChan <- "SqlDb instance launched"
+	}
+
+	if Static.Config.Map && Static.Config.Sql {
+		for {
+			select {
+			case hold <- Request:
+				MapRequesChan <- hold
+				SqlRequestChan <- hold
+			}
+		}
+	} else if Static.Config.Map {
+		for {
+			select {
+			case hold <- Request:
+				MapRequesChan <- hold
+
+			}
+		}
+	} else if Static.Config.Sql {
+		for {
+			select {
+			case hold <- Request:
+				SqlRequesChan <- hold
+
+			}
+		}
+	} else {
+		Static.LogChan <- "No database in use."
 	}
 
 }
