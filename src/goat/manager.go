@@ -1,5 +1,8 @@
 package goat
 
+import (
+	"time"
+)
 const APP = "goat"
 
 func Manager(killChan chan bool, exitChan chan int) {
@@ -23,11 +26,11 @@ func Manager(killChan chan bool, exitChan chan int) {
 
 	// Launch listeners as configured
 	if Static.Config.Http {
-		go new(HttpListener).Listen()
+		go new(HttpListener).Listen(doneChan)
 		Static.LogChan <- "HTTP listener launched on port " + Static.Config.Port
 	}
 	if Static.Config.Udp {
-		go new(UdpListener).Listen()
+		go new(UdpListener).Listen(doneChan)
 		Static.LogChan <- "UDP listener launched on port " + Static.Config.Port
 	}
 
@@ -35,6 +38,14 @@ func Manager(killChan chan bool, exitChan chan int) {
 	for {
 		select {
 		case <-killChan:
+			// Trigger a graceful shutdown
+			Static.LogChan <- "triggering graceful shutdown, press Ctrl+C again to force halt"
+			doneChan <- true
+
+			// Allow 1 second for graceful shutdown of all goroutines
+			time.Sleep(1 * time.Second)
+
+			// Report that program should exit gracefully
 			exitChan <- 0
 		}
 	}

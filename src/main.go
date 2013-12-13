@@ -24,8 +24,20 @@ func main() {
 		// Trigger manager shutdown
 		fmt.Println(APP, ": caught signal:", sig)
 		killChan <- true
-
-		// Exit with specified code from manager
-		os.Exit(<-exitChan)
+		break
 	}
+
+	// Force terminate if signaled twice
+	go func(sigChan chan os.Signal) {
+		for sig := range sigChan {
+			_ = sig
+			fmt.Println(APP, ": force halting now!")
+			os.Exit(1)
+		}
+	}(sigChan)
+
+	// Exit with specified code from manager
+	code := <-exitChan
+	fmt.Println(APP, ": graceful shutdown complete")
+	os.Exit(code)
 }

@@ -16,15 +16,22 @@ type HttpConnHandler struct {
 }
 
 // Handle incoming HTTP connections and serve
-func (h HttpConnHandler) Handle(l net.Listener) {
+func (h HttpConnHandler) Handle(l net.Listener, doneChan chan bool) {
+	// Create shutdown function
+	go func(doneChan chan bool, l net.Listener) {
+		// Wait for done signal
+		<-doneChan
+
+		// Close listener
+		Static.LogChan <- "closing HTTP listener"
+		l.Close()
+	}(doneChan, l)
+
 	// Set up HTTP routes for handling functions
 	http.HandleFunc("/", parseHttp)
 
 	// Serve HTTP requests
-	err := http.Serve(l, nil)
-	if err != nil {
-		Static.LogChan <- err.Error()
-	}
+	http.Serve(l, nil)
 }
 
 // Parse incoming HTTP connections before making tracker calls
@@ -114,5 +121,14 @@ type UdpConnHandler struct {
 }
 
 // Handle incoming UDP connections and return response
-func (u UdpConnHandler) Handle(l net.Listener) {
+func (u UdpConnHandler) Handle(l net.Listener, doneChan chan bool) {
+	// Create shutdown function
+	go func(doneChan chan bool, l net.Listener) {
+		// Wait for done signal
+		<-doneChan
+
+		// Close listener
+		Static.LogChan <- "closing UDP listener"
+		l.Close()
+	}(doneChan, l)
 }
