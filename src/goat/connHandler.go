@@ -97,7 +97,7 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 		go TrackerAnnounce(passkey, query, resChan)
 	// Tracker status
 	case "status":
-		go GetServerStatus(resChan)
+		go GetStatusJson(resChan)
 	// Any undefined handlers
 	default:
 		go TrackerError(resChan, "Malformed announce")

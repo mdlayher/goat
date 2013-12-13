@@ -2,7 +2,6 @@ package goat
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -27,7 +26,7 @@ func LoadConfig() Config {
 	// Decode JSON
 	err = read.Decode(&conf)
 	if err != nil {
-		fmt.Println(APP, ": config.json could not be read, using default configuration")
+		Static.LogChan <- "config.json could not be read, using default configuration"
 		conf.Port = "8080"
 		conf.Passkey = false
 		conf.Http = true

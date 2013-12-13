@@ -7,6 +7,10 @@ import (
 	"runtime"
 )
 
+// Interface for passing server status structs via channel
+type Status interface {
+}
+
 // Struct to be serialized, containing information about the system running goat
 type ServerStatus struct {
 	Pid          int
@@ -21,7 +25,7 @@ type ServerStatus struct {
 }
 
 // Tracker status request
-func GetServerStatus(resChan chan []byte) {
+func GetServerStatus() ServerStatus {
 	// Get system hostname
 	hostname, _ := os.Hostname()
 
@@ -32,7 +36,8 @@ func GetServerStatus(resChan chan []byte) {
 	// Report memory usage in MB
 	memMb := float64((float64(mem.Alloc) / 1000) / 1000)
 
-	res, err := json.Marshal(ServerStatus{
+	// Build status struct
+	status := ServerStatus{
 		os.Getpid(),
 		hostname,
 		runtime.GOOS,
@@ -42,28 +47,28 @@ func GetServerStatus(resChan chan []byte) {
 		memMb,
 		Static.Http.Total,
 		Static.Http.Current,
-	})
+	}
+
+	// Return status struct
+	return status
+}
+
+// Return JSON representation of server status
+func GetStatusJson(resChan chan []byte) {
+	// Marshal into JSON from request
+	res, err := json.Marshal(GetServerStatus())
 	if err != nil {
 		resChan <- nil
 	}
 
-	// Return JSON
+	// Return status
 	resChan <- res
 }
 
 // Log the startup status banner
 func PrintStatusBanner() {
 	// Grab initial server status
-	statChan := make(chan []byte)
-	go GetServerStatus(statChan)
-
-	// Unmarshal response JSON
-	var stat ServerStatus
-	err := json.Unmarshal(<-statChan, &stat)
-	close(statChan)
-	if err != nil {
-		Static.LogChan <- "could not parse server status"
-	}
+	stat := GetServerStatus()
 
 	// Startup banner
 	Static.LogChan <- fmt.Sprintf("%s - %s_%s (%d CPU) [pid: %d]", stat.Hostname, stat.Platform, stat.Architecture, stat.NumCpu, stat.Pid)
@@ -72,23 +77,14 @@ func PrintStatusBanner() {
 // Log the regular status check banner
 func PrintCurrentStatus() {
 	// Grab server status
-	statChan := make(chan []byte)
-	go GetServerStatus(statChan)
-
-	// Unmarshal response JSON
-	var stat ServerStatus
-	err := json.Unmarshal(<-statChan, &stat)
-	close(statChan)
-	if err != nil {
-		Static.LogChan <- "could not parse server status"
-	}
+	stat := GetServerStatus()
 
 	// Regular status banner
 	Static.LogChan <- fmt.Sprintf("status - [goroutines: %d] [memory: %02.3f MB]", stat.NumGoroutine, stat.MemoryMb)
 
 	// HTTP stats
 	if Static.Config.Http {
-		Static.LogChan <- fmt.Sprintf("  http - [current: %d] [total: %d]", Static.Http.Current, Static.Http.Total)
+		Static.LogChan <- fmt.Sprintf("  http - [current: %d] [total: %d]", stat.HttpCurrent, stat.HttpTotal)
 
 		// Reset current HTTP counter
 		Static.Http.Current = 0
