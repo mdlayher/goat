@@ -2,16 +2,14 @@ package goat
 
 func DbManager(RequestChan chan Request) {
 	if Static.Config.Map {
-		go new(MapDb).HandleDb()
+		go new(MapDb).HandleDb(RequestChan)
 		Static.LogChan <- "MapDb instance launched"
 	}
 	if Static.Config.Sql {
-		go new(SqlDb).HandleDb()
+		go new(SqlDb).HandleDb(RequestChan)
 		Static.LogChan <- "SqlDb instance launched"
 	}
-	for {
 
-	}
 }
 
 // Holds information for request from database
