@@ -34,8 +34,8 @@ func TrackerAnnounce(query map[string][]string, resChan chan []byte) {
 func TrackerError(resChan chan []byte, err string) {
 	resChan <- bencode.EncDictMap(map[string][]byte{
 		"failure reason": bencode.EncString(err),
-		"min interval":   bencode.EncInt(1800),
 		"interval":       bencode.EncInt(3600),
+		"min interval":   bencode.EncInt(1800),
 	})
 }
 
@@ -44,11 +44,11 @@ func fakeAnnounceResponse(compact bool) []byte {
 	res := map[string][]byte{
 		// complete, downloaded, incomplete: used to report client download statistics
 		// min interval, interval: used to tell clients how often to announce
-		"complete":     bencode.EncInt(99),
-		"downloaded":   bencode.EncInt(200),
+		"complete":     bencode.EncInt(360),
+		"downloaded":   bencode.EncInt(1468),
 		"incomplete":   bencode.EncInt(1),
-		"min interval": bencode.EncInt(1800),
 		"interval":     bencode.EncInt(3600),
+		"min interval": bencode.EncInt(1800),
 	}
 
 	// Send a compact response if requested
