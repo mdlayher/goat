@@ -1,5 +1,6 @@
 package goat
 
+/*
 import (
 	"time"
 )
@@ -49,6 +50,7 @@ func DbManager(RequestChan chan Request) {
 	}
 
 }
+*/
 
 // Holds information for request from database
 type Request struct {
