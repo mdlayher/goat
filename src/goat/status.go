@@ -7,10 +7,6 @@ import (
 	"runtime"
 )
 
-// Interface for passing server status structs via channel
-type Status interface {
-}
-
 // Struct to be serialized, containing information about the system running goat
 type ServerStatus struct {
 	Pid          int
