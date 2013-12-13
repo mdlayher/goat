@@ -6,6 +6,7 @@ type Request struct {
 	Read, Write  bool
 	Data         interface{}
 	ResponseChan chan Response
+	
 }
 
 // Holds information for response from database
