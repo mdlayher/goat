@@ -15,8 +15,11 @@ func Manager(killChan chan bool, exitChan chan int) {
 	// Load configuration
 	config := LoadConfig()
 	Static.Config.Port = config.Port
+	Static.Config.Passkey = config.Passkey
 	Static.Config.Http = config.Http
 	Static.Config.Udp = config.Udp
+	Static.Config.Map = config.Map
+	Static.Config.Sql = config.Sql
 
 	// Launch listeners as configured
 	if Static.Config.Http {

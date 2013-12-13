@@ -37,22 +37,38 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 	resChan := make(chan []byte)
 
 	// Parse querystring
-	query := r.URL.Query()
+	querystring := r.URL.Query()
+
+	// Flatten arrays into single values
+	query := map[string]string{}
+	for k, v := range querystring {
+		query[k] = v[0]
+	}
 
 	// Check if IP was previously set
 	if _, ok := query["ip"]; !ok {
 		// If no IP set, detect and store it in query map
-		query["ip"] = []string{""}
-		query["ip"][0] = strings.Split(r.RemoteAddr, ":")[0]
+		query["ip"] = strings.Split(r.RemoteAddr, ":")[0]
+	}
+
+	// Store current passkey URL
+	var passkey string = ""
+	url := r.URL.Path
+
+	// Check for passkey present in URL
+	urlArr := strings.Split(url, "/")
+	url = urlArr[1]
+	if len(urlArr) == 3 {
+		passkey = urlArr[1]
 	}
 
 	// Handle tracker functions via different URLs
-	switch r.URL.Path {
+	switch url {
 	// Tracker announce
-	case "/announce":
-		go TrackerAnnounce(query, resChan)
+	case "announce":
+		go TrackerAnnounce(passkey, query, resChan)
 	// Tracker status
-	case "/status":
+	case "status":
 		go GetServerStatus(resChan)
 	// Any undefined handlers
 	default:

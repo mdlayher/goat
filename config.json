@@ -1,5 +1,8 @@
 {
 	"Port": "8080",
+	"Passkey": true,
 	"Http": true,
-	"Udp": false
+	"Udp": false,
+	"Map": true,
+	"Sql": false
 }
