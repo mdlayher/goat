@@ -42,8 +42,7 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 	// Check if IP was previously set
 	if _, ok := query["ip"]; !ok {
 		// If no IP set, detect and store it in query map
-		query["ip"] = []string{""}
-		query["ip"][0] = strings.Split(r.RemoteAddr, ":")[0]
+		query["ip"] = []string{strings.Split(r.RemoteAddr, ":")[0]}
 	}
 
 	// Handle tracker functions via different URLs
