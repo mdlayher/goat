@@ -4,6 +4,7 @@ import (
 	"bencode"
 	"encoding/binary"
 	"net"
+	"strconv"
 )
 
 // Tracker announce request
@@ -20,6 +21,17 @@ func TrackerAnnounce(query map[string]string, resChan chan []byte) {
 
 	// Fetch peer information
 
+	// Check for numwant parameter, return up to that number of peers
+	// Default is 50 per protocol
+	numwant := 50
+	if _, ok := query["numwant"]; ok {
+		// Verify numwant is an integer
+		num, err := strconv.Atoi(query["numwant"])
+		if err == nil {
+			numwant = num
+		}
+	}
+
 	// Don't use compact announce by default
 	compact := false
 	if _, ok := query["compact"]; ok && query["compact"] == "1" {
@@ -27,7 +39,7 @@ func TrackerAnnounce(query map[string]string, resChan chan []byte) {
 	}
 
 	// Fake tracker announce response
-	resChan <- fakeAnnounceResponse(compact)
+	resChan <- fakeAnnounceResponse(compact, numwant)
 }
 
 // Report a bencoded []byte response as specified by input string
@@ -40,7 +52,10 @@ func TrackerError(resChan chan []byte, err string) {
 }
 
 // Generate a fake announce response
-func fakeAnnounceResponse(compact bool) []byte {
+func fakeAnnounceResponse(compact bool, numwant int) []byte {
+	// For now, we completely ignore numwant
+	_ = numwant
+
 	res := map[string][]byte{
 		// complete, downloaded, incomplete: used to report client download statistics
 		// min interval, interval: used to tell clients how often to announce
