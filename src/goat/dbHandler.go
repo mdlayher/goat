@@ -2,7 +2,9 @@ package goat
 
 // Holds information for request from database
 type Request struct {
-	Query        string
+	Id           string
+	Read, Write  bool
+	Data         interface{}
 	ResponseChan chan Response
 }
 
