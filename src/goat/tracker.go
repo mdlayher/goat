@@ -7,7 +7,7 @@ import (
 )
 
 // Tracker announce request
-func TrackerAnnounce(query map[string][]string, resChan chan []byte) {
+func TrackerAnnounce(query map[string]string, resChan chan []byte) {
 	// Validate required parameter input
 	required := []string{"info_hash", "peer_id", "ip", "port", "uploaded", "downloaded", "left"}
 	for _, r := range required {
@@ -22,7 +22,7 @@ func TrackerAnnounce(query map[string][]string, resChan chan []byte) {
 
 	// Don't use compact announce by default
 	compact := false
-	if _, ok := query["compact"]; ok && query["compact"][0] == "1" {
+	if _, ok := query["compact"]; ok && query["compact"] == "1" {
 		compact = true
 	}
 

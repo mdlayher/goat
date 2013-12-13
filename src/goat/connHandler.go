@@ -37,12 +37,18 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 	resChan := make(chan []byte)
 
 	// Parse querystring
-	query := r.URL.Query()
+	querystring := r.URL.Query()
+
+	// Flatten arrays into single values
+	query := map[string]string{}
+	for k, v := range querystring {
+		query[k] = v[0]
+	}
 
 	// Check if IP was previously set
 	if _, ok := query["ip"]; !ok {
 		// If no IP set, detect and store it in query map
-		query["ip"] = []string{strings.Split(r.RemoteAddr, ":")[0]}
+		query["ip"] = strings.Split(r.RemoteAddr, ":")[0]
 	}
 
 	// Handle tracker functions via different URLs
