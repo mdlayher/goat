@@ -7,11 +7,12 @@ var Static struct {
 
 	// Server configuration
 	Config struct {
-		Port string
-		Http bool
-		Udp  bool
-		Map  bool
-		Sql  bool
+		Port    string
+		Passkey bool
+		Http    bool
+		Udp     bool
+		Map     bool
+		Sql     bool
 	}
 
 	// HTTP requests in last stat period, and total overall

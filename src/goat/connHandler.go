@@ -51,13 +51,24 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 		query["ip"] = strings.Split(r.RemoteAddr, ":")[0]
 	}
 
+	// Store current passkey URL
+	var passkey string = ""
+	url := r.URL.Path
+
+	// Check for passkey present in URL
+	urlArr := strings.Split(url, "/")
+	url = urlArr[1]
+	if len(urlArr) == 3 {
+		passkey = urlArr[1]
+	}
+
 	// Handle tracker functions via different URLs
-	switch r.URL.Path {
+	switch url {
 	// Tracker announce
-	case "/announce":
-		go TrackerAnnounce(query, resChan)
+	case "announce":
+		go TrackerAnnounce(passkey, query, resChan)
 	// Tracker status
-	case "/status":
+	case "status":
 		go GetServerStatus(resChan)
 	// Any undefined handlers
 	default:

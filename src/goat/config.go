@@ -8,9 +8,12 @@ import (
 )
 
 type Config struct {
-	Port string
-	Http,
-	Udp bool
+	Port    string
+	Passkey bool
+	Http    bool
+	Udp     bool
+	Map     bool
+	Sql     bool
 }
 
 // Load configuration
@@ -26,8 +29,11 @@ func LoadConfig() Config {
 	if err != nil {
 		fmt.Println(APP, ": config.json could not be read, using default configuration")
 		conf.Port = "8080"
+		conf.Passkey = false
 		conf.Http = true
 		conf.Udp = false
+		conf.Map = true
+		conf.Sql = false
 	}
 
 	return conf
