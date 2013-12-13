@@ -60,6 +60,7 @@ func PrintStatusBanner() {
 	// Unmarshal response JSON
 	var stat ServerStatus
 	err := json.Unmarshal(<-statChan, &stat)
+	close(statChan)
 	if err != nil {
 		Static.LogChan <- "could not parse server status"
 	}
@@ -77,6 +78,7 @@ func PrintCurrentStatus() {
 	// Unmarshal response JSON
 	var stat ServerStatus
 	err := json.Unmarshal(<-statChan, &stat)
+	close(statChan)
 	if err != nil {
 		Static.LogChan <- "could not parse server status"
 	}

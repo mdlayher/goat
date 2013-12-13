@@ -9,19 +9,6 @@ import (
 
 // Tracker announce request
 func TrackerAnnounce(passkey string, query map[string]string, resChan chan []byte) {
-	// Check if server is configured for passkey announce
-	if Static.Config.Passkey && passkey == "" {
-		TrackerError(resChan, "No passkey found in announce URL")
-	}
-
-	// Validate required parameter input
-	required := []string{"info_hash", "peer_id", "ip", "port", "uploaded", "downloaded", "left"}
-	for _, r := range required {
-		if _, ok := query[r]; !ok {
-			TrackerError(resChan, "Missing required parameter: "+r)
-		}
-	}
-
 	// Store announce information
 
 	// Fetch peer information

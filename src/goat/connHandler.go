@@ -55,17 +55,45 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 	var passkey string = ""
 	url := r.URL.Path
 
-	// Check for passkey present in URL
+	// Check for passkey present in URL, form: /ABDEF/announce
 	urlArr := strings.Split(url, "/")
 	url = urlArr[1]
 	if len(urlArr) == 3 {
 		passkey = urlArr[1]
+		url = urlArr[2]
+	}
+
+	// Add header to identify goat
+	w.Header().Add("Server", APP+"-git")
+
+	// Check if server is configured for passkey announce
+	if Static.Config.Passkey && passkey == "" {
+		go TrackerError(resChan, "No passkey found in announce URL")
+
+		// Wait for response, and send it when ready
+		w.Write(<-resChan)
+		close(resChan)
+		return
 	}
 
 	// Handle tracker functions via different URLs
 	switch url {
 	// Tracker announce
 	case "announce":
+		// Validate required parameter input
+		required := []string{"info_hash", "peer_id", "ip", "port", "uploaded", "downloaded", "left"}
+		for _, r := range required {
+			if _, ok := query[r]; !ok {
+				go TrackerError(resChan, "Missing required parameter: "+r)
+
+				// Wait for response, and send it when ready
+				w.Write(<-resChan)
+				close(resChan)
+				return
+			}
+		}
+
+		// Perform tracker announce
 		go TrackerAnnounce(passkey, query, resChan)
 	// Tracker status
 	case "status":
@@ -75,11 +103,10 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 		go TrackerError(resChan, "Malformed announce")
 	}
 
-	// Add header to identify goat
-	w.Header().Add("Server", APP+"-git")
-
 	// Wait for response, and send it when ready
 	w.Write(<-resChan)
+	close(resChan)
+	return
 }
 
 // UdpConnHandler handles incoming UDP network connections
