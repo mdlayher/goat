@@ -1,15 +1,10 @@
 package goat
 
-/*
-import (
-	"time"
-)
-
 func DbManager(RequestChan chan Request) {
-	var hold Request
+
 	SqlRequestChan := make(chan Request)
 	MapRequesChan := make(chan Request)
-	time.mi
+
 	// launch databases
 	if Static.Config.Map {
 
@@ -22,9 +17,10 @@ func DbManager(RequestChan chan Request) {
 	}
 
 	if Static.Config.Map && Static.Config.Sql {
+
 		for {
 			select {
-			case hold <- Request:
+			case hold := <-RequestChan:
 				MapRequesChan <- hold
 				SqlRequestChan <- hold
 			}
@@ -32,7 +28,7 @@ func DbManager(RequestChan chan Request) {
 	} else if Static.Config.Map {
 		for {
 			select {
-			case hold <- Request:
+			case hold := <-RequestChan:
 				MapRequesChan <- hold
 
 			}
@@ -40,8 +36,8 @@ func DbManager(RequestChan chan Request) {
 	} else if Static.Config.Sql {
 		for {
 			select {
-			case hold <- Request:
-				SqlRequesChan <- hold
+			case hold := <-RequestChan:
+				SqlRequestChan <- hold
 
 			}
 		}
@@ -50,7 +46,6 @@ func DbManager(RequestChan chan Request) {
 	}
 
 }
-*/
 
 // Holds information for request from database
 type Request struct {
