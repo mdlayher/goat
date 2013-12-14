@@ -1,9 +1,9 @@
 package goat
 
 func DbManager(RequestChan chan Request) {
-
+	// channels
 	SqlRequestChan := make(chan Request)
-	MapRequesChan := make(chan Request)
+	MapRequesChan := make(chan Request, 100)
 
 	// launch databases
 	if Static.Config.Map {
@@ -60,6 +60,9 @@ type Response struct {
 	Id, Db string
 	Data   interface{}
 }
+type WriteResponse struct {
+	Complete bool
+}
 
 // DbHandler interface method HandleDb defines a database handler which handles requests
 type DbHandler interface {
@@ -69,13 +72,27 @@ type DbHandler interface {
 // MapDb is a key value storage database
 // Id will be an identification for sharding
 type MapDb struct {
-	Id string
-	Db map[string]map[string]interface{}
+	Id      string
+	Db      map[string]map[string]interface{}
+	Workers map[string]MapWorker
 }
 
 // Handle data MapDb requests
-func (m MapDb) HandleDb(RequestChan chan Request) {
+func (db MapDb) HandleDb(RequestChan chan Request) {
+	for {
+		select {
+		case hold := <-RequestChan:
+			switch {
+			//this logic needs to be refactored so that the number of shards can be determained via the config file, which will define the number of digits used from the id for the shard name
+			case hold.Read:
+				go new(MapWorker).Read(hold, db.Db[hold.Id[(len(hold.Id)-3):(len(hold.Id)-1)]])
+			case hold.Write:
+				go new(MapWorker).Write(hold, db.Db[hold.Id[len(hold.Id)-3:len(hold.Id)-1]])
+			}
 
+		}
+
+	}
 }
 
 // SqlDb is a sql based database
