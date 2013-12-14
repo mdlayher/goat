@@ -7,12 +7,14 @@ import (
 )
 
 type Config struct {
-	Port    string
-	Passkey bool
-	Http    bool
-	Udp     bool
-	Map     bool
-	Sql     bool
+	Port      string
+	Passkey   bool
+	Http      bool
+	Udp       bool
+	Map       bool
+	Sql       bool
+	CacheSize int //must be an int between 1-8. Higher values result in
+	//faster performance and larger memory requirements
 }
 
 // Load configuration
@@ -33,6 +35,7 @@ func LoadConfig() Config {
 		conf.Udp = false
 		conf.Map = true
 		conf.Sql = false
+		conf.CacheSize = 3
 	}
 
 	return conf

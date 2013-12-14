@@ -49,10 +49,10 @@ func DbManager(RequestChan chan Request) {
 
 // Holds information for request from database
 type Request struct {
-	Id           string
-	Read, Write  bool
-	Data         interface{}
-	ResponseChan chan Response
+	Id                           string
+	Read, Write, DbOnly, MapOnly bool
+	Data                         interface{}
+	ResponseChan                 chan Response
 }
 
 // Holds information for response from database
@@ -95,7 +95,7 @@ func (db MapDb) HandleDb(RequestChan chan Request) {
 	}
 }
 
-// SqlDb is a sql based database
+// SqlDb is a Sql based database
 type SqlDb struct {
 }
 

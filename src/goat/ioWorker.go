@@ -1,5 +1,9 @@
 package goat
 
+import (
+	"time"
+)
+
 type IoWorker interface {
 	Read(request Request)
 	Write(request Request)
@@ -16,10 +20,39 @@ type SqlWorker struct {
 //takes a pointer to a shard map and a request and replies with a response struct
 func (m MapWorker) Read(request Request, shard map[string]interface{}) {
 	var response Response
-	response.Data = shard[request.Id]
-	response.Id = request.Id
-	response.Db = "map"
-	request.ResponseChan <- response
+	_, ok := shard[request.Id]
+	if ok {
+		response.Data = shard[request.Id]
+		response.Id = request.Id
+		response.Db = "map"
+		request.ResponseChan <- response
+	} else {
+		responseChan := make(chan Response)
+		var dbReadRequest Request
+		dbReadRequest.ResponseChan = responseChan
+		dbReadRequest.Id = request.Id
+		dbReadRequest.Read = true
+		dbReadRequest.Write = false
+		dbReadRequest.DbOnly = true
+		dbReadRequest.MapOnly = false
+		Static.RequestChan <- dbReadRequest
+		select {
+		case response := <-responseChan:
+			var mapWriteRequest Request
+			mapWriteRequest.Id = request.Id
+			mapWriteRequest.Data = response.Data
+			mapWriteRequest.Write = true
+			mapWriteRequest.MapOnly = true
+			Static.RequestChan <- mapWriteRequest
+
+		case <-time.After(100 * time.Millisecond):
+			close(responseChan)
+		}
+
+	}
+
+	<-request.ResponseChan
+
 }
 
 // takes a pointer to a map shard and writes the data from a request and
