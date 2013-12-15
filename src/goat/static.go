@@ -22,8 +22,9 @@ type HttpStats struct {
 // "Static" struct containing values which should be shared globally
 var Static struct {
 	// Server logging
-	LogChan     chan string
-	RequestChan chan Request
+	LogChan        chan string
+	RequestChan    chan Request
+	PersistantChan chan Request
 
 	// Configuration object
 	Config Conf
