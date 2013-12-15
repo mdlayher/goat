@@ -23,10 +23,16 @@ type HttpStats struct {
 var Static struct {
 	// Server logging
 	LogChan        chan string
+
+	// Buffered request channel for DB manager
 	RequestChan    chan Request
-	PersistantChan chan Request
+
+	// Backup request channel for persistant storage
+	PersistentChan chan Request
 
 	// Configuration object
 	Config Conf
+
+	// Stats about HTTP server
 	Http   HttpStats
 }

@@ -25,7 +25,7 @@ func DbManager() {
 					MapRequestChan <- hold
 					SqlRequestChan <- hold
 				}
-			case hold := <-Static.PersistantChan:
+			case hold := <-Static.PersistentChan:
 				SqlRequestChan <- hold
 			}
 		}
