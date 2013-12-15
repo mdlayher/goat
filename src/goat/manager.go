@@ -15,6 +15,8 @@ func Manager(killChan chan bool, exitChan chan int) {
 
 	// Print startup status banner
 	go PrintStatusBanner()
+	// dbManager startup
+	go DbManager()
 
 	// Load configuration
 	Static.Config = LoadConfig()
