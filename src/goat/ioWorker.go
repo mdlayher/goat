@@ -31,18 +31,12 @@ func (m MapWorker) Read(request Request, shard map[string]interface{}) {
 		var dbReadRequest Request
 		dbReadRequest.ResponseChan = responseChan
 		dbReadRequest.Id = request.Id
-		dbReadRequest.Read = true
-		dbReadRequest.Write = false
-		dbReadRequest.DbOnly = true
-		dbReadRequest.MapOnly = false
 		Static.RequestChan <- dbReadRequest
 		select {
 		case response := <-responseChan:
 			var mapWriteRequest Request
 			mapWriteRequest.Id = request.Id
 			mapWriteRequest.Data = response.Data
-			mapWriteRequest.Write = true
-			mapWriteRequest.MapOnly = true
 			Static.RequestChan <- mapWriteRequest
 		case <-time.After(100 * time.Millisecond):
 			close(responseChan)
