@@ -82,17 +82,28 @@ type MapDb struct {
 
 // Handle data MapDb requests
 func (db MapDb) HandleDb(RequestChan chan Request) {
+	db.Db = make(map[string]map[string]interface{})
 	for {
 		select {
 		case hold := <-RequestChan:
+			l := len(hold.Id)
+			s := Static.Config.CacheSize
 			switch {
 			// This logic needs to be refactored so that the number of shards can be
 			// determined via the config file, which will define the number of digits
 			// used from the ID for the shard name
 			case hold.Read:
-				go new(MapWorker).Read(hold, db.Db[hold.Id[(len(hold.Id)-3):(len(hold.Id)-1)]])
+				_, ok := db.Db[hold.Id[l-s:l-1]]
+				if !ok {
+					db.Db[hold.Id[l-s:l-1]] = make(map[string]interface{})
+				}
+				go new(MapWorker).Read(hold, db.Db[hold.Id[l-s:l-1]])
 			case hold.Write:
-				go new(MapWorker).Write(hold, db.Db[hold.Id[len(hold.Id)-3:len(hold.Id)-1]])
+				_, ok := db.Db[hold.Id[l-s:l-1]]
+				if !ok {
+					db.Db[hold.Id[l-s:l-1]] = make(map[string]interface{})
+				}
+				go new(MapWorker).Write(hold, db.Db[hold.Id[l-s:l-1]])
 			}
 		}
 	}
