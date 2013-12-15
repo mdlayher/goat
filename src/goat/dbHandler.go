@@ -7,11 +7,11 @@ func DbManager() {
 
 	// launch databases
 	if Static.Config.Map {
-		go new(MapDb).HandleDb(Static.RequestChan)
+		go new(MapDb).HandleDb(MapRequestChan)
 		Static.LogChan <- "MapDb instance launched"
 	}
 	if Static.Config.Sql {
-		go new(SqlDb).HandleDb(Static.RequestChan)
+		go new(SqlDb).HandleDb(SqlRequestChan)
 		Static.LogChan <- "SqlDb instance launched"
 	}
 
@@ -92,14 +92,18 @@ func (db MapDb) HandleDb(RequestChan chan Request) {
 			// determined via the config file, which will define the number of digits
 			// used from the ID for the shard name
 			case hold.Data == nil:
+				// check if key exits
 				_, ok := db.Db[key]
 				if !ok {
+					// if key does not exist, make a new map with the given key
 					db.Db[key] = make(map[string]interface{})
 				}
 				go new(MapWorker).Read(hold, db.Db[key])
 			case hold.Data != nil:
+				// check if key exits
 				_, ok := db.Db[key]
 				if !ok {
+					// if key does not exist, make a new map with the given key
 					db.Db[key] = make(map[string]interface{})
 				}
 				go new(MapWorker).Write(hold, db.Db[key])
