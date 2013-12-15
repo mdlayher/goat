@@ -3,7 +3,7 @@ package goat
 func DbManager(RequestChan chan Request) {
 	// channels
 	SqlRequestChan := make(chan Request)
-	MapRequesChan := make(chan Request, 100)
+	MapRequestChan := make(chan Request, 100)
 
 	// launch databases
 	if Static.Config.Map {
@@ -21,15 +21,19 @@ func DbManager(RequestChan chan Request) {
 		for {
 			select {
 			case hold := <-RequestChan:
-				MapRequesChan <- hold
-				SqlRequestChan <- hold
+				if hold.MapOnly {
+					MapRequestChan <- hold
+				} else {
+					MapRequestChan <- hold
+					SqlRequestChan <- hold
+				}
 			}
 		}
 	} else if Static.Config.Map {
 		for {
 			select {
 			case hold := <-RequestChan:
-				MapRequesChan <- hold
+				MapRequestChan <- hold
 
 			}
 		}
