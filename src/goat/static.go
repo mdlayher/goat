@@ -22,11 +22,17 @@ type HttpStats struct {
 // "Static" struct containing values which should be shared globally
 var Static struct {
 	// Server logging
-	LogChan        chan string
-	RequestChan    chan Request
-	PersistantChan chan Request
+	LogChan chan string
+
+	// Buffered request channel for DB manager
+	RequestChan chan Request
+
+	// Backup request channel for persistant storage
+	PersistentChan chan Request
 
 	// Configuration object
 	Config Conf
-	Http   HttpStats
+
+	// Stats about HTTP server
+	Http HttpStats
 }
