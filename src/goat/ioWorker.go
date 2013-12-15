@@ -44,15 +44,12 @@ func (m MapWorker) Read(request Request, shard map[string]interface{}) {
 			mapWriteRequest.Write = true
 			mapWriteRequest.MapOnly = true
 			Static.RequestChan <- mapWriteRequest
-
 		case <-time.After(100 * time.Millisecond):
 			close(responseChan)
 		}
-
 	}
 
 	<-request.ResponseChan
-
 }
 
 // takes a pointer to a map shard and writes the data from a request and
@@ -66,13 +63,11 @@ func (m MapWorker) Write(request Request, shard map[string]interface{}) {
 	response.Db = "map"
 	response.Id = request.Id
 	request.ResponseChan <- response
-
 }
 
 // sql read and write
 func (s SqlWorker) Read(request Request) {
-
 }
-func (s SqlWorker) Write(Request Request) {
 
+func (s SqlWorker) Write(Request Request) {
 }

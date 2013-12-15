@@ -31,5 +31,4 @@ type UdpListener struct {
 
 // Listen on specified UDP port, accept and handle connections
 func (u UdpListener) Listen(doneChan chan bool) {
-
 }

@@ -7,7 +7,6 @@ func DbManager(RequestChan chan Request) {
 
 	// launch databases
 	if Static.Config.Map {
-
 		go new(MapDb).HandleDb(RequestChan)
 		Static.LogChan <- "MapDb instance launched"
 	}
@@ -17,7 +16,6 @@ func DbManager(RequestChan chan Request) {
 	}
 
 	if Static.Config.Map && Static.Config.Sql {
-
 		for {
 			select {
 			case hold := <-RequestChan:
@@ -34,7 +32,6 @@ func DbManager(RequestChan chan Request) {
 			select {
 			case hold := <-RequestChan:
 				MapRequestChan <- hold
-
 			}
 		}
 	} else if Static.Config.Sql {
@@ -42,27 +39,29 @@ func DbManager(RequestChan chan Request) {
 			select {
 			case hold := <-RequestChan:
 				SqlRequestChan <- hold
-
 			}
 		}
 	} else {
 		Static.LogChan <- "No database in use."
 	}
-
 }
 
 // Holds information for request from database
 type Request struct {
-	Id                           string
-	Read, Write, DbOnly, MapOnly bool
-	Data                         interface{}
-	ResponseChan                 chan Response
+	Id           string
+	Read         bool
+	Write        bool
+	DbOnly       bool
+	MapOnly      bool
+	Data         interface{}
+	ResponseChan chan Response
 }
 
 // Holds information for response from database
 type Response struct {
-	Id, Db string
-	Data   interface{}
+	Id   string
+	Db   string
+	Data interface{}
 }
 type WriteResponse struct {
 	Complete bool
@@ -87,15 +86,15 @@ func (db MapDb) HandleDb(RequestChan chan Request) {
 		select {
 		case hold := <-RequestChan:
 			switch {
-			//this logic needs to be refactored so that the number of shards can be determained via the config file, which will define the number of digits used from the id for the shard name
+			// This logic needs to be refactored so that the number of shards can be
+			// determined via the config file, which will define the number of digits
+			// used from the ID for the shard name
 			case hold.Read:
 				go new(MapWorker).Read(hold, db.Db[hold.Id[(len(hold.Id)-3):(len(hold.Id)-1)]])
 			case hold.Write:
 				go new(MapWorker).Write(hold, db.Db[hold.Id[len(hold.Id)-3:len(hold.Id)-1]])
 			}
-
 		}
-
 	}
 }
 
@@ -105,5 +104,4 @@ type SqlDb struct {
 
 // Handle Sql based requests
 func (s SqlDb) HandleDb(RequestChan chan Request) {
-
 }
