@@ -76,4 +76,3 @@ func (s SqlWorker) Read(request Request) {
 func (s SqlWorker) Write(Request Request) {
 
 }
-:

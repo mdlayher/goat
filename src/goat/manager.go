@@ -3,6 +3,7 @@ package goat
 import (
 	"time"
 )
+
 const APP = "goat"
 
 func Manager(killChan chan bool, exitChan chan int) {
@@ -16,13 +17,7 @@ func Manager(killChan chan bool, exitChan chan int) {
 	go PrintStatusBanner()
 
 	// Load configuration
-	config := LoadConfig()
-	Static.Config.Port = config.Port
-	Static.Config.Passkey = config.Passkey
-	Static.Config.Http = config.Http
-	Static.Config.Udp = config.Udp
-	Static.Config.Map = config.Map
-	Static.Config.Sql = config.Sql
+	Static.Config = LoadConfig()
 
 	// Launch listeners as configured
 	if Static.Config.Http {
