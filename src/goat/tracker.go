@@ -38,16 +38,8 @@ func TrackerAnnounce(passkey string, query map[string]string, resChan chan []byt
 		}
 	}
 
-	// Only allow compact announce
-	compact := false
-	if _, ok := query["compact"]; ok && query["compact"] == "1" {
-		compact = true
-	} else {
-		TrackerError(resChan, "Your client does not support compact announce")
-	}
-
 	// Fake tracker announce response
-	announceRes := fakeAnnounceResponse(compact, numwant)
+	announceRes := fakeAnnounceResponse(true, numwant)
 	Static.LogChan <- fmt.Sprintf("res: %s", announceRes)
 	resChan <- announceRes
 }
