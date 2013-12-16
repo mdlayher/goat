@@ -1,17 +1,21 @@
 package goat
 
+import (
+	"fmt"
+)
+
 func DbManager() {
 	// channels
-	SqlRequestChan := make(chan Request)
-	MapRequestChan := make(chan Request, 100)
+	sqlRequestChan := make(chan Request)
+	mapRequestChan := make(chan Request, 100)
 
 	// launch databases
 	if Static.Config.Map {
-		go new(MapDb).HandleDb(MapRequestChan)
+		go new(MapDb).HandleDb(mapRequestChan)
 		Static.LogChan <- "MapDb instance launched"
 	}
 	if Static.Config.Sql {
-		go new(SqlDb).HandleDb(SqlRequestChan)
+		go new(SqlDb).HandleDb(sqlRequestChan)
 		Static.LogChan <- "SqlDb instance launched"
 	}
 
@@ -20,27 +24,27 @@ func DbManager() {
 			select {
 			case hold := <-Static.RequestChan:
 				if hold.Data == nil {
-					MapRequestChan <- hold
+					mapRequestChan <- hold
 				} else {
-					MapRequestChan <- hold
-					SqlRequestChan <- hold
+					mapRequestChan <- hold
+					sqlRequestChan <- hold
 				}
 			case hold := <-Static.PersistentChan:
-				SqlRequestChan <- hold
+				sqlRequestChan <- hold
 			}
 		}
 	} else if Static.Config.Map {
 		for {
 			select {
 			case hold := <-Static.RequestChan:
-				MapRequestChan <- hold
+				mapRequestChan <- hold
 			}
 		}
 	} else if Static.Config.Sql {
 		for {
 			select {
 			case hold := <-Static.RequestChan:
-				SqlRequestChan <- hold
+				sqlRequestChan <- hold
 			}
 		}
 	} else {
@@ -79,11 +83,11 @@ type MapDb struct {
 }
 
 // Handle data MapDb requests
-func (db MapDb) HandleDb(RequestChan chan Request) {
+func (db MapDb) HandleDb(mapChan chan Request) {
 	db.Db = make(map[string]map[string]interface{})
 	for {
 		select {
-		case hold := <-RequestChan:
+		case hold := <-mapChan:
 			l := len(hold.Id)
 			s := Static.Config.CacheSize
 			key := hold.Id[l-s : l-1]
@@ -117,5 +121,5 @@ type SqlDb struct {
 }
 
 // Handle Sql based requests
-func (s SqlDb) HandleDb(RequestChan chan Request) {
+func (s SqlDb) HandleDb(sqlChan chan Request) {
 }
