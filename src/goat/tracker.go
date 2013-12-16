@@ -15,17 +15,15 @@ func TrackerAnnounce(passkey string, query map[string]string, resChan chan []byt
 	// Store announce information in struct
 	announce := mapToAnnounceLog(query, resChan)
 
-	// Generate a storage request
-	res, ok := DbWrite(announce.InfoHash, announce)
+	// Request to store announce
+	_, ok := DbWrite(announce.InfoHash, announce)
 	if !ok {
-		Static.LogChan <- "could not read struct from storage"
+		Static.LogChan <- "could not write struct from storage"
 	}
 
-	// Request to store announce
-	Static.LogChan <- fmt.Sprintf("req: [ip: %s, port:%d]", announce.Ip, announce.Port)
-	Static.LogChan <- fmt.Sprintf("req: [info_hash: %s]", announce.InfoHash)
-	Static.LogChan <- fmt.Sprintf("req: [peer_id: %s]", announce.PeerId)
-	Static.LogChan <- fmt.Sprintf("res: [id: %s, db: %s]", res.Id, res.Db)
+	Static.LogChan <- fmt.Sprintf("db: [ip: %s, port:%d]", announce.Ip, announce.Port)
+	Static.LogChan <- fmt.Sprintf("db: [info_hash: %s]", announce.InfoHash)
+	Static.LogChan <- fmt.Sprintf("db: [peer_id: %s]", announce.PeerId)
 
 	// Fetch peer information
 
@@ -40,14 +38,18 @@ func TrackerAnnounce(passkey string, query map[string]string, resChan chan []byt
 		}
 	}
 
-	// Don't use compact announce by default
+	// Only allow compact announce
 	compact := false
 	if _, ok := query["compact"]; ok && query["compact"] == "1" {
 		compact = true
+	} else {
+		TrackerError(resChan, "Your client does not support compact announce")
 	}
 
 	// Fake tracker announce response
-	resChan <- fakeAnnounceResponse(compact, numwant)
+	announceRes := fakeAnnounceResponse(compact, numwant)
+	Static.LogChan <- fmt.Sprintf("res: %s", announceRes)
+	resChan <- announceRes
 }
 
 // Report a bencoded []byte response as specified by input string
@@ -128,32 +130,39 @@ func fakeAnnounceResponse(compact bool, numwant int) []byte {
 	res := map[string][]byte{
 		// complete, downloaded, incomplete: used to report client download statistics
 		// min interval, interval: used to tell clients how often to announce
-		"complete":     bencode.EncInt(360),
-		"downloaded":   bencode.EncInt(1468),
-		"incomplete":   bencode.EncInt(1),
+		// TODO: these may not be necessary, or may cause problems
+		// Need to do further research
+		/*
+		"complete":     bencode.EncInt(0),
+		"downloaded":   bencode.EncInt(0),
+		"incomplete":   bencode.EncInt(0),
+		*/
 		"interval":     bencode.EncInt(3600),
 		"min interval": bencode.EncInt(1800),
 	}
 
-	// Send a compact response if requested
-	if compact {
-		res["peers"] = bencode.EncBytes(compactPeerList())
-	} else {
-		// peers: list of dictionaries
-		res["peers"] = bencode.EncList([][]byte{
-			// peer dictionary: contains peer id, ip, and port of a peer
-			bencode.EncDictMap(map[string][]byte{
-				"peer id": bencode.EncString("ABCDEF0123456789ABCD"),
-				"ip":      bencode.EncString("127.0.0.1"),
-				"port":    bencode.EncInt(6881),
-			}),
-			bencode.EncDictMap(map[string][]byte{
-				"peer id": bencode.EncString("0123456789ABCDEF0123"),
-				"ip":      bencode.EncString("127.0.0.1"),
-				"port":    bencode.EncInt(6882),
-			}),
-		})
-	}
+	// Send a compact response
+	res["peers"] = bencode.EncBytes(compactPeerList())
+
+	// TODO: decide whether or not to support non-compact announce.  Any sane, modern
+	// client supports it, and it save a great amount of bandwidth for large peer lists
+
+	/*
+	// peers: list of dictionaries
+	res["peers"] = bencode.EncList([][]byte{
+		// peer dictionary: contains peer id, ip, and port of a peer
+		bencode.EncDictMap(map[string][]byte{
+			"peer id": bencode.EncString("ABCDEF0123456789ABCD"),
+			"ip":      bencode.EncString("127.0.0.1"),
+			"port":    bencode.EncInt(6881),
+		}),
+		bencode.EncDictMap(map[string][]byte{
+			"peer id": bencode.EncString("0123456789ABCDEF0123"),
+			"ip":      bencode.EncString("127.0.0.1"),
+			"port":    bencode.EncInt(6882),
+		}),
+	})
+	*/
 
 	return bencode.EncDictMap(res)
 }
