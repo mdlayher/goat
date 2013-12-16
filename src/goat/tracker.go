@@ -14,9 +14,9 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 	// Request to store announce
 	go announce.Save()
 
-	Static.LogChan <- fmt.Sprintf("db: [ip: %s, port:%d]", announce.Ip, announce.Port)
-	Static.LogChan <- fmt.Sprintf("db: [info_hash: %s]", announce.InfoHash)
-	Static.LogChan <- fmt.Sprintf("db: [peer_id: %s]", announce.PeerId)
+	Static.LogChan <- fmt.Sprintf("announce: [ip: %s, port:%d]", announce.Ip, announce.Port)
+	Static.LogChan <- fmt.Sprintf("announce: [info_hash: %s]", announce.InfoHash)
+	Static.LogChan <- fmt.Sprintf("announce: [event: %s]", announce.Event)
 
 	// Check for a matching file via info_hash
 	file := new(FileRecord).Load(announce.InfoHash, "info_hash")
@@ -24,6 +24,46 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 		resChan <- TrackerError("Unregistered torrent")
 		return
 	}
+
+	// Check for existing record for this user with this file
+	fileUser := new(FileUserRecord).Load(file.Id, user.Id)
+	if fileUser == (FileUserRecord{}) {
+		// Create new relationship
+		fileUser.FileId = file.Id
+		fileUser.UserId = user.Id
+		fileUser.Active = true
+		fileUser.Completed = false
+		fileUser.Announced = 1
+		fileUser.Uploaded = announce.Uploaded
+		fileUser.Downloaded = announce.Downloaded
+		fileUser.Left = announce.Left
+	} else {
+		// Else, pre-existing record, so update
+		// Check for stopped status
+		if announce.Event != "stopped" {
+			fileUser.Active = true
+		} else {
+			fileUser.Active = false
+		}
+
+		// Check for completion
+		if announce.Left == 0 {
+			fileUser.Completed = true
+		} else {
+			fileUser.Completed = false
+		}
+
+		// Add an announce
+		fileUser.Announced = fileUser.Announced + 1
+
+		// Do math on statistics
+		fileUser.Uploaded = fileUser.Uploaded + announce.Uploaded
+		fileUser.Downloaded = fileUser.Downloaded + announce.Downloaded
+		fileUser.Left = announce.Left
+	}
+
+	// Insert or update the FileUser record
+	go fileUser.Save()
 
 	// Fetch peer information
 	/*
