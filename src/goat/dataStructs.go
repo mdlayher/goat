@@ -251,14 +251,12 @@ func (u UserRecord) Save() bool {
 
 		// Get sum of upload and download for this user
 		err = db.Get(&totals, "SELECT SUM(uploaded) AS uploaded, SUM(downloaded) AS downloaded FROM files_users WHERE user_id = ?", u.Id)
-		if err != nil {
-			Static.LogChan <- err.Error()
-			return false
+		if err == nil {
+			// Store in struct
+			u.Uploaded = totals.Uploaded
+			u.Downloaded = totals.Downloaded
 		}
 
-		// Store in struct
-		u.Uploaded = totals.Uploaded
-		u.Downloaded = totals.Downloaded
 	}
 
 	// Create database transaction, do insert, commit

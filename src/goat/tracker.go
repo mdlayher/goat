@@ -70,6 +70,11 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 			fileUser.Active = true
 		} else {
 			fileUser.Active = false
+
+			// Remove seeder if applicable
+			if announce.Left == 0 && file.Seeders > 0 {
+				file.Seeders = file.Seeders - 1
+			}
 		}
 
 		// Check for completion
@@ -80,7 +85,9 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 			file.Completed = file.Completed + 1
 
 			// Decrement leecher, add seeder
-			file.Leechers = file.Leechers - 1
+			if (file.Leechers > 0) {
+				file.Leechers = file.Leechers - 1
+			}
 			file.Seeders = file.Seeders + 1
 		} else {
 			fileUser.Completed = false
