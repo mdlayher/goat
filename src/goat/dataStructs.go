@@ -28,5 +28,21 @@ func (log AnnounceLog) PersistentWrite() {
 	close(re)
 }
 
-type ScrapeLogs struct {
+// Struct representing a scrapelog, to be logged to storage
+type ScrapeLog struct {
+	InfoHash string
+	UserId   string
+	Ip       string
+	Time     int64
+}
+
+func (log ScrapeLog) PersistentWrite() {
+	re := make(chan Response)
+	var request Request
+	request.Data = log
+	request.Id = log.InfoHash
+	request.ResponseChan = re
+	Static.PersistentChan <- request
+	<-re
+	close(re)
 }
