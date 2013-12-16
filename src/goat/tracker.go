@@ -16,19 +16,13 @@ func TrackerAnnounce(passkey string, query map[string]string, resChan chan []byt
 	announce := mapToAnnounceLog(query, resChan)
 
 	// Generate a storage request
-	var req Request
-	req.Id = announce.InfoHash
-	req.Data = announce
-	queryResChan := make(chan Response)
-	req.ResponseChan = queryResChan
+	res, ok := DbWrite(announce.InfoHash, announce)
+	if !ok {
+		Static.LogChan <- "could not read struct from storage"
+	}
 
 	// Request to store announce
-	Static.LogChan <- fmt.Sprintf("req: [id: %s]", req.Id)
 	Static.LogChan <- fmt.Sprintf("req: data:{info_hash: %s, ip: %s, port:%d}", announce.InfoHash, announce.Ip, announce.Port)
-	Static.RequestChan <- req
-
-	// Get response from storage
-	res := <-queryResChan
 	Static.LogChan <- fmt.Sprintf("res: [id: %s, db: %s]", res.Id, res.Db)
 
 	// Fetch peer information
