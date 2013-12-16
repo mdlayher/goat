@@ -1,7 +1,9 @@
 package goat
 
 import (
+	"encoding/binary"
 	"crypto/sha1"
+	"net"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -123,6 +125,54 @@ func (f FileRecord) Load(id interface{}, col string) FileRecord {
 	return f
 }
 
+// Return compact peer buffer for tracker announce, excluding self
+func (f FileRecord) PeerList(exclude string, numwant int) []byte {
+	// Open database connection
+	db, err := DbConnect()
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return nil
+	}
+
+	// Anonymous Peer struct
+	peer := struct {
+		Ip   string
+		Port uint16
+	}{
+		"",
+		0,
+	}
+
+	// Buffer for compact list
+	buf := make([]byte, 0)
+
+	// Get IP and port of all peers who are active and seeding this file
+	rows, err := db.Queryx("SELECT DISTINCT announce_log.ip,announce_log.port FROM announce_log JOIN files ON announce_log.info_hash = files.info_hash JOIN files_users ON files.id = files_users.file_id WHERE files_users.active=1 AND files.info_hash=? AND announce_log.ip != ? LIMIT ?;", f.InfoHash, exclude, numwant)
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return buf
+	}
+
+	// Iterate all rows
+	for rows.Next() {
+		// Scan row results
+		rows.StructScan(&peer)
+
+		// Parse IP into byte buffer
+		ip := [4]byte{}
+		binary.BigEndian.PutUint32(ip[:], binary.BigEndian.Uint32(net.ParseIP(peer.Ip).To4()))
+
+		// Parse port into byte buffer
+		port := [2]byte{}
+		binary.BigEndian.PutUint16(port[:], peer.Port)
+
+		// Append ip/port to end of list
+		buf = append(buf[:], append(ip[:], port[:]...)...)
+	}
+
+	return buf
+}
+
 // Struct representing a file tracked by tracker
 type FileUserRecord struct {
 	FileId     int `db:"file_id"`
@@ -191,7 +241,7 @@ func (u UserRecord) Save() bool {
 
 	// Create database transaction, do insert, commit
 	tx := db.MustBegin()
-	tx.Execl("INSERT INTO users (`username`, `passkey`, `torrent_limit`, `uploaded`, `downloaded`) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `username`=values(`username`), `passkey`=values(`passkey`), `torrent_limit`=values(`torrent_limit`), `uploaded`=values(`uploaded`), `downloaded`=values(`downloaded)`;",
+	tx.Execl("INSERT INTO users (`username`, `passkey`, `torrent_limit`, `uploaded`, `downloaded`) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `username`=values(`username`), `passkey`=values(`passkey`), `torrent_limit`=values(`torrent_limit`), `uploaded`=values(`uploaded`), `downloaded`=values(`downloaded`);",
 		u.Username, u.Passkey, u.TorrentLimit, u.Uploaded, u.Downloaded)
 	tx.Commit()
 

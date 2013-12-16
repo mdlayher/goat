@@ -65,14 +65,6 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 	// Insert or update the FileUser record
 	go fileUser.Save()
 
-	// Fetch peer information
-	/*
-	res, ok = DbRead(announce.FileRecordInfoHash())
-	if !ok {
-		Static.LogChan <- "could not read file info from storage"
-	}
-	*/
-
 	// Check for numwant parameter, return up to that number of peers
 	// Default is 50 per protocol
 	numwant := 50
@@ -84,10 +76,12 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 		}
 	}
 
-	// Fake tracker announce response
-	announceRes := FakeAnnounceResponse(numwant)
-	Static.LogChan <- fmt.Sprintf("res: %s", announceRes)
-	resChan <- announceRes
+	// Tracker announce response, with generated peerlist of length numwant, excluding this user
+	resChan <- bencode.EncDictMap(map[string][]byte{
+		"interval":     bencode.EncInt(RandRange(3200, 4000)),
+		"min interval": bencode.EncInt(1800),
+		"peers":        bencode.EncBytes(file.PeerList(query["ip"], numwant)),
+	})
 }
 
 // Report a bencoded []byte response as specified by input string
