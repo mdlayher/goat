@@ -12,9 +12,9 @@ func TrackerAnnounce(passkey string, query map[string]string, resChan chan []byt
 	announce := MapToAnnounceLog(query, resChan)
 
 	// Request to store announce
-	_, ok := DbWrite(announce.InfoHash, announce)
+	res, ok := DbWrite(announce.Hash(), announce)
 	if !ok {
-		Static.LogChan <- "could not write struct from storage"
+		Static.LogChan <- "could not write announce to storage"
 	}
 
 	Static.LogChan <- fmt.Sprintf("db: [ip: %s, port:%d]", announce.Ip, announce.Port)
@@ -22,6 +22,12 @@ func TrackerAnnounce(passkey string, query map[string]string, resChan chan []byt
 	Static.LogChan <- fmt.Sprintf("db: [peer_id: %s]", announce.PeerId)
 
 	// Fetch peer information
+	/*
+	res, ok = DbRead(announce.FileRecordInfoHash())
+	if !ok {
+		Static.LogChan <- "could not read file info from storage"
+	}
+	*/
 
 	// Check for numwant parameter, return up to that number of peers
 	// Default is 50 per protocol

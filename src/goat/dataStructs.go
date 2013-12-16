@@ -1,5 +1,15 @@
 package goat
 
+import (
+	"crypto/sha1"
+	"fmt"
+)
+
+// Generates a unique hash for a given struct with its ID, to be used as ID for storage
+type Hashable interface {
+	Hash() string
+}
+
 type PersistentWriter interface {
 	PersistentWrite()
 }
@@ -17,6 +27,13 @@ type AnnounceLog struct {
 	Time       int64
 }
 
+// Generate a SHA1 hash of the form: announce_log_InfoHash
+func (log AnnounceLog) Hash() string {
+	hash := sha1.New()
+	hash.Write([]byte("announce_log"+log.InfoHash))
+	return fmt.Sprintf("%x", hash.Sum(nil))
+}
+
 //sends the annoucelog to the persistant write handler
 func (log AnnounceLog) PersistentWrite() {
 	re := make(chan Response)
@@ -27,6 +44,16 @@ func (log AnnounceLog) PersistentWrite() {
 	Static.PersistentChan <- request
 	<-re
 	close(re)
+}
+
+// Struct representing a file tracked by tracker
+type FileRecord struct {
+	InfoHash   string
+	Leechers   int
+	Seeders    int
+	Completed  int
+	Time       int64
+	CreateTime int64
 }
 
 // Struct representing a scrapelog, to be logged to storage
