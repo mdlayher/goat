@@ -89,6 +89,14 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate passkey if needed
+	user := new(UserRecord).Load(passkey, "passkey")
+	if Static.Config.Passkey && user == (UserRecord{}) {
+		w.Write(TrackerError("Invalid passkey"))
+		close(resChan)
+		return
+	}
+
 	// Handle tracker functions via different URLs
 	switch url {
 	// Tracker announce
@@ -127,7 +135,7 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Perform tracker announce
-		go TrackerAnnounce(passkey, query, resChan)
+		go TrackerAnnounce(user, query, resChan)
 	// Tracker status
 	case "status":
 		go GetStatusJson(resChan)

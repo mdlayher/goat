@@ -7,7 +7,7 @@ import (
 )
 
 // Tracker announce request
-func TrackerAnnounce(passkey string, query map[string]string, resChan chan []byte) {
+func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []byte) {
 	// Store announce information in struct
 	announce := MapToAnnounceLog(query)
 
