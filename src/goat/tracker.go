@@ -9,18 +9,6 @@ import (
 	"strconv"
 )
 
-// Struct representing an announce, to be logged to storage
-type AnnounceLog struct {
-	InfoHash   string
-	PeerId     string
-	Ip         string
-	Port       int
-	Uploaded   int
-	Downloaded int
-	Left       int
-	Event      string
-}
-
 // Tracker announce request
 func TrackerAnnounce(passkey string, query map[string]string, resChan chan []byte) {
 	// Store announce information in struct
