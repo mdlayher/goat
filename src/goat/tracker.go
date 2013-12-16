@@ -39,7 +39,7 @@ func TrackerAnnounce(passkey string, query map[string]string, resChan chan []byt
 	}
 
 	// Fake tracker announce response
-	announceRes := fakeAnnounceResponse(true, numwant)
+	announceRes := fakeAnnounceResponse(numwant)
 	Static.LogChan <- fmt.Sprintf("res: %s", announceRes)
 	resChan <- announceRes
 }
@@ -115,7 +115,7 @@ func mapToAnnounceLog(query map[string]string, resChan chan []byte) AnnounceLog 
 }
 
 // Generate a fake announce response
-func fakeAnnounceResponse(compact bool, numwant int) []byte {
+func fakeAnnounceResponse(numwant int) []byte {
 	// For now, we completely ignore numwant
 	_ = numwant
 
@@ -131,30 +131,8 @@ func fakeAnnounceResponse(compact bool, numwant int) []byte {
 		*/
 		"interval":     bencode.EncInt(3600),
 		"min interval": bencode.EncInt(1800),
+		"peers":        bencode.EncBytes(compactPeerList()),
 	}
-
-	// Send a compact response
-	res["peers"] = bencode.EncBytes(compactPeerList())
-
-	// TODO: decide whether or not to support non-compact announce.  Any sane, modern
-	// client supports it, and it save a great amount of bandwidth for large peer lists
-
-	/*
-	// peers: list of dictionaries
-	res["peers"] = bencode.EncList([][]byte{
-		// peer dictionary: contains peer id, ip, and port of a peer
-		bencode.EncDictMap(map[string][]byte{
-			"peer id": bencode.EncString("ABCDEF0123456789ABCD"),
-			"ip":      bencode.EncString("127.0.0.1"),
-			"port":    bencode.EncInt(6881),
-		}),
-		bencode.EncDictMap(map[string][]byte{
-			"peer id": bencode.EncString("0123456789ABCDEF0123"),
-			"ip":      bencode.EncString("127.0.0.1"),
-			"port":    bencode.EncInt(6882),
-		}),
-	})
-	*/
 
 	return bencode.EncDictMap(res)
 }
