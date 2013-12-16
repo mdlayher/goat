@@ -12,10 +12,7 @@ func TrackerAnnounce(passkey string, query map[string]string, resChan chan []byt
 	announce := MapToAnnounceLog(query, resChan)
 
 	// Request to store announce
-	res, ok := DbWrite(announce.Hash(), announce)
-	if !ok {
-		Static.LogChan <- "could not write announce to storage"
-	}
+	go announce.Save()
 
 	Static.LogChan <- fmt.Sprintf("db: [ip: %s, port:%d]", announce.Ip, announce.Port)
 	Static.LogChan <- fmt.Sprintf("db: [info_hash: %s]", announce.InfoHash)

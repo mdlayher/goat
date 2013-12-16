@@ -3,6 +3,7 @@ package goat
 import (
 	"crypto/sha1"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 // Generates a unique hash for a given struct with its ID, to be used as ID for storage
@@ -10,8 +11,11 @@ type Hashable interface {
 	Hash() string
 }
 
-type PersistentWriter interface {
-	PersistentWrite()
+// Defines methods to save, load, and delete data for an object
+type Persistent interface {
+	Save() bool
+	Load(interface{}) interface{}
+	Delete() bool
 }
 
 type ErrorRes struct {
@@ -22,8 +26,9 @@ type ErrorRes struct {
 
 // Struct representing an announce, to be logged to storage
 type AnnounceLog struct {
-	InfoHash   string
-	PeerId     string
+	Id         int
+	InfoHash   string `db:"info_hash"`
+	PeerId     string `db:"peer_id"`
 	Ip         string
 	Port       int
 	Uploaded   int
@@ -40,16 +45,34 @@ func (log AnnounceLog) Hash() string {
 	return fmt.Sprintf("%x", hash.Sum(nil))
 }
 
-//sends the annoucelog to the persistant write handler
-func (log AnnounceLog) PersistentWrite() {
-	re := make(chan Response)
-	var request Request
-	request.Data = log
-	request.Id = log.InfoHash
-	request.ResponseChan = re
-	Static.PersistentChan <- request
-	<-re
-	close(re)
+// Save AnnounceLog to storage
+func (a AnnounceLog) Save() bool {
+	// Open database connection
+	db, err := DbConnect()
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return false
+	}
+
+	// Create database transaction, do insert, commit
+	tx := db.MustBegin()
+	tx.Execl("INSERT INTO announce_log (`info_hash`, `peer_id`, `ip`, `port`, `uploaded`, `downloaded`, `left`, `event`, `time`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, UNIX_TIMESTAMP());",
+		a.InfoHash, a.PeerId, a.Ip, a.Port, a.Uploaded, a.Downloaded, a.Left, a.Event)
+	tx.Commit()
+
+	return true
+}
+
+// Load AnnounceLog from storage
+func (a AnnounceLog) Load(id interface{}) AnnounceLog {
+	// Open database connection
+	db, _ := DbConnect()
+
+	// Create database transaction
+	res := AnnounceLog{}
+	db.Get(&res, "SELECT * FROM announce_log WHERE id=?", id)
+
+	return res
 }
 
 // Struct representing a file tracked by tracker
@@ -68,15 +91,4 @@ type ScrapeLog struct {
 	UserId   string
 	Ip       string
 	Time     int64
-}
-
-func (log ScrapeLog) PersistentWrite() {
-	re := make(chan Response)
-	var request Request
-	request.Data = log
-	request.Id = log.InfoHash
-	request.ResponseChan = re
-	Static.PersistentChan <- request
-	<-re
-	close(re)
 }
