@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -76,20 +77,14 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 
 	// Verify that torrent client is advertising its User-Agent, so we can use a whitelist
 	if _, ok := r.Header["User-Agent"]; !ok {
-		go TrackerError(resChan, "Your client is not whitelisted")
-
-		// Wait for response, and send it when ready
-		w.Write(<-resChan)
+		w.Write(TrackerError("Your client is not whitelisted"))
 		close(resChan)
 		return
 	}
 
 	// Check if server is configured for passkey announce
 	if Static.Config.Passkey && passkey == "" {
-		go TrackerError(resChan, "No passkey found in announce URL")
-
-		// Wait for response, and send it when ready
-		w.Write(<-resChan)
+		w.Write(TrackerError("No passkey found in announce URL"))
 		close(resChan)
 		return
 	}
@@ -100,23 +95,33 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 	case "announce":
 		// Validate required parameter input
 		required := []string{"info_hash", "peer_id", "ip", "port", "uploaded", "downloaded", "left"}
+		// Validate required integer input
+		reqInt := []string{"port", "uploaded", "downloaded", "left"}
+
+		// Check for required parameters
 		for _, r := range required {
 			if _, ok := query[r]; !ok {
-				go TrackerError(resChan, "Missing required parameter: "+r)
-
-				// Wait for response, and send it when ready
-				w.Write(<-resChan)
+				w.Write(TrackerError("Missing required parameter: "+r))
 				close(resChan)
 				return
 			}
 		}
 
+		// Check for all valid integers
+		for _, r := range reqInt {
+			if _, ok := query[r]; ok {
+				_, err := strconv.Atoi(query[r])
+				if err != nil {
+					w.Write(TrackerError("Invalid integer parameter: "+r))
+					close(resChan)
+					return
+				}
+			}
+		}
+
 		// Only allow compact announce
 		if _, ok := query["compact"]; !ok || query["compact"] != "1" {
-			go TrackerError(resChan, "Your client does not support compact announce")
-
-			// Wait for response, and send it when ready
-			w.Write(<-resChan)
+			w.Write(TrackerError("Your client does not support compact announce"))
 			close(resChan)
 			return
 		}
@@ -128,7 +133,9 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 		go GetStatusJson(resChan)
 	// Any undefined handlers
 	default:
-		go TrackerError(resChan, "Malformed announce")
+		w.Write(TrackerError("Malformed announce"))
+		close(resChan)
+		return
 	}
 
 	// Wait for response, and send it when ready

@@ -18,6 +18,14 @@ func TrackerAnnounce(passkey string, query map[string]string, resChan chan []byt
 	Static.LogChan <- fmt.Sprintf("db: [info_hash: %s]", announce.InfoHash)
 	Static.LogChan <- fmt.Sprintf("db: [peer_id: %s]", announce.PeerId)
 
+	// Check for a matching file via info_hash
+	/*
+	file := new(FileRecord).Load(announce.InfoHash, "info_hash")
+	if file == nil {
+		resChan <-
+	}
+	*/
+
 	// Fetch peer information
 	/*
 	res, ok = DbRead(announce.FileRecordInfoHash())
@@ -44,8 +52,8 @@ func TrackerAnnounce(passkey string, query map[string]string, resChan chan []byt
 }
 
 // Report a bencoded []byte response as specified by input string
-func TrackerError(resChan chan []byte, err string) {
-	resChan <- bencode.EncDictMap(map[string][]byte{
+func TrackerError(err string) []byte {
+	return bencode.EncDictMap(map[string][]byte{
 		"failure reason": bencode.EncString(err),
 		"interval":       bencode.EncInt(RandRange(3200, 4000)),
 		"min interval":   bencode.EncInt(1800),
