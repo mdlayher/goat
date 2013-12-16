@@ -7,7 +7,7 @@ func DbManager() {
 
 	// launch databases
 	if Static.Config.Map {
-		go new(MapDb).HandleDb(Static.RequestChan)
+		go new(MapDb).HandleDb(MapRequestChan)
 		Static.LogChan <- "MapDb instance launched"
 	}
 	if Static.Config.Sql {
@@ -15,37 +15,37 @@ func DbManager() {
 		Static.LogChan <- "SqlDb instance launched"
 	}
 
-	// if Static.Config.Map && Static.Config.Sql {
-	// 	for {
-	// 		select {
-	// 		case hold := <-Static.RequestChan:
-	// 			if hold.Data == nil {
-	// 				MapRequestChan <- hold
-	// 			} else {
-	// 				MapRequestChan <- hold
-	// 				SqlRequestChan <- hold
-	// 			}
-	// 		case hold := <-Static.PersistentChan:
-	// 			SqlRequestChan <- hold
-	// 		}
-	// 	}
-	// } else if Static.Config.Map {
-	// 	for {
-	// 		select {
-	// 		case hold := <-Static.RequestChan:
-	// 			MapRequestChan <- hold
-	// 		}
-	// 	}
-	// } else if Static.Config.Sql {
-	// 	for {
-	// 		select {
-	// 		case hold := <-Static.RequestChan:P
-	// 			SqlRequestChan <- hold
-	// 		}
-	// 	}
-	// } else {
-	// 	Static.LogChan <- "No database in use."
-	// }
+	if Static.Config.Map && Static.Config.Sql {
+		for {
+			select {
+			case hold := <-Static.RequestChan:
+				if hold.Data == nil {
+					MapRequestChan <- hold
+				} else {
+					MapRequestChan <- hold
+					SqlRequestChan <- hold
+				}
+			case hold := <-Static.PersistentChan:
+				SqlRequestChan <- hold
+			}
+		}
+	} else if Static.Config.Map {
+		for {
+			select {
+			case hold := <-Static.RequestChan:
+				MapRequestChan <- hold
+			}
+		}
+	} else if Static.Config.Sql {
+		for {
+			select {
+			case hold := <-Static.RequestChan:
+				SqlRequestChan <- hold
+			}
+		}
+	} else {
+		Static.LogChan <- "No database in use."
+	}
 }
 
 // Holds information for request from database

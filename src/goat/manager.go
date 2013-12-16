@@ -15,6 +15,9 @@ func Manager(killChan chan bool, exitChan chan int) {
 
 	// Print startup status banner
 	go PrintStatusBanner()
+
+	requestChan := make(chan Request, 100)
+	Static.RequestChan = requestChan
 	// dbManager startup
 	go DbManager()
 
