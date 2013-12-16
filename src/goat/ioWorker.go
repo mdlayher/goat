@@ -42,7 +42,6 @@ func (m MapWorker) Read(request Request, shard map[string]interface{}) {
 			close(responseChan)
 		}
 	}
-
 	<-request.ResponseChan
 }
 
@@ -62,6 +61,5 @@ func (m MapWorker) Write(request Request, shard map[string]interface{}) {
 // sql read and write
 func (s SqlWorker) Read(request Request) {
 }
-
 func (s SqlWorker) Write(Request Request) {
 }
