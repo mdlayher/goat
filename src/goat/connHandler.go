@@ -8,7 +8,7 @@ import (
 
 // ConnHandler interface method Handle defines how to handle incoming network connections
 type ConnHandler interface {
-	Handle(l net.Listener)
+	Handle(net.Listener, chan bool)
 }
 
 // HttpConnHandler handles incoming HTTP (TCP) network connections
@@ -16,16 +16,18 @@ type HttpConnHandler struct {
 }
 
 // Handle incoming HTTP connections and serve
-func (h HttpConnHandler) Handle(l net.Listener) {
+func (h HttpConnHandler) Handle(l net.Listener, httpDoneChan chan bool) {
 	// Create shutdown function
-	go func(l net.Listener) {
+	go func(l net.Listener, httpDoneChan chan bool) {
 		// Wait for done signal
 		<-Static.ShutdownChan
 
 		// Close listener
-		Static.LogChan <- "closing HTTP listener"
+		Static.LogChan <- "2"
 		l.Close()
-	}(l)
+		Static.LogChan <- "3"
+		httpDoneChan <- true
+	}(l, httpDoneChan)
 
 	// Set up HTTP routes for handling functions
 	http.HandleFunc("/", parseHttp)
@@ -121,14 +123,14 @@ type UdpConnHandler struct {
 }
 
 // Handle incoming UDP connections and return response
-func (u UdpConnHandler) Handle(l net.Listener) {
+func (u UdpConnHandler) Handle(l net.Listener, udpDoneChan chan bool) {
 	// Create shutdown function
-	go func(l net.Listener) {
+	go func(l net.Listener, udpDoneChan chan bool) {
 		// Wait for done signal
 		<-Static.ShutdownChan
 
 		// Close listener
-		Static.LogChan <- "closing UDP listener"
 		l.Close()
-	}(l)
+		udpDoneChan <- true
+	}(l, udpDoneChan)
 }
