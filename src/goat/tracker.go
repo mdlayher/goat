@@ -22,7 +22,9 @@ func TrackerAnnounce(passkey string, query map[string]string, resChan chan []byt
 	}
 
 	// Request to store announce
-	Static.LogChan <- fmt.Sprintf("req: data:{info_hash: %s, ip: %s, port:%d}", announce.InfoHash, announce.Ip, announce.Port)
+	Static.LogChan <- fmt.Sprintf("req: [ip: %s, port:%d]", announce.Ip, announce.Port)
+	Static.LogChan <- fmt.Sprintf("req: [info_hash: %s]", announce.InfoHash)
+	Static.LogChan <- fmt.Sprintf("req: [peer_id: %s]", announce.PeerId)
 	Static.LogChan <- fmt.Sprintf("res: [id: %s, db: %s]", res.Id, res.Db)
 
 	// Fetch peer information
