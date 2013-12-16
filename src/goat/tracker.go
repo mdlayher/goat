@@ -89,10 +89,16 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 		// Add an announce
 		fileUser.Announced = fileUser.Announced + 1
 
-		// Store latest statistics
-		fileUser.Uploaded = announce.Uploaded
-		fileUser.Downloaded = announce.Downloaded
-		fileUser.Left = announce.Left
+		// Store latest statistics, but do so in a sane way (no removing upload/download, no adding left)
+		if (announce.Uploaded > fileUser.Uploaded) {
+			fileUser.Uploaded = announce.Uploaded
+		}
+		if (announce.Downloaded > fileUser.Downloaded) {
+			fileUser.Downloaded = announce.Downloaded
+		}
+		if (announce.Left < fileUser.Left) {
+			fileUser.Left = announce.Left
+		}
 	}
 
 	// Update File record
