@@ -14,7 +14,7 @@ type Hashable interface {
 // Defines methods to save, load, and delete data for an object
 type Persistent interface {
 	Save() bool
-	Load(interface{}) interface{}
+	Load(interface{}, string) interface{}
 	Delete() bool
 }
 
@@ -64,25 +64,63 @@ func (a AnnounceLog) Save() bool {
 }
 
 // Load AnnounceLog from storage
-func (a AnnounceLog) Load(id interface{}) AnnounceLog {
+func (a AnnounceLog) Load(id interface{}, col string) AnnounceLog {
 	// Open database connection
-	db, _ := DbConnect()
+	db, err := DbConnect()
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return a
+	}
 
-	// Create database transaction
-	res := AnnounceLog{}
-	db.Get(&res, "SELECT * FROM announce_log WHERE id=?", id)
+	// Fetch announce log into struct
+	a = AnnounceLog{}
+	db.Get(&a, "SELECT * FROM announce_log WHERE `"+col+"`=?", id)
 
-	return res
+	return a
 }
 
 // Struct representing a file tracked by tracker
 type FileRecord struct {
-	InfoHash   string
+	Id         int
+	InfoHash   string `db:"info_hash"`
 	Leechers   int
 	Seeders    int
 	Completed  int
-	Time       int64
-	CreateTime int64
+	CreateTime int64 `db:"create_time"`
+	UpdateTime int64 `db:"update_time"`
+}
+
+// Save FileRecord to storage
+func (f FileRecord) Save() bool {
+	// Open database connection
+	db, err := DbConnect()
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return false
+	}
+
+	// Create database transaction, do insert, commit
+	tx := db.MustBegin()
+	tx.Execl("INSERT INTO files (`info_hash`, `leechers`, `seeders`, `completed`, `create_time`, `update_time`) VALUES (?, ?, ?, ?, UNIX_TIMESTAMP(), UNIX_TIMESTAMP()) ON DUPLICATE KEY UPDATE `leechers`=values(`leechers`), `seeders`=values(`seeders`), `completed`=values(`completed`), `update_time`=UNIX_TIMESTAMP();",
+		f.InfoHash, f.Leechers, f.Seeders, f.Completed)
+	tx.Commit()
+
+	return true
+}
+
+// Load FileRecord from storage
+func (f FileRecord) Load(id interface{}, col string) FileRecord {
+	// Open database connection
+	db, err := DbConnect()
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return f
+	}
+
+	// Fetch announce log into struct
+	f = FileRecord{}
+	db.Get(&f, "SELECT * FROM files WHERE `"+col+"`=?", id)
+	return f
 }
 
 // Struct representing a scrapelog, to be logged to storage

@@ -9,7 +9,7 @@ import (
 // Tracker announce request
 func TrackerAnnounce(passkey string, query map[string]string, resChan chan []byte) {
 	// Store announce information in struct
-	announce := MapToAnnounceLog(query, resChan)
+	announce := MapToAnnounceLog(query)
 
 	// Request to store announce
 	go announce.Save()
@@ -19,12 +19,11 @@ func TrackerAnnounce(passkey string, query map[string]string, resChan chan []byt
 	Static.LogChan <- fmt.Sprintf("db: [peer_id: %s]", announce.PeerId)
 
 	// Check for a matching file via info_hash
-	/*
 	file := new(FileRecord).Load(announce.InfoHash, "info_hash")
-	if file == nil {
-		resChan <-
+	if file == (FileRecord{}) {
+		resChan <- TrackerError("Unregistered torrent")
+		return
 	}
-	*/
 
 	// Fetch peer information
 	/*
