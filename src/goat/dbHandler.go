@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-func DbManager() {
+func DbManager(dbDoneChan chan bool) {
 	// Storage handler instances
 	mapDb := new(MapDb)
 	sqlDb := new(SqlDb)
@@ -14,20 +14,19 @@ func DbManager() {
 	mapRequestChan := make(chan Request, 100)
 
 	// Shutdown function
-	go func(mapDb *MapDb, sqlDb *SqlDb) {
+	go func(dbDoneChan chan bool, mapDb *MapDb, sqlDb *SqlDb) {
 		// Wait for shutdown
 		<-Static.ShutdownChan
 
-		Static.LogChan <- "stopping storage handlers"
 		if Static.Config.Map {
 			mapDb.Shutdown()
 		}
 		if Static.Config.Sql {
 			sqlDb.Shutdown()
 		}
-		Static.LogChan <- "stopping database manager"
-	}(mapDb, sqlDb)
 
+		dbDoneChan <- true
+	}(dbDoneChan, mapDb, sqlDb)
 
 	// launch databases
 	if Static.Config.Map {

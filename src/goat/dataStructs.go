@@ -14,6 +14,7 @@ type AnnounceLog struct {
 	Downloaded int
 	Left       int
 	Event      string
+	Time       int64
 }
 
 //sends the annoucelog to the persistant write handler
