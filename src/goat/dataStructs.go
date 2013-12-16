@@ -31,9 +31,9 @@ type AnnounceLog struct {
 	PeerId     string `db:"peer_id"`
 	Ip         string
 	Port       int
-	Uploaded   int
-	Downloaded int
-	Left       int
+	Uploaded   int64
+	Downloaded int64
+	Left       int64
 	Event      string
 	Time       int64
 }
@@ -121,6 +121,49 @@ func (f FileRecord) Load(id interface{}, col string) FileRecord {
 	f = FileRecord{}
 	db.Get(&f, "SELECT * FROM files WHERE `"+col+"`=?", id)
 	return f
+}
+
+// Struct representing a user on the tracker
+type UserRecord struct {
+	Id           int
+	Username     string
+	Passkey      string
+	TorrentLimit int `db:"torrent_limit"`
+	Uploaded     int64
+	Downloaded   int64
+}
+
+// Save UserRecord to storage
+func (u UserRecord) Save() bool {
+	// Open database connection
+	db, err := DbConnect()
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return false
+	}
+
+	// Create database transaction, do insert, commit
+	tx := db.MustBegin()
+	tx.Execl("INSERT INTO users (`username`, `passkey`, `torrent_limit`, `uploaded`, `downloaded`) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `username`=values(`username`), `passkey`=values(`passkey`), `torrent_limit`=values(`torrent_limit`), `uploaded`=values(`uploaded`), `downloaded`=values(`downloaded)`;",
+		u.Username, u.Passkey, u.TorrentLimit, u.Uploaded, u.Downloaded)
+	tx.Commit()
+
+	return true
+}
+
+// Load UserRecord from storage
+func (u UserRecord) Load(id interface{}, col string) UserRecord {
+	// Open database connection
+	db, err := DbConnect()
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return u
+	}
+
+	// Fetch announce log into struct
+	u = UserRecord{}
+	db.Get(&u, "SELECT * FROM users WHERE `"+col+"`=?", id)
+	return u
 }
 
 // Struct representing a scrapelog, to be logged to storage
