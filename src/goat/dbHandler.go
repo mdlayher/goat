@@ -1,8 +1,16 @@
 package goat
 
 import (
+	"fmt"
 	"time"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/go-sql-driver/mysql"
 )
+
+// Connect to MySQL database
+func DbConnect() (*sqlx.DB, error) {
+	return sqlx.Connect("mysql", fmt.Sprintf("%s:%s@/%s", "goat", "goat", "goat"))
+}
 
 // Read a struct with specified ID from storage
 func DbRead(id string) (Response, bool) {
