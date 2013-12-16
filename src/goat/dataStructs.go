@@ -1,5 +1,10 @@
 package goat
 
+type ErrorRes struct {
+	ErrLocation string
+	Time        int64
+	Error       string
+}
 type PersistentWriter interface {
 	PersistentWrite()
 }

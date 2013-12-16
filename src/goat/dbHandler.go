@@ -113,36 +113,48 @@ func (db MapDb) HandleDb(mapChan chan Request) {
 		db.Busy = false
 		select {
 		case hold := <-mapChan:
-			// Mark database as busy
-			db.Busy = true
 
-			l := len(hold.Id)
-			s := Static.Config.CacheSize
-			key := hold.Id[l-s : l-1]
-			switch {
-			// This logic needs to be refactored so that the number of shards can be
-			// determined via the config file, which will define the number of digits
-			// used from the ID for the shard name
-			case hold.Data == nil:
-				// check if key exits
-				_, ok := db.Db[key]
-				if !ok {
-					// if key does not exist, make a new map with the given key
-					db.Db[key] = make(map[string]interface{})
+			if len(hold.Id) < Static.Config.CacheSize {
+				// Mark database as busy
+				db.Busy = true
+
+				l := len(hold.Id)
+				s := Static.Config.CacheSize
+				key := hold.Id[l-s : l-1]
+				switch {
+				// This logic needs to be refactored so that the number of shards can be
+				// determined via the config file, which will define the number of digits
+				// used from the ID for the shard name
+				case hold.Data == nil:
+					// check if key exits
+					_, ok := db.Db[key]
+					if !ok {
+						// if key does not exist, make a new map with the given key
+						db.Db[key] = make(map[string]interface{})
+					}
+					go new(MapWorker).Read(hold, db.Db[key])
+				case hold.Data != nil:
+					// check if key exits
+					_, ok := db.Db[key]
+					if !ok {
+						// if key does not exist, make a new map with the given key
+						db.Db[key] = make(map[string]interface{})
+					}
+					go new(MapWorker).Write(hold, db.Db[key])
 				}
-				go new(MapWorker).Read(hold, db.Db[key])
-			case hold.Data != nil:
-				// check if key exits
-				_, ok := db.Db[key]
-				if !ok {
-					// if key does not exist, make a new map with the given key
-					db.Db[key] = make(map[string]interface{})
-				}
-				go new(MapWorker).Write(hold, db.Db[key])
+			} else {
+				var err ErrorRes
+				err.ErrLocation = "HandleDb"
+				err.Time = time.Now().UnixNano()
+				var res Response
+				res.Id = hold.Id
+				res.Data = err
+				Static.ErrChan <- res
 			}
+
 		case <-Static.ShutdownChan:
 			db.Busy = false
-			break;
+			break
 		}
 	}
 }
