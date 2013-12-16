@@ -1,6 +1,7 @@
 package goat
 
 import (
+	"fmt"
 	"net"
 	"net/http"
 	"strings"
@@ -23,9 +24,7 @@ func (h HttpConnHandler) Handle(l net.Listener, httpDoneChan chan bool) {
 		<-Static.ShutdownChan
 
 		// Close listener
-		Static.LogChan <- "2"
 		l.Close()
-		Static.LogChan <- "3"
 		httpDoneChan <- true
 	}(l, httpDoneChan)
 
@@ -73,7 +72,7 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Add header to identify goat
-	w.Header().Add("Server", APP+"-git")
+	w.Header().Add("Server", fmt.Sprintf("%s %s", APP, VERSION))
 
 	// Check if server is configured for passkey announce
 	if Static.Config.Passkey && passkey == "" {
