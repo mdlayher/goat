@@ -32,15 +32,15 @@ func MapToAnnounceLog(query map[string]string) AnnounceLog {
 	announce.Port = port
 
 	// uploaded
-	uploaded, _ := strconv.Atoi(query["uploaded"])
+	uploaded, _ := strconv.ParseInt(query["uploaded"], 10, 64)
 	announce.Uploaded = uploaded
 
 	// downloaded
-	downloaded, _ := strconv.Atoi(query["downloaded"])
+	downloaded, _ := strconv.ParseInt(query["downloaded"], 10, 64)
 	announce.Downloaded = downloaded
 
 	// left
-	left, _ := strconv.Atoi(query["left"])
+	left, _ := strconv.ParseInt(query["left"], 10, 64)
 	announce.Left = left
 
 	// Optional parameters
