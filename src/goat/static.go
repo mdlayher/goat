@@ -33,6 +33,9 @@ var Static struct {
 	// Backup request channel for persistant storage
 	PersistentChan chan Request
 
+	// Error handling chan for various errors in goroutines
+	ErrChan chan Response
+
 	// Configuration object
 	Config Conf
 

@@ -14,6 +14,12 @@ type PersistentWriter interface {
 	PersistentWrite()
 }
 
+type ErrorRes struct {
+	ErrLocation string
+	Time        int64
+	Error       string
+}
+
 // Struct representing an announce, to be logged to storage
 type AnnounceLog struct {
 	InfoHash   string
