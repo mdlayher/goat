@@ -239,6 +239,28 @@ func (u UserRecord) Save() bool {
 		return false
 	}
 
+	// Calculate total uploaded and downloaded
+	if u.Id != 0 {
+		totals := struct {
+			Uploaded   int64
+			Downloaded int64
+		}{
+			0,
+			0,
+		}
+
+		// Get sum of upload and download for this user
+		err = db.Get(&totals, "SELECT SUM(uploaded) AS uploaded, SUM(downloaded) AS downloaded FROM files_users WHERE user_id = ?", u.Id)
+		if err != nil {
+			Static.LogChan <- err.Error()
+			return false
+		}
+
+		// Store in struct
+		u.Uploaded = totals.Uploaded
+		u.Downloaded = totals.Downloaded
+	}
+
 	// Create database transaction, do insert, commit
 	tx := db.MustBegin()
 	tx.Execl("INSERT INTO users (`username`, `passkey`, `torrent_limit`, `uploaded`, `downloaded`) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `username`=values(`username`), `passkey`=values(`passkey`), `torrent_limit`=values(`torrent_limit`), `uploaded`=values(`uploaded`), `downloaded`=values(`downloaded`);",
