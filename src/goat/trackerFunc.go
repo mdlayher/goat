@@ -11,50 +11,36 @@ import (
 )
 
 // Generate an AnnounceLog struct from a query map
-func MapToAnnounceLog(query map[string]string, resChan chan []byte) AnnounceLog {
+func MapToAnnounceLog(query map[string]string) AnnounceLog {
 	var announce AnnounceLog
 
 	// Required parameters
 
 	// info_hash
-	infoHash := make([]byte, 64)
-	hex.Encode(infoHash, []byte(query["info_hash"]))
-	announce.InfoHash = string(infoHash)
+	announce.InfoHash = hex.EncodeToString([]byte(query["info_hash"]))
 
 	// peer_id
-	peerId := make([]byte, 64)
-	hex.Encode(peerId, []byte(query["peer_id"]))
-	announce.PeerId = string(peerId)
+	announce.PeerId = hex.EncodeToString([]byte(query["peer_id"]))
 
 	// ip
 	announce.Ip = query["ip"]
 
+	// Note: integers previously validated in connHandler.go
+
 	// port
-	port, err := strconv.Atoi(query["port"])
-	if err != nil {
-		TrackerError(resChan, "parameter port is not a valid integer")
-	}
+	port, _ := strconv.Atoi(query["port"])
 	announce.Port = port
 
 	// uploaded
-	uploaded, err := strconv.Atoi(query["uploaded"])
-	if err != nil {
-		TrackerError(resChan, "parameter uploaded is not a valid integer")
-	}
+	uploaded, _ := strconv.Atoi(query["uploaded"])
 	announce.Uploaded = uploaded
 
 	// downloaded
-	downloaded, err := strconv.Atoi(query["downloaded"])
-	if err != nil {
-		TrackerError(resChan, "parameter downloaded is not a valid integer")
-	}
+	downloaded, _ := strconv.Atoi(query["downloaded"])
 	announce.Downloaded = downloaded
 
 	// left
-	left, err := strconv.Atoi(query["left"])
-	if err != nil {
-		TrackerError(resChan, "parameter left is not a valid integer")
-	}
+	left, _ := strconv.Atoi(query["left"])
 	announce.Left = left
 
 	// Optional parameters
