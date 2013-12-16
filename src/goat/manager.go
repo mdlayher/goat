@@ -14,7 +14,7 @@ func Manager(killChan chan bool, exitChan chan int) {
 	Static.LogChan = logChan
 	go LogManager()
 
-	Static.LogChan <- "Starting "+APP+" "+VERSION
+	Static.LogChan <- "Starting " + APP + " " + VERSION
 
 	// Print startup status banner
 	go PrintStatusBanner()

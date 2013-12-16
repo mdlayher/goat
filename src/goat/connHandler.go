@@ -109,7 +109,7 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 		// Check for required parameters
 		for _, r := range required {
 			if _, ok := query[r]; !ok {
-				w.Write(TrackerError("Missing required parameter: "+r))
+				w.Write(TrackerError("Missing required parameter: " + r))
 				close(resChan)
 				return
 			}
@@ -120,7 +120,7 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 			if _, ok := query[r]; ok {
 				_, err := strconv.Atoi(query[r])
 				if err != nil {
-					w.Write(TrackerError("Invalid integer parameter: "+r))
+					w.Write(TrackerError("Invalid integer parameter: " + r))
 					close(resChan)
 					return
 				}

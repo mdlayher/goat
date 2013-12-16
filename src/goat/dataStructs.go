@@ -1,11 +1,11 @@
 package goat
 
 import (
-	"encoding/binary"
 	"crypto/sha1"
-	"net"
+	"encoding/binary"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"net"
 )
 
 // Generates a unique hash for a given struct with its ID, to be used as ID for storage
@@ -43,7 +43,7 @@ type AnnounceLog struct {
 // Generate a SHA1 hash of the form: announce_log_InfoHash
 func (log AnnounceLog) Hash() string {
 	hash := sha1.New()
-	hash.Write([]byte("announce_log"+log.InfoHash))
+	hash.Write([]byte("announce_log" + log.InfoHash))
 	return fmt.Sprintf("%x", hash.Sum(nil))
 }
 
@@ -218,7 +218,6 @@ func (f FileUserRecord) Load(fileId interface{}, userId interface{}) FileUserRec
 	db.Get(&f, "SELECT * FROM files_users WHERE `file_id`=? AND `user_id`=?", fileId, userId)
 	return f
 }
-
 
 // Struct representing a user on the tracker
 type UserRecord struct {

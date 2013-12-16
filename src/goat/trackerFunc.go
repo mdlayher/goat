@@ -60,7 +60,7 @@ func MapToAnnounceLog(query map[string]string) AnnounceLog {
 // Generate a random announce interval in the specified range
 func RandRange(min int, max int) int {
 	rand.Seed(time.Now().Unix())
-	return min + rand.Intn(max - min)
+	return min + rand.Intn(max-min)
 }
 
 // Generate a fake announce response
@@ -74,9 +74,9 @@ func FakeAnnounceResponse(numwant int) []byte {
 		// TODO: these may not be necessary, or may cause problems
 		// Need to do further research
 		/*
-		"complete":     bencode.EncInt(0),
-		"downloaded":   bencode.EncInt(0),
-		"incomplete":   bencode.EncInt(0),
+			"complete":     bencode.EncInt(0),
+			"downloaded":   bencode.EncInt(0),
+			"incomplete":   bencode.EncInt(0),
 		*/
 		"interval":     bencode.EncInt(RandRange(3200, 4000)),
 		"min interval": bencode.EncInt(1800),

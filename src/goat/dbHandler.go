@@ -2,9 +2,9 @@ package goat
 
 import (
 	"fmt"
-	"time"
-	"github.com/jmoiron/sqlx"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
+	"time"
 )
 
 // Connect to MySQL database
