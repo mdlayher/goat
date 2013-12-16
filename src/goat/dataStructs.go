@@ -85,6 +85,7 @@ func (a AnnounceLog) Load(id interface{}, col string) AnnounceLog {
 type FileRecord struct {
 	Id         int
 	InfoHash   string `db:"info_hash"`
+	Verified   bool
 	Leechers   int
 	Seeders    int
 	Completed  int
@@ -103,8 +104,8 @@ func (f FileRecord) Save() bool {
 
 	// Create database transaction, do insert, commit
 	tx := db.MustBegin()
-	tx.Execl("INSERT INTO files (`info_hash`, `leechers`, `seeders`, `completed`, `create_time`, `update_time`) VALUES (?, ?, ?, ?, UNIX_TIMESTAMP(), UNIX_TIMESTAMP()) ON DUPLICATE KEY UPDATE `leechers`=values(`leechers`), `seeders`=values(`seeders`), `completed`=values(`completed`), `update_time`=UNIX_TIMESTAMP();",
-		f.InfoHash, f.Leechers, f.Seeders, f.Completed)
+	tx.Execl("INSERT INTO files (`info_hash`, `verified`, `leechers`, `seeders`, `completed`, `create_time`, `update_time`) VALUES (?, ?, ?, ?, ?, UNIX_TIMESTAMP(), UNIX_TIMESTAMP()) ON DUPLICATE KEY UPDATE `verified`=values(`verified`), `leechers`=values(`leechers`), `seeders`=values(`seeders`), `completed`=values(`completed`), `update_time`=UNIX_TIMESTAMP();",
+		f.InfoHash, f.Verified, f.Leechers, f.Seeders, f.Completed)
 	tx.Commit()
 
 	return true

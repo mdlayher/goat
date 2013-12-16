@@ -16,12 +16,31 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 
 	Static.LogChan <- fmt.Sprintf("announce: [ip: %s, port:%d]", announce.Ip, announce.Port)
 	Static.LogChan <- fmt.Sprintf("announce: [info_hash: %s]", announce.InfoHash)
-	Static.LogChan <- fmt.Sprintf("announce: [event: %s]", announce.Event)
+
+	// Only report announce when needed
+	if announce.Event != "" {
+		Static.LogChan <- fmt.Sprintf("announce: [event: %s]", announce.Event)
+	}
 
 	// Check for a matching file via info_hash
 	file := new(FileRecord).Load(announce.InfoHash, "info_hash")
 	if file == (FileRecord{}) {
+		// Torrent is not currently registered
 		resChan <- TrackerError("Unregistered torrent")
+
+		// Create an entry in file table for this hash, but mark it as unverified
+		file.InfoHash = announce.InfoHash
+		file.Verified = false
+		file.Leechers = 0
+		file.Seeders = 0
+		file.Completed = 0
+		go file.Save()
+		return
+	}
+
+	// Ensure file is verified, meaning we will permit tracking of it
+	if !file.Verified {
+		resChan <- TrackerError("Unverified torrent")
 		return
 	}
 
@@ -37,6 +56,9 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 		fileUser.Uploaded = announce.Uploaded
 		fileUser.Downloaded = announce.Downloaded
 		fileUser.Left = announce.Left
+
+		// Add a leecher to this file
+		file.Leechers = file.Leechers + 1
 	} else {
 		// Else, pre-existing record, so update
 		// Check for stopped status
@@ -47,8 +69,15 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 		}
 
 		// Check for completion
-		if announce.Left == 0 {
+		if announce.Event == "completed" && announce.Left == 0 {
 			fileUser.Completed = true
+
+			// Mark file as completed by another user
+			file.Completed = file.Completed + 1
+
+			// Decrement leecher, add seeder
+			file.Leechers = file.Leechers - 1
+			file.Seeders = file.Seeders + 1
 		} else {
 			fileUser.Completed = false
 		}
@@ -61,6 +90,9 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 		fileUser.Downloaded = fileUser.Downloaded + announce.Downloaded
 		fileUser.Left = announce.Left
 	}
+
+	// Update File record
+	go file.Save()
 
 	// Insert or update the FileUser record
 	go fileUser.Save()
