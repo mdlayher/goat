@@ -4,5 +4,6 @@
 	"Http": true,
 	"Udp": false,
 	"Map": true,
-	"Sql": false
+	"Sql": false,
+	"CacheSize": 8
 }
