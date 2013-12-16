@@ -1,6 +1,8 @@
 package goat
 
+// Application name and version
 const APP = "goat"
+const VERSION = "git-master"
 
 func Manager(killChan chan bool, exitChan chan int) {
 	// Set up graceful shutdown channel
@@ -11,6 +13,8 @@ func Manager(killChan chan bool, exitChan chan int) {
 	logChan := make(chan string)
 	Static.LogChan = logChan
 	go LogManager()
+
+	Static.LogChan <- "Starting "+APP+" "+VERSION
 
 	// Print startup status banner
 	go PrintStatusBanner()
