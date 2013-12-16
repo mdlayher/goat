@@ -1,21 +1,41 @@
 package goat
 
 import (
-	"fmt"
+	"time"
 )
 
 func DbManager() {
+	// Storage handler instances
+	mapDb := new(MapDb)
+	sqlDb := new(SqlDb)
+
 	// channels
 	sqlRequestChan := make(chan Request)
 	mapRequestChan := make(chan Request, 100)
 
+	// Shutdown function
+	go func(mapDb *MapDb, sqlDb *SqlDb) {
+		// Wait for shutdown
+		<-Static.ShutdownChan
+
+		Static.LogChan <- "stopping storage handlers"
+		if Static.Config.Map {
+			mapDb.Shutdown()
+		}
+		if Static.Config.Sql {
+			sqlDb.Shutdown()
+		}
+		Static.LogChan <- "stopping database manager"
+	}(mapDb, sqlDb)
+
+
 	// launch databases
 	if Static.Config.Map {
-		go new(MapDb).HandleDb(mapRequestChan)
+		go mapDb.HandleDb(mapRequestChan)
 		Static.LogChan <- "MapDb instance launched"
 	}
 	if Static.Config.Sql {
-		go new(SqlDb).HandleDb(sqlRequestChan)
+		go sqlDb.HandleDb(sqlRequestChan)
 		Static.LogChan <- "SqlDb instance launched"
 	}
 
@@ -71,7 +91,8 @@ type WriteResponse struct {
 
 // DbHandler interface method HandleDb defines a database handler which handles requests
 type DbHandler interface {
-	HandleDb(RequestChan chan Request)
+	HandleDb(chan Request)
+	Shutdown()
 }
 
 // MapDb is a key value storage database
@@ -80,14 +101,22 @@ type MapDb struct {
 	Id      string
 	Db      map[string]map[string]interface{}
 	Workers map[string]MapWorker
+	Busy    bool
 }
 
 // Handle data MapDb requests
 func (db MapDb) HandleDb(mapChan chan Request) {
+	// Initialize map database
 	db.Db = make(map[string]map[string]interface{})
+
+	// Loop until shutdown
 	for {
+		db.Busy = false
 		select {
 		case hold := <-mapChan:
+			// Mark database as busy
+			db.Busy = true
+
 			l := len(hold.Id)
 			s := Static.Config.CacheSize
 			key := hold.Id[l-s : l-1]
@@ -112,8 +141,21 @@ func (db MapDb) HandleDb(mapChan chan Request) {
 				}
 				go new(MapWorker).Write(hold, db.Db[key])
 			}
+		case <-Static.ShutdownChan:
+			db.Busy = false
+			break;
 		}
 	}
+}
+
+// Shutdown MapDb
+func (db MapDb) Shutdown() {
+	// Wait until map is no longer busy
+	for db.Busy {
+		time.Sleep(500 * time.Millisecond)
+	}
+
+	Static.LogChan <- "stopping MapDb"
 }
 
 // SqlDb is a Sql based database
@@ -122,4 +164,8 @@ type SqlDb struct {
 
 // Handle Sql based requests
 func (s SqlDb) HandleDb(sqlChan chan Request) {
+}
+
+// Shutdown SqlDb
+func (db SqlDb) Shutdown() {
 }

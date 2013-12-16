@@ -24,6 +24,9 @@ var Static struct {
 	// Server logging
 	LogChan chan string
 
+	// Trigger a graceful shutdown
+	ShutdownChan chan bool
+
 	// Buffered request channel for DB manager
 	RequestChan chan Request
 

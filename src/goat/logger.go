@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func LogManager(doneChan chan bool) {
+func LogManager() {
 	// Create log directory and file, and pull current date to add to logfile name
 	now := time.Now()
 	os.Mkdir("logs", os.ModeDir|os.ModePerm)
@@ -19,18 +19,14 @@ func LogManager(doneChan chan bool) {
 
 	// create a logger that will use the writer created above
 	logger := log.New(bufio.NewWriter(logFile), "", log.Lmicroseconds|log.Lshortfile)
-	amIDone := false
-	msg := ""
 
 	// Start the system status logger
 	go StatusLogger()
 
-	// Wait for error to be passed on the logChan channel, or termination signal on doneChan
-	for !amIDone {
+	// Wait for error to be passed on the logChan channel, or termination signal
+	for {
 		select {
-		case amIDone = <-doneChan:
-			logFile.Close()
-		case msg = <-Static.LogChan:
+		case msg := <-Static.LogChan:
 			now := time.Now()
 			log := fmt.Sprintf("%s : [%4d-%02d-%02d %02d:%02d:%02d] %s\n", APP, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second(), msg)
 			logger.Print(log)
