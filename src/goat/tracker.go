@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"math/rand"
 	"net"
 	"strconv"
 	"time"
@@ -48,7 +49,7 @@ func TrackerAnnounce(passkey string, query map[string]string, resChan chan []byt
 func TrackerError(resChan chan []byte, err string) {
 	resChan <- bencode.EncDictMap(map[string][]byte{
 		"failure reason": bencode.EncString(err),
-		"interval":       bencode.EncInt(3600),
+		"interval":       bencode.EncInt(randRange(3200, 4000)),
 		"min interval":   bencode.EncInt(1800),
 	})
 }
@@ -114,6 +115,12 @@ func mapToAnnounceLog(query map[string]string, resChan chan []byte) AnnounceLog 
 	return announce
 }
 
+// Generate a random announce interval in the specified range
+func randRange(min int, max int) int {
+	rand.Seed(time.Now().Unix())
+	return min + rand.Intn(max - min)
+}
+
 // Generate a fake announce response
 func fakeAnnounceResponse(numwant int) []byte {
 	// For now, we completely ignore numwant
@@ -129,7 +136,7 @@ func fakeAnnounceResponse(numwant int) []byte {
 		"downloaded":   bencode.EncInt(0),
 		"incomplete":   bencode.EncInt(0),
 		*/
-		"interval":     bencode.EncInt(3600),
+		"interval":     bencode.EncInt(randRange(3200, 4000)),
 		"min interval": bencode.EncInt(1800),
 		"peers":        bencode.EncBytes(compactPeerList()),
 	}

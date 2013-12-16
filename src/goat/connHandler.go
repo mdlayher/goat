@@ -75,7 +75,7 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Server", fmt.Sprintf("%s/%s", APP, VERSION))
 
 	// Verify that torrent client is advertising its User-Agent, so we can use a whitelist
-	if ua, ok := r.Header["User-Agent"]; !ok {
+	if _, ok := r.Header["User-Agent"]; !ok {
 		go TrackerError(resChan, "Your client is not whitelisted")
 
 		// Wait for response, and send it when ready
