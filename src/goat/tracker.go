@@ -57,8 +57,12 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 		fileUser.Downloaded = announce.Downloaded
 		fileUser.Left = announce.Left
 
-		// Add a leecher to this file
-		file.Leechers = file.Leechers + 1
+		// Add a leecher to this file, UNLESS they have already completed it
+		if announce.Left = 0 || announce.Event = "completed" {
+			file.Seeders = file.Seeders + 1
+		} else {
+			file.Leechers = file.Leechers + 1
+		}
 	} else {
 		// Else, pre-existing record, so update
 		// Check for stopped status
