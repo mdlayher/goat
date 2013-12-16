@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"strconv"
+	"time"
 )
 
 // Tracker announce request
@@ -115,6 +116,9 @@ func mapToAnnounceLog(query map[string]string, resChan chan []byte) AnnounceLog 
 	if event, ok := query["event"]; ok {
 		announce.Event = event
 	}
+
+	// Current UNIX timestamp
+	announce.Time = time.Now().Unix()
 
 	// Return the created announce
 	return announce
