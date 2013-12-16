@@ -87,6 +87,11 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 	// Only allow compact announce
 	if _, ok := query["compact"]; !ok || query["compact"] != "1" {
 		go TrackerError(resChan, "Your client does not support compact announce")
+
+		// Wait for response, and send it when ready
+		w.Write(<-resChan)
+		close(resChan)
+		return
 	}
 
 	// Handle tracker functions via different URLs
