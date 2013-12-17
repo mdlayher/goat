@@ -42,9 +42,6 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 	Static.Http.Current++
 	Static.Http.Total++
 
-	// Create channel to return bencoded response to client on
-	resChan := make(chan []byte)
-
 	// Parse querystring
 	querystring := r.URL.Query()
 
@@ -78,14 +75,12 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 	// Verify that torrent client is advertising its User-Agent, so we can use a whitelist
 	if _, ok := r.Header["User-Agent"]; !ok {
 		w.Write(TrackerError("Your client is not whitelisted"))
-		close(resChan)
 		return
 	}
 
 	// Check if server is configured for passkey announce
 	if Static.Config.Passkey && passkey == "" {
 		w.Write(TrackerError("No passkey found in announce URL"))
-		close(resChan)
 		return
 	}
 
@@ -93,9 +88,11 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 	user := new(UserRecord).Load(passkey, "passkey")
 	if Static.Config.Passkey && user == (UserRecord{}) {
 		w.Write(TrackerError("Invalid passkey"))
-		close(resChan)
 		return
 	}
+
+	// Create channel to return bencoded response to client on
+	resChan := make(chan []byte)
 
 	// Handle tracker functions via different URLs
 	switch url {
