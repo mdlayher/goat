@@ -136,6 +136,7 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 		go TrackerAnnounce(user, query, resChan)
 	// Tracker status
 	case "status":
+		w.Header().Add("Content-Type", "application/json")
 		go GetStatusJson(resChan)
 	// Any undefined handlers
 	default:
