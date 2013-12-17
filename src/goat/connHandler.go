@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync/atomic"
 )
 
 // ConnHandler interface method Handle defines how to handle incoming network connections
@@ -39,8 +40,8 @@ func (h HttpConnHandler) Handle(l net.Listener, httpDoneChan chan bool) {
 // Parse incoming HTTP connections before making tracker calls
 func parseHttp(w http.ResponseWriter, r *http.Request) {
 	// Count incoming connections
-	Static.Http.Current++
-	Static.Http.Total++
+	atomic.AddInt64(&Static.Http.Current, 1)
+	atomic.AddInt64(&Static.Http.Total, 1)
 
 	// Parse querystring
 	querystring := r.URL.Query()

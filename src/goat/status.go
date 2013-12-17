@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"sync/atomic"
 )
 
 // Struct to be serialized, containing information about the system running goat
@@ -16,8 +17,8 @@ type ServerStatus struct {
 	NumCpu       int
 	NumGoroutine int
 	MemoryMb     float64
-	HttpTotal    int
-	HttpCurrent  int
+	HttpTotal    int64
+	HttpCurrent  int64
 }
 
 // Tracker status request
@@ -83,6 +84,6 @@ func PrintCurrentStatus() {
 		Static.LogChan <- fmt.Sprintf("  http - [current: %d] [total: %d]", stat.HttpCurrent, stat.HttpTotal)
 
 		// Reset current HTTP counter
-		Static.Http.Current = 0
+		atomic.StoreInt64(&Static.Http.Current, 0)
 	}
 }

@@ -15,8 +15,8 @@ type Conf struct {
 
 // Statistics regarding HTTP server
 type HttpStats struct {
-	Current int
-	Total   int
+	Current int64
+	Total   int64
 }
 
 // "Static" struct containing values which should be shared globally
