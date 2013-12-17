@@ -10,15 +10,15 @@ import (
 
 // Struct to be serialized, containing information about the system running goat
 type ServerStatus struct {
-	Pid          int
-	Hostname     string
-	Platform     string
-	Architecture string
-	NumCpu       int
-	NumGoroutine int
-	MemoryMb     float64
-	HttpTotal    int64
-	HttpCurrent  int64
+	Pid          int     `json:"pid"`
+	Hostname     string  `json:"hostname"`
+	Platform     string  `json:"platform"`
+	Architecture string  `json:"architecture"`
+	NumCpu       int     `json:"numCpu"`
+	NumGoroutine int     `json:"numGoroutine"`
+	MemoryMb     float64 `json:"memoryMb"`
+	HttpTotal    int64   `json:"httpTotal"`
+	HttpCurrent  int64   `json:"httpCurrent"`
 }
 
 // Tracker status request
