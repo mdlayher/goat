@@ -86,7 +86,7 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 			file.Completed = file.Completed + 1
 
 			// Decrement leecher, add seeder
-			if (file.Leechers > 0) {
+			if file.Leechers > 0 {
 				file.Leechers = file.Leechers - 1
 			}
 			file.Seeders = file.Seeders + 1
@@ -98,13 +98,13 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 		fileUser.Announced = fileUser.Announced + 1
 
 		// Store latest statistics, but do so in a sane way (no removing upload/download, no adding left)
-		if (announce.Uploaded > fileUser.Uploaded) {
+		if announce.Uploaded > fileUser.Uploaded {
 			fileUser.Uploaded = announce.Uploaded
 		}
-		if (announce.Downloaded > fileUser.Downloaded) {
+		if announce.Downloaded > fileUser.Downloaded {
 			fileUser.Downloaded = announce.Downloaded
 		}
-		if (announce.Left < fileUser.Left) {
+		if announce.Left < fileUser.Left {
 			fileUser.Left = announce.Left
 		}
 	}
