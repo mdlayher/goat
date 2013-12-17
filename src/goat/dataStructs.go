@@ -56,10 +56,14 @@ func (a AnnounceLog) Save() bool {
 		return false
 	}
 
+	// Store announce log
+	query := "INSERT INTO announce_log " +
+	"(`info_hash`, `peer_id`, `ip`, `port`, `uploaded`, `downloaded`, `left`, `event`, `time`) " +
+	"VALUES (?, ?, ?, ?, ?, ?, ?, ?, UNIX_TIMESTAMP());"
+
 	// Create database transaction, do insert, commit
 	tx := db.MustBegin()
-	tx.Execl("INSERT INTO announce_log (`info_hash`, `peer_id`, `ip`, `port`, `uploaded`, `downloaded`, `left`, `event`, `time`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, UNIX_TIMESTAMP());",
-		a.InfoHash, a.PeerId, a.Ip, a.Port, a.Uploaded, a.Downloaded, a.Left, a.Event)
+	tx.Execl(query, a.InfoHash, a.PeerId, a.Ip, a.Port, a.Uploaded, a.Downloaded, a.Left, a.Event)
 	tx.Commit()
 
 	return true
@@ -102,10 +106,17 @@ func (f FileRecord) Save() bool {
 		return false
 	}
 
+	// Store or update file information
+	query := "INSERT INTO files " +
+	"(`info_hash`, `verified`, `leechers`, `seeders`, `completed`, `create_time`, `update_time`) " +
+	"VALUES (?, ?, ?, ?, ?, UNIX_TIMESTAMP(), UNIX_TIMESTAMP()) " +
+	"ON DUPLICATE KEY UPDATE " +
+	"`verified`=values(`verified`), `leechers`=values(`leechers`), `seeders`=values(`seeders`), " +
+	"`completed`=values(`completed`), `update_time`=UNIX_TIMESTAMP();"
+
 	// Create database transaction, do insert, commit
 	tx := db.MustBegin()
-	tx.Execl("INSERT INTO files (`info_hash`, `verified`, `leechers`, `seeders`, `completed`, `create_time`, `update_time`) VALUES (?, ?, ?, ?, ?, UNIX_TIMESTAMP(), UNIX_TIMESTAMP()) ON DUPLICATE KEY UPDATE `verified`=values(`verified`), `leechers`=values(`leechers`), `seeders`=values(`seeders`), `completed`=values(`completed`), `update_time`=UNIX_TIMESTAMP();",
-		f.InfoHash, f.Verified, f.Leechers, f.Seeders, f.Completed)
+	tx.Execl(query, f.InfoHash, f.Verified, f.Leechers, f.Seeders, f.Completed)
 	tx.Commit()
 
 	return true
@@ -148,7 +159,15 @@ func (f FileRecord) PeerList(exclude string, numwant int) []byte {
 	buf := make([]byte, 0)
 
 	// Get IP and port of all peers who are active and seeding this file
-	rows, err := db.Queryx("SELECT DISTINCT announce_log.ip,announce_log.port FROM announce_log JOIN files ON announce_log.info_hash = files.info_hash JOIN files_users ON files.id = files_users.file_id WHERE files_users.active=1 AND files.info_hash=? AND announce_log.ip != ? LIMIT ?;", f.InfoHash, exclude, numwant)
+	query := "SELECT DISTINCT announce_log.ip,announce_log.port FROM announce_log " +
+	"JOIN files ON announce_log.info_hash = files.info_hash " +
+	"JOIN files_users ON files.id = files_users.file_id " +
+	"WHERE files_users.active=1 " +
+	"AND files.info_hash=? " +
+	"AND announce_log.ip != ? " +
+	"LIMIT ?;"
+
+	rows, err := db.Queryx(query, f.InfoHash, exclude, numwant)
 	if err != nil {
 		Static.LogChan <- err.Error()
 		return buf
@@ -196,10 +215,18 @@ func (f FileUserRecord) Save() bool {
 		return false
 	}
 
+	// Insert or update a file/user relationship record
+	query := "INSERT INTO files_users " +
+	"(`file_id`, `user_id`, `active`, `completed`, `announced`, `uploaded`, `downloaded`, `left`, `time`) " +
+	"VALUES (?, ?, ?, ?, ?, ?, ?, ?, UNIX_TIMESTAMP()) " +
+	"ON DUPLICATE KEY UPDATE " +
+	"`active`=values(`active`), `completed`=values(`completed`), `announced`=values(`announced`), " +
+	"`uploaded`=values(`uploaded`), `downloaded`=values(`downloaded`), `left`=values(`left`), " +
+	"`time`=UNIX_TIMESTAMP();"
+
 	// Create database transaction, do insert, commit
 	tx := db.MustBegin()
-	tx.Execl("INSERT INTO files_users (`file_id`, `user_id`, `active`, `completed`, `announced`, `uploaded`, `downloaded`, `left`, `time`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, UNIX_TIMESTAMP()) ON DUPLICATE KEY UPDATE `active`=values(`active`), `completed`=values(`completed`), `announced`=values(`announced`), `uploaded`=values(`uploaded`), `downloaded`=values(`downloaded`), `left`=values(`left`), `time`=UNIX_TIMESTAMP();",
-		f.FileId, f.UserId, f.Active, f.Completed, f.Announced, f.Uploaded, f.Downloaded, f.Left)
+	tx.Execl(query, f.FileId, f.UserId, f.Active, f.Completed, f.Announced, f.Uploaded, f.Downloaded, f.Left)
 	tx.Commit()
 
 	return true
@@ -250,19 +277,30 @@ func (u UserRecord) Save() bool {
 		}
 
 		// Get sum of upload and download for this user
-		err = db.Get(&totals, "SELECT SUM(uploaded) AS uploaded, SUM(downloaded) AS downloaded FROM files_users WHERE user_id = ?", u.Id)
+		totalQuery := "SELECT SUM(uploaded) AS uploaded, " +
+		"SUM(downloaded) AS downloaded " +
+		"FROM files_users " +
+		"WHERE user_id = ?"
+
+		err = db.Get(&totals, totalQuery, u.Id)
 		if err == nil {
 			// Store in struct
 			u.Uploaded = totals.Uploaded
 			u.Downloaded = totals.Downloaded
 		}
-
 	}
+
+	// Insert or update a user record
+	query := "INSERT INTO users " +
+	"(`username`, `passkey`, `torrent_limit`, `uploaded`, `downloaded`) " +
+	"VALUES (?, ?, ?, ?, ?) " +
+	"ON DUPLICATE KEY UPDATE " +
+	"`username`=values(`username`), `passkey`=values(`passkey`), `torrent_limit`=values(`torrent_limit`), " +
+	"`uploaded`=values(`uploaded`), `downloaded`=values(`downloaded`);"
 
 	// Create database transaction, do insert, commit
 	tx := db.MustBegin()
-	tx.Execl("INSERT INTO users (`username`, `passkey`, `torrent_limit`, `uploaded`, `downloaded`) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `username`=values(`username`), `passkey`=values(`passkey`), `torrent_limit`=values(`torrent_limit`), `uploaded`=values(`uploaded`), `downloaded`=values(`downloaded`);",
-		u.Username, u.Passkey, u.TorrentLimit, u.Uploaded, u.Downloaded)
+	tx.Execl(query, u.Username, u.Passkey, u.TorrentLimit, u.Uploaded, u.Downloaded)
 	tx.Commit()
 
 	return true
