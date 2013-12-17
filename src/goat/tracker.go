@@ -78,7 +78,7 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 		}
 
 		// Check for completion
-		if announce.Event == "completed" && announce.Left == 0 {
+		if announce.Event == "completed" || announce.Left == 0 {
 			fileUser.Completed = true
 
 			// Mark file as completed by another user
@@ -111,11 +111,11 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 	// Update File record
 	go file.Save()
 
-	// Update User record
-	go user.Save()
-
 	// Insert or update the FileUser record
 	go fileUser.Save()
+
+	// Update User record
+	go user.Save()
 
 	// Check for numwant parameter, return up to that number of peers
 	// Default is 50 per protocol
