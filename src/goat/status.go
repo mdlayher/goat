@@ -42,8 +42,8 @@ func GetServerStatus() ServerStatus {
 		runtime.NumCPU(),
 		runtime.NumGoroutine(),
 		memMb,
-		Static.Http.Total,
-		Static.Http.Current,
+		atomic.LoadInt64(&Static.Http.Total),
+		atomic.LoadInt64(&Static.Http.Current),
 	}
 
 	// Return status struct
