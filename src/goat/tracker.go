@@ -43,15 +43,23 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 		return
 	}
 
-	// Check for existing record for this user with this file
+	// Check existing record for this user with this file
 	fileUser := new(FileUserRecord).Load(file.Id, user.Id)
-	if fileUser == (FileUserRecord{}) {
+
+	// New user, starting torrent
+	if announce.Event == "started" && fileUser == (FileUserRecord{}) {
 		// Create new relationship
 		fileUser.FileId = file.Id
 		fileUser.UserId = user.Id
 		fileUser.Active = true
-		fileUser.Completed = false
 		fileUser.Announced = 1
+
+		// If announce reports 0 left, but no existing record, user is probably the initial seeder
+		if announce.Left == 0 {
+			fileUser.Completed = true
+		} else {
+			fileUser.Completed = false
+		}
 
 		// Track the initial uploaded, download, and left values
 		// NOTE: clients report absolute values, so delta should NEVER be calculated for these
@@ -60,20 +68,24 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 		fileUser.Left = announce.Left
 	} else {
 		// Else, pre-existing record, so update
-		// Check for stopped status
-		if announce.Event != "stopped" {
-			fileUser.Active = true
-		} else {
+		// Event "stopped", mark as inactive
+		// NOTE: likely only reported by clients which are actively seeding, NOT when stopped during leeching
+		if announce.Event == "stopped" {
 			fileUser.Active = false
+		} else {
+			// Else, "started", "completed", or no status, mark as active
+			fileUser.Active = true
 		}
 
 		// Check for completion
-		// Note: must be AND so that each announce doesn't add a new seeder, etc
-		if announce.Event == "completed" && announce.Left == 0 {
+		// Could be from a peer stating completed, or a seed reporting 0 left
+		if announce.Event == "completed" || announce.Left == 0 {
 			fileUser.Completed = true
 
-			// Mark file as completed by another user
-			file.Completed = file.Completed + 1
+			// If status completed, mark file as completed by another user
+			if announce.Event == "completed" {
+				file.Completed = file.Completed + 1
+			}
 		} else {
 			fileUser.Completed = false
 		}
