@@ -90,8 +90,6 @@ type FileRecord struct {
 	Id         int
 	InfoHash   string `db:"info_hash"`
 	Verified   bool
-	Leechers   int
-	Seeders    int
 	Completed  int
 	CreateTime int64 `db:"create_time"`
 	UpdateTime int64 `db:"update_time"`
@@ -108,15 +106,14 @@ func (f FileRecord) Save() bool {
 
 	// Store or update file information
 	query := "INSERT INTO files " +
-		"(`info_hash`, `verified`, `leechers`, `seeders`, `completed`, `create_time`, `update_time`) " +
-		"VALUES (?, ?, ?, ?, ?, UNIX_TIMESTAMP(), UNIX_TIMESTAMP()) " +
+		"(`info_hash`, `verified`, `completed`, `create_time`, `update_time`) " +
+		"VALUES (?, ?, ?, UNIX_TIMESTAMP(), UNIX_TIMESTAMP()) " +
 		"ON DUPLICATE KEY UPDATE " +
-		"`verified`=values(`verified`), `leechers`=values(`leechers`), `seeders`=values(`seeders`), " +
-		"`completed`=values(`completed`), `update_time`=UNIX_TIMESTAMP();"
+		"`verified`=values(`verified`), `completed`=values(`completed`), `update_time`=UNIX_TIMESTAMP();"
 
 	// Create database transaction, do insert, commit
 	tx := db.MustBegin()
-	tx.Execl(query, f.InfoHash, f.Verified, f.Leechers, f.Seeders, f.Completed)
+	tx.Execl(query, f.InfoHash, f.Verified, f.Completed)
 	tx.Commit()
 
 	return true

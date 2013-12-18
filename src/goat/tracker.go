@@ -32,8 +32,6 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 		// Create an entry in file table for this hash, but mark it as unverified
 		file.InfoHash = announce.InfoHash
 		file.Verified = false
-		file.Leechers = 0
-		file.Seeders = 0
 		file.Completed = 0
 		go file.Save()
 		return
@@ -60,13 +58,6 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 		fileUser.Uploaded = announce.Uploaded
 		fileUser.Downloaded = announce.Downloaded
 		fileUser.Left = announce.Left
-
-		// Add a leecher to this file, UNLESS they have already completed it
-		if announce.Left == 0 || announce.Event == "completed" {
-			file.Seeders = file.Seeders + 1
-		} else {
-			file.Leechers = file.Leechers + 1
-		}
 	} else {
 		// Else, pre-existing record, so update
 		// Check for stopped status
@@ -74,11 +65,6 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 			fileUser.Active = true
 		} else {
 			fileUser.Active = false
-
-			// Remove seeder if applicable
-			if announce.Left == 0 && file.Seeders > 0 {
-				file.Seeders = file.Seeders - 1
-			}
 		}
 
 		// Check for completion
@@ -88,12 +74,6 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 
 			// Mark file as completed by another user
 			file.Completed = file.Completed + 1
-
-			// Decrement leecher, add seeder
-			if file.Leechers > 0 {
-				file.Leechers = file.Leechers - 1
-			}
-			file.Seeders = file.Seeders + 1
 		} else {
 			fileUser.Completed = false
 		}
