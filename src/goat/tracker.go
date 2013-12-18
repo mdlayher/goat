@@ -114,6 +114,23 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 	// Update file/user relationship record
 	go fileUser.Save()
 
+	// Begin generating response map, with current number of known seeders/leechers
+	res := map[string][]byte{
+		"complete":   bencode.EncInt(file.Seeders()),
+		"incomplete": bencode.EncInt(file.Leechers()),
+	}
+
+	// If client has not yet completed torrent, ask them to announce more frequently, so they can gather
+	// more peers and quickly report their statistics
+	if fileUser.Completed == true {
+		res["interval"] = bencode.EncInt(RandRange(300, 600))
+		res["min interval"] = bencode.EncInt(300)
+	} else {
+		// Once a torrent has been completed, report statistics less frequently
+		res["interval"] = bencode.EncInt(RandRange(3200, 4000))
+		res["min interval"] = bencode.EncInt(1800)
+	}
+
 	// Check for numwant parameter, return up to that number of peers
 	// Default is 50 per protocol
 	numwant := 50
@@ -125,12 +142,11 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 		}
 	}
 
-	// Tracker announce response, with generated peerlist of length numwant, excluding this user
-	resChan <- bencode.EncDictMap(map[string][]byte{
-		"interval":     bencode.EncInt(RandRange(3200, 4000)),
-		"min interval": bencode.EncInt(1800),
-		"peers":        bencode.EncBytes(file.PeerList(query["ip"], numwant)),
-	})
+	// Generaate compact peer list of length numwant, exclude this user
+	res["peers"] = bencode.EncBytes(file.PeerList(query["ip"], numwant))
+
+	// Bencode entire map and return
+	resChan <- bencode.EncDictMap(res)
 }
 
 // Report a bencoded []byte response as specified by input string
