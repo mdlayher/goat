@@ -253,8 +253,6 @@ type UserRecord struct {
 	Username     string
 	Passkey      string
 	TorrentLimit int `db:"torrent_limit"`
-	Uploaded     int64
-	Downloaded   int64
 }
 
 // Save UserRecord to storage
@@ -266,41 +264,16 @@ func (u UserRecord) Save() bool {
 		return false
 	}
 
-	// Calculate total uploaded and downloaded
-	if u.Id != 0 {
-		totals := struct {
-			Uploaded   int64
-			Downloaded int64
-		}{
-			0,
-			0,
-		}
-
-		// Get sum of upload and download for this user
-		totalQuery := "SELECT SUM(uploaded) AS uploaded, " +
-			"SUM(downloaded) AS downloaded " +
-			"FROM files_users " +
-			"WHERE user_id = ?"
-
-		err = db.Get(&totals, totalQuery, u.Id)
-		if err == nil {
-			// Store in struct
-			u.Uploaded = totals.Uploaded
-			u.Downloaded = totals.Downloaded
-		}
-	}
-
 	// Insert or update a user record
 	query := "INSERT INTO users " +
-		"(`username`, `passkey`, `torrent_limit`, `uploaded`, `downloaded`) " +
-		"VALUES (?, ?, ?, ?, ?) " +
+		"(`username`, `passkey`, `torrent_limit`) " +
+		"VALUES (?, ?, ?) " +
 		"ON DUPLICATE KEY UPDATE " +
-		"`username`=values(`username`), `passkey`=values(`passkey`), `torrent_limit`=values(`torrent_limit`), " +
-		"`uploaded`=values(`uploaded`), `downloaded`=values(`downloaded`);"
+		"`username`=values(`username`), `passkey`=values(`passkey`), `torrent_limit`=values(`torrent_limit`);"
 
 	// Create database transaction, do insert, commit
 	tx := db.MustBegin()
-	tx.Execl(query, u.Username, u.Passkey, u.TorrentLimit, u.Uploaded, u.Downloaded)
+	tx.Execl(query, u.Username, u.Passkey, u.TorrentLimit)
 	tx.Commit()
 
 	return true

@@ -3,8 +3,6 @@ CREATE TABLE IF NOT EXISTS users (
 	, `username` varchar(20) NOT NULL
 	, `passkey` char(40) NOT NULL
 	, `torrent_limit` int(11) NOT NULL
-	, `uploaded` bigint unsigned NOT NULL
-	, `downloaded` bigint unsigned NOT NULL
 	, PRIMARY KEY (`id`)
 	, UNIQUE KEY (`username`)
 	, UNIQUE KEY (`passkey`)
