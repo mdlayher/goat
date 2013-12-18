@@ -1,13 +1,5 @@
 package goat
 
-import (
-	"crypto/sha1"
-	"encoding/binary"
-	"fmt"
-	_ "github.com/go-sql-driver/mysql"
-	"net"
-)
-
 // Generates a unique hash for a given struct with its ID, to be used as ID for storage
 type Hashable interface {
 	Hash() string

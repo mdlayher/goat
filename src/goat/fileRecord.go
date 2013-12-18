@@ -1,5 +1,11 @@
 package goat
 
+import (
+	"encoding/binary"
+	"fmt"
+	"net"
+)
+
 // Struct representing a file tracked by tracker
 type FileRecord struct {
 	Id         int

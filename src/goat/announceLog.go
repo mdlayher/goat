@@ -1,5 +1,10 @@
 package goat
 
+import (
+	"crypto/sha1"
+	"fmt"
+)
+
 // Struct representing an announce, to be logged to storage
 type AnnounceLog struct {
 	Id         int
