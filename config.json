@@ -1,6 +1,7 @@
 {
 	"Port": "8080",
 	"Passkey": true,
+	"Whitelist": true,
 	"Http": true,
 	"Udp": false,
 	"Map": true,

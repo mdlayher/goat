@@ -75,12 +75,32 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 
 	// Verify that torrent client is advertising its User-Agent, so we can use a whitelist
 	if _, ok := r.Header["User-Agent"]; !ok {
-		w.Write(TrackerError("Your client is not whitelisted"))
+		w.Write(TrackerError("Your client is not identifying itself"))
 		return
 	}
 
+	client := r.Header["User-Agent"][0]
+
+	// If configured, verify that torrent client is on whitelist
+	if Static.Config.Whitelist {
+		whitelist := new(WhitelistRecord).Load(client, "client")
+		if whitelist == (WhitelistRecord{}) || !whitelist.Approved {
+			w.Write(TrackerError("Your client is not whitelisted"))
+
+			// Insert unknown clients into list for later approval
+			if whitelist == (WhitelistRecord{}) {
+				whitelist.Client = client
+				whitelist.Approved = false
+
+				go whitelist.Save()
+			}
+
+			return
+		}
+	}
+
 	// Put client in query map
-	query["client"] = r.Header["User-Agent"][0]
+	query["client"] = client
 
 	// Check if server is configured for passkey announce
 	if Static.Config.Passkey && passkey == "" {

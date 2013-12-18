@@ -2,12 +2,13 @@ package goat
 
 // Server configuration
 type Conf struct {
-	Port    string
-	Passkey bool
-	Http    bool
-	Udp     bool
-	Map     bool
-	Sql     bool
+	Port      string
+	Passkey   bool
+	Whitelist bool
+	Http      bool
+	Udp       bool
+	Map       bool
+	Sql       bool
 	// Must be an int between 1-8
 	// Higher values result in faster performance and larger memory requirements
 	CacheSize int
