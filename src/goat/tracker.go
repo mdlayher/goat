@@ -33,6 +33,9 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 		file.InfoHash = announce.InfoHash
 		file.Verified = false
 		file.Completed = 0
+
+		Static.LogChan <- fmt.Sprintf("tracker: detected new file, awaiting manual approval [hash: %s]", announce.InfoHash)
+
 		go file.Save()
 		return
 	}
