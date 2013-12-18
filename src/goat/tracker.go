@@ -103,6 +103,10 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 
 		// Store latest statistics, but do so in a sane way (no removing upload/download, no adding left)
 		// NOTE: clients report absolute values, so delta should NEVER be calculated for these
+		// NOTE: It is also worth noting that if a client re-downloads a file they have previously downloaded,
+		// but the FileUserRecord relationship is not cleared, they will essentially get a "free" download, with
+		// no extra download penalty to their share ratio
+		// For the time being, this behavior will be expected and acceptable
 		if announce.Uploaded > fileUser.Uploaded {
 			fileUser.Uploaded = announce.Uploaded
 		}
