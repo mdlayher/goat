@@ -16,6 +16,7 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 
 	Static.LogChan <- fmt.Sprintf("announce: [ip: %s, port:%d]", announce.Ip, announce.Port)
 	Static.LogChan <- fmt.Sprintf("announce: [info_hash: %s]", announce.InfoHash)
+	Static.LogChan <- fmt.Sprintf("announce: [up: %d, down: %d, left: %d]", announce.Uploaded, announce.Downloaded, announce.Left)
 
 	// Only report announce when needed
 	if announce.Event != "" {
@@ -53,6 +54,9 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 		fileUser.Active = true
 		fileUser.Completed = false
 		fileUser.Announced = 1
+
+		// Track the initial uploaded, download, and left values
+		// NOTE: clients report absolute values, so delta should NEVER be calculated for these
 		fileUser.Uploaded = announce.Uploaded
 		fileUser.Downloaded = announce.Downloaded
 		fileUser.Left = announce.Left
@@ -98,6 +102,7 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 		fileUser.Announced = fileUser.Announced + 1
 
 		// Store latest statistics, but do so in a sane way (no removing upload/download, no adding left)
+		// NOTE: clients report absolute values, so delta should NEVER be calculated for these
 		if announce.Uploaded > fileUser.Uploaded {
 			fileUser.Uploaded = announce.Uploaded
 		}
