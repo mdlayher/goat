@@ -134,6 +134,48 @@ func (f FileRecord) Load(id interface{}, col string) FileRecord {
 	return f
 }
 
+// Return number of seeders on this file
+func (f FileRecord) Seeders() int {
+	// Open database connection
+	db, err := DbConnect()
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return 0
+	}
+
+	// Anonymous Seeders struct
+	seeders := struct {
+		Seeders int
+	}{
+		0,
+	}
+
+	// Calculate number of seeders on this file, defined as users who are active, completed, and 0 left
+	db.Get(&seeders, "SELECT COUNT(user_id) AS seeders FROM files_users WHERE active = 1 AND completed = 1 AND `left` = 0;")
+	return seeders.Seeders
+}
+
+// Return number of leechers on this file
+func (f FileRecord) Leechers() int {
+	// Open database connection
+	db, err := DbConnect()
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return 0
+	}
+
+	// Anonymous Leechers struct
+	leechers := struct {
+		Leechers int
+	}{
+		0,
+	}
+
+	// Calculate number of leechers on this file, defined as users who are active, completed, and 0 left
+	db.Get(&leechers, "SELECT COUNT(user_id) AS leechers FROM files_users WHERE active = 1 AND completed = 0 AND `left` > 0;")
+	return leechers.Leechers
+}
+
 // Return compact peer buffer for tracker announce, excluding self
 func (f FileRecord) PeerList(exclude string, numwant int) []byte {
 	// Open database connection
