@@ -16,9 +16,6 @@ func MapToAnnounceLog(query map[string]string) AnnounceLog {
 	// info_hash
 	announce.InfoHash = hex.EncodeToString([]byte(query["info_hash"]))
 
-	// peer_id
-	announce.PeerId = hex.EncodeToString([]byte(query["peer_id"]))
-
 	// ip
 	announce.Ip = query["ip"]
 

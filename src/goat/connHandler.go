@@ -100,7 +100,7 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 	// Tracker announce
 	case "announce":
 		// Validate required parameter input
-		required := []string{"info_hash", "peer_id", "ip", "port", "uploaded", "downloaded", "left"}
+		required := []string{"info_hash", "ip", "port", "uploaded", "downloaded", "left"}
 		// Validate required integer input
 		reqInt := []string{"port", "uploaded", "downloaded", "left"}
 

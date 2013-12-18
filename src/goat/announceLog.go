@@ -9,7 +9,6 @@ import (
 type AnnounceLog struct {
 	Id         int
 	InfoHash   string `db:"info_hash"`
-	PeerId     string `db:"peer_id"`
 	Ip         string
 	Port       int
 	Uploaded   int64
@@ -37,12 +36,12 @@ func (a AnnounceLog) Save() bool {
 
 	// Store announce log
 	query := "INSERT INTO announce_log " +
-		"(`info_hash`, `peer_id`, `ip`, `port`, `uploaded`, `downloaded`, `left`, `event`, `time`) " +
-		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, UNIX_TIMESTAMP());"
+		"(`info_hash`, `ip`, `port`, `uploaded`, `downloaded`, `left`, `event`, `time`) " +
+		"VALUES (?, ?, ?, ?, ?, ?, ?, UNIX_TIMESTAMP());"
 
 	// Create database transaction, do insert, commit
 	tx := db.MustBegin()
-	tx.Execl(query, a.InfoHash, a.PeerId, a.Ip, a.Port, a.Uploaded, a.Downloaded, a.Left, a.Event)
+	tx.Execl(query, a.InfoHash, a.Ip, a.Port, a.Uploaded, a.Downloaded, a.Left, a.Event)
 	tx.Commit()
 
 	return true
