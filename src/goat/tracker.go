@@ -45,6 +45,9 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 		return
 	}
 
+	// Launch peer reaper to remove old peers from this file
+	go file.PeerReaper()
+
 	// Check existing record for this user with this file
 	fileUser := new(FileUserRecord).Load(file.Id, user.Id)
 
