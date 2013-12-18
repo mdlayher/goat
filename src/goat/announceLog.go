@@ -15,6 +15,7 @@ type AnnounceLog struct {
 	Downloaded int64
 	Left       int64
 	Event      string
+	Client     string
 	Time       int64
 }
 
@@ -36,12 +37,12 @@ func (a AnnounceLog) Save() bool {
 
 	// Store announce log
 	query := "INSERT INTO announce_log " +
-		"(`info_hash`, `ip`, `port`, `uploaded`, `downloaded`, `left`, `event`, `time`) " +
-		"VALUES (?, ?, ?, ?, ?, ?, ?, UNIX_TIMESTAMP());"
+		"(`info_hash`, `ip`, `port`, `uploaded`, `downloaded`, `left`, `event`, `client`, `time`) " +
+		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, UNIX_TIMESTAMP());"
 
 	// Create database transaction, do insert, commit
 	tx := db.MustBegin()
-	tx.Execl(query, a.InfoHash, a.Ip, a.Port, a.Uploaded, a.Downloaded, a.Left, a.Event)
+	tx.Execl(query, a.InfoHash, a.Ip, a.Port, a.Uploaded, a.Downloaded, a.Left, a.Event, a.Client)
 	tx.Commit()
 
 	return true

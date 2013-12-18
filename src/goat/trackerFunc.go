@@ -44,6 +44,9 @@ func MapToAnnounceLog(query map[string]string) AnnounceLog {
 		announce.Event = event
 	}
 
+	// BitTorrent client, User-Agent header
+	announce.Client = query["client"]
+
 	// Current UNIX timestamp
 	announce.Time = time.Now().Unix()
 

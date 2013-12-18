@@ -79,6 +79,9 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Put client in query map
+	query["client"] = r.Header["User-Agent"][0]
+
 	// Check if server is configured for passkey announce
 	if Static.Config.Passkey && passkey == "" {
 		w.Write(TrackerError("No passkey found in announce URL"))
