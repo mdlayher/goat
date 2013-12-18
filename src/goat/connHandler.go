@@ -117,6 +117,9 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Put passkey in query map
+	query["passkey"] = user.Passkey
+
 	// Create channel to return bencoded response to client on
 	resChan := make(chan []byte)
 

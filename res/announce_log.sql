@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS announce_log (
 	`id` int(11) NOT NULL AUTO_INCREMENT
 	, `info_hash` varchar(40) NOT NULL
+	, `passkey` char(40) NOT NULL
 	, `ip` varchar(15) NOT NULL
 	, `port` int(11) NOT NULL
 	, `uploaded` bigint unsigned NOT NULL

@@ -16,6 +16,9 @@ func MapToAnnounceLog(query map[string]string) AnnounceLog {
 	// info_hash
 	announce.InfoHash = hex.EncodeToString([]byte(query["info_hash"]))
 
+	// passkey
+	announce.Passkey = query["passkey"]
+
 	// ip
 	announce.Ip = query["ip"]
 
