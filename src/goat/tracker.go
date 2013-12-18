@@ -122,7 +122,7 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 
 	// If client has not yet completed torrent, ask them to announce more frequently, so they can gather
 	// more peers and quickly report their statistics
-	if fileUser.Completed == true {
+	if fileUser.Completed == false {
 		res["interval"] = bencode.EncInt(RandRange(300, 600))
 		res["min interval"] = bencode.EncInt(300)
 	} else {
