@@ -2,7 +2,6 @@ package goat
 
 import (
 	"encoding/binary"
-	"fmt"
 	"net"
 )
 
@@ -137,9 +136,6 @@ func (f FileRecord) PeerList(exclude string, numwant int) []byte {
 	for rows.Next() {
 		// Scan row results
 		rows.StructScan(&peer)
-
-		// Report peer output to log
-		Static.LogChan <- fmt.Sprintf("peer: [ip: %s, port: %d]", peer.Ip, peer.Port)
 
 		// Parse IP into byte buffer
 		ip := [4]byte{}

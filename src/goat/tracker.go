@@ -14,14 +14,13 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 	// Request to store announce
 	go announce.Save()
 
-	Static.LogChan <- fmt.Sprintf("announce: [ip: %s, port:%d]", announce.Ip, announce.Port)
-	Static.LogChan <- fmt.Sprintf("announce: [info_hash: %s]", announce.InfoHash)
-	Static.LogChan <- fmt.Sprintf("announce: [up: %d, down: %d, left: %d]", announce.Uploaded, announce.Downloaded, announce.Left)
-
-	// Only report announce when needed
+	// Only report event when needed
+	event := ""
 	if announce.Event != "" {
-		Static.LogChan <- fmt.Sprintf("announce: [event: %s]", announce.Event)
+		event = announce.Event + " "
 	}
+
+	Static.LogChan <- fmt.Sprintf("announce: [%s:%d] %s%s", announce.Ip, announce.Port, event, announce.InfoHash)
 
 	// Check for a matching file via info_hash
 	file := new(FileRecord).Load(announce.InfoHash, "info_hash")
