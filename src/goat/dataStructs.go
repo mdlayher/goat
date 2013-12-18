@@ -294,6 +294,48 @@ func (u UserRecord) Load(id interface{}, col string) UserRecord {
 	return u
 }
 
+// Load this user's total upload
+func (u UserRecord) Uploaded() int64 {
+	// Open database connection
+	db, err := DbConnect()
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return 0
+	}
+
+	// Anonymous Uploaded struct
+	uploaded := struct {
+		Uploaded int64
+	}{
+		0,
+	}
+
+	// Calculate sum of this user's upload via their file/user relationship records
+	db.Get(&uploaded, "SELECT SUM(uploaded) AS uploaded FROM files_users WHERE user_id=?", u.Id)
+	return uploaded.Uploaded
+}
+
+// Load this user's total download
+func (u UserRecord) Downloaded() int64 {
+	// Open database connection
+	db, err := DbConnect()
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return 0
+	}
+
+	// Anonymous Downloaded struct
+	downloaded := struct {
+		Downloaded int64
+	}{
+		0,
+	}
+
+	// Calculate sum of this user's download via their file/user relationship records
+	db.Get(&downloaded, "SELECT SUM(downloaded) AS downloaded FROM files_users WHERE user_id=?", u.Id)
+	return downloaded.Downloaded
+}
+
 // Struct representing a scrapelog, to be logged to storage
 type ScrapeLog struct {
 	InfoHash string
