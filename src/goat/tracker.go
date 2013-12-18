@@ -85,6 +85,7 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 			// If status completed, mark file as completed by another user
 			if announce.Event == "completed" {
 				file.Completed = file.Completed + 1
+				go file.Save()
 			}
 		} else {
 			fileUser.Completed = false
@@ -110,6 +111,9 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 		}
 	}
 
+	// Update file/user relationship record
+	go fileUser.Save()
+
 	// Check for numwant parameter, return up to that number of peers
 	// Default is 50 per protocol
 	numwant := 50
@@ -127,13 +131,6 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 		"min interval": bencode.EncInt(1800),
 		"peers":        bencode.EncBytes(file.PeerList(query["ip"], numwant)),
 	})
-
-	// Update records AFTER user gets their response
-	// NOTE: not goroutines because these occur after the client gets a response anyway, and because these
-	// can create some interesting race conditions if not updated synchronously
-	file.Save()
-	fileUser.Save()
-	user.Save()
 }
 
 // Report a bencoded []byte response as specified by input string
