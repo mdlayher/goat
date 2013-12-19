@@ -156,6 +156,7 @@ func (u UdpConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 			go TrackerAnnounce(UserRecord{}, query, transId, resChan)
 
 			_, err := l.WriteToUDP(<-resChan, addr)
+			close(resChan)
 			if err != nil {
 				Static.LogChan <- err.Error()
 				continue
