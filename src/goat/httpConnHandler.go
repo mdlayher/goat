@@ -160,6 +160,9 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 
 		// Perform tracker announce
 		go TrackerAnnounce(user, query, nil, resChan)
+	// Tracker scrape
+	case "scrape":
+		go TrackerScrape(user, query, resChan)
 	// Tracker status
 	case "status":
 		w.Header().Add("Content-Type", "application/json")

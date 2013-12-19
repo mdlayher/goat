@@ -4,9 +4,41 @@ import (
 	"bencode"
 	"bytes"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"strconv"
 )
+
+// Tracker scrape request
+func TrackerScrape(user UserRecord, query map[string]string, resChan chan []byte) {
+	// Store scrape information in struct
+	scrape := MapToScrapeLog(query)
+
+	// Request to store scrape
+	go scrape.Save()
+
+	Static.LogChan <- fmt.Sprintf("scrape: [%s] %s", scrape.Ip, scrape.InfoHash)
+
+	// Check for a matching file via info_hash
+	file := new(FileRecord).Load(scrape.InfoHash, "info_hash")
+	if file == (FileRecord{}) {
+		// Torrent is not currently registered
+		resChan <- HttpTrackerError("Unregistered torrent")
+		return
+	}
+
+	// Ensure file is verified, meaning we will permit scraping of it
+	if !file.Verified {
+		resChan <- HttpTrackerError("Unverified torrent")
+		return
+	}
+
+	// Launch peer reaper to remove old peers from this file
+	go file.PeerReaper()
+
+	// Create scrape
+	resChan <- HttpTrackerScrape(query, file)
+}
 
 // Tracker announce request
 func TrackerAnnounce(user UserRecord, query map[string]string, transId []byte, resChan chan []byte) {
@@ -183,6 +215,23 @@ func HttpTrackerAnnounce(query map[string]string, file FileRecord, fileUser File
 
 	// Bencode entire map and return
 	return bencode.EncDictMap(res)
+}
+
+// Report scrape using HTTP format
+func HttpTrackerScrape(query map[string]string, file FileRecord) []byte {
+	// Decode hex string to byte format
+	hash, err := hex.DecodeString(file.InfoHash)
+	if err != nil {
+		hash = []byte("")
+	}
+
+	return bencode.EncDictMap(map[string][]byte{
+		"files":      bencode.EncBytes(hash),
+		"complete":   bencode.EncInt(file.Seeders()),
+		"downloaded": bencode.EncInt(file.Completed),
+		"incomplete": bencode.EncInt(file.Leechers()),
+		// optional field: name, string
+	})
 }
 
 // Report a bencoded []byte response as specified by input string

@@ -67,6 +67,28 @@ func MapToAnnounceLog(query map[string]string) AnnounceLog {
 	return announce
 }
 
+// Generate a ScrapeLog struct from a query map
+func MapToScrapeLog(query map[string]string) ScrapeLog {
+	var scrape ScrapeLog
+
+	// Required parameters
+
+	// info_hash
+	scrape.InfoHash = hex.EncodeToString([]byte(query["info_hash"]))
+
+	// passkey
+	scrape.Passkey = query["passkey"]
+
+	// ip
+	scrape.Ip = query["ip"]
+
+	// Current UNIX timestamp
+	scrape.Time = time.Now().Unix()
+
+	// Return the created scrape
+	return scrape
+}
+
 // Generate a random announce interval in the specified range
 func RandRange(min int, max int) int {
 	rand.Seed(time.Now().Unix())

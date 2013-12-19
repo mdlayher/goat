@@ -17,11 +17,3 @@ type ErrorRes struct {
 	Time        int64
 	Error       string
 }
-
-// Struct representing a scrapelog, to be logged to storage
-type ScrapeLog struct {
-	InfoHash string
-	UserId   string
-	Ip       string
-	Time     int64
-}
