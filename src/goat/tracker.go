@@ -132,8 +132,8 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 		res["min interval"] = bencode.EncInt(300)
 	} else {
 		// Once a torrent has been completed, report statistics less frequently
-		res["interval"] = bencode.EncInt(RandRange(3200, 4000))
-		res["min interval"] = bencode.EncInt(1800)
+		res["interval"] = bencode.EncInt(RandRange(Static.Config.Interval - 600, Static.Config.Interval))
+		res["min interval"] = bencode.EncInt(Static.Config.Interval / 2)
 	}
 
 	// Check for numwant parameter, return up to that number of peers
@@ -158,7 +158,7 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 func TrackerError(err string) []byte {
 	return bencode.EncDictMap(map[string][]byte{
 		"failure reason": bencode.EncString(err),
-		"interval":       bencode.EncInt(RandRange(3200, 4000)),
-		"min interval":   bencode.EncInt(1800),
+		"interval":       bencode.EncInt(RandRange(Static.Config.Interval - 600, Static.Config.Interval)),
+		"min interval":   bencode.EncInt(Static.Config.Interval / 2),
 	})
 }

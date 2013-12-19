@@ -5,6 +5,7 @@ type Conf struct {
 	Port      string
 	Passkey   bool
 	Whitelist bool
+	Interval  int
 	Http      bool
 	Udp       bool
 	Map       bool

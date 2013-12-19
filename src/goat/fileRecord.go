@@ -169,18 +169,13 @@ func (f FileRecord) PeerReaper() {
 		0,
 	}
 
-	// Query for list of peers and the times they have announced on this torrent, who are currently marked as active,
-	// and who have not announced in two hours
-	query := "SELECT DISTINCT users.id AS user_id, announce_log.time FROM announce_log " +
-		"JOIN users ON announce_log.passkey = users.passkey " +
-		"JOIN files_users ON users.id = files_users.user_id " +
-		"WHERE announce_log.time IN " +
-		"(SELECT MAX(announce_log.time) FROM announce_log GROUP BY announce_log.passkey) " +
-		"AND announce_log.time < (UNIX_TIMESTAMP() - 7200) " +
-		"AND files_users.active = 1 " +
-		"AND files_users.file_id = ?;"
+	// Query for user IDs associated with this file, who are marked active but have not announced recently
+	query := "SELECT user_id FROM files_users " +
+	"WHERE time < (UNIX_TIMESTAMP() - ?) " +
+	"AND active = 1 " +
+	"AND file_id = ?;"
 
-	rows, err := db.Queryx(query, f.Id)
+	rows, err := db.Queryx(query, Static.Config.Interval + 60, f.Id)
 	if err != nil {
 		Static.LogChan <- err.Error()
 		return

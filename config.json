@@ -2,6 +2,7 @@
 	"Port": "8080",
 	"Passkey": true,
 	"Whitelist": true,
+	"Interval": 3600,
 	"Http": true,
 	"Udp": false,
 	"Map": true,
