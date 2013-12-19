@@ -12,43 +12,6 @@ func DbConnect() (*sqlx.DB, error) {
 	return sqlx.Connect("mysql", fmt.Sprintf("%s:%s@/%s", "goat", "goat", "goat"))
 }
 
-// Read a struct with specified ID from storage
-func DbRead(id string) (Response, bool) {
-	// Generate request
-	var req Request
-	req.Id = id
-
-	// Generate channel for response
-	queryResChan := make(chan Response)
-	req.ResponseChan = queryResChan
-
-	// Perform request
-	Static.RequestChan <- req
-
-	// Read and return response
-	res := <-queryResChan
-	return res, true
-}
-
-// Write a struct with specified ID to storage
-func DbWrite(id string, data interface{}) (Response, bool) {
-	// Generate request
-	var req Request
-	req.Id = id
-	req.Data = data
-
-	// Generate channel for response
-	queryResChan := make(chan Response)
-	req.ResponseChan = queryResChan
-
-	// Perform request
-	Static.RequestChan <- req
-
-	// Read and return response
-	res := <-queryResChan
-	return res, true
-}
-
 func DbManager(dbDoneChan chan bool) {
 	// Storage handler instances
 	mapDb := new(MapDb)
