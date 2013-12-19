@@ -58,7 +58,7 @@ func Manager(killChan chan bool, exitChan chan int) {
 			}
 			if Static.Config.Udp {
 				Static.LogChan <- "stopping UDP listener"
-				<-udpDoneChan
+				//<-udpDoneChan
 			}
 
 			// Stop storage manager

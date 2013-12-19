@@ -31,4 +31,13 @@ type UdpListener struct {
 
 // Listen on specified UDP port, accept and handle connections
 func (u UdpListener) Listen(udpDoneChan chan bool) {
+	// Listen on specified UDP port
+	addr, err := net.ResolveUDPAddr("udp", ":"+Static.Config.Port)
+	l, err := net.ListenUDP("udp", addr)
+	if err != nil {
+		Static.LogChan <- err.Error()
+	}
+
+	// Send listener to UdpConnHandler
+	go new(UdpConnHandler).Handle(l, udpDoneChan)
 }

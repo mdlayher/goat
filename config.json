@@ -4,7 +4,7 @@
 	"Whitelist": true,
 	"Interval": 3600,
 	"Http": true,
-	"Udp": false,
+	"Udp": true,
 	"Map": true,
 	"Sql": false,
 	"CacheSize": 8
