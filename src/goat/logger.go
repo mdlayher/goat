@@ -35,10 +35,9 @@ func LogManager() {
 	}
 }
 
-// Log and display system status every minute
+// Log and display system status at regular intervals
 func StatusLogger() {
-	// Poll status every 30 seconds
-	ticker := time.NewTicker(30 * time.Second)
+	ticker := time.NewTicker(5 * time.Minute)
 
 	// Loop infinitely, trigger events via ticker
 	for {
