@@ -2,6 +2,8 @@ package goat
 
 import (
 	"bencode"
+	"bytes"
+	"encoding/binary"
 	"fmt"
 	"strconv"
 )
@@ -26,7 +28,7 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 	file := new(FileRecord).Load(announce.InfoHash, "info_hash")
 	if file == (FileRecord{}) {
 		// Torrent is not currently registered
-		resChan <- TrackerError("Unregistered torrent")
+		resChan <- HttpTrackerError("Unregistered torrent")
 
 		// Create an entry in file table for this hash, but mark it as unverified
 		file.InfoHash = announce.InfoHash
@@ -41,7 +43,7 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 
 	// Ensure file is verified, meaning we will permit tracking of it
 	if !file.Verified {
-		resChan <- TrackerError("Unverified torrent")
+		resChan <- HttpTrackerError("Unverified torrent")
 		return
 	}
 
@@ -155,10 +157,25 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 }
 
 // Report a bencoded []byte response as specified by input string
-func TrackerError(err string) []byte {
+func HttpTrackerError(err string) []byte {
 	return bencode.EncDictMap(map[string][]byte{
 		"failure reason": bencode.EncString(err),
 		"interval":       bencode.EncInt(RandRange(Static.Config.Interval - 600, Static.Config.Interval)),
 		"min interval":   bencode.EncInt(Static.Config.Interval / 2),
 	})
+}
+
+// Report a []byte response packed datagram
+func UdpTrackerError(err string, transId []byte) []byte {
+	// Response buffer
+	res := bytes.NewBuffer(make([]byte, 0))
+
+	// Action (3 for error)
+	binary.Write(res, binary.BigEndian, uint32(3))
+	// Transaction ID
+	binary.Write(res, binary.BigEndian, transId)
+	// Error message
+	binary.Write(res, binary.BigEndian, []byte(err))
+
+	return res.Bytes()
 }
