@@ -118,6 +118,8 @@ func TrackerAnnounce(user UserRecord, query map[string]string, transId []byte, r
 		// If announce reports 0 left, but no existing record, user is probably the initial seeder
 		if announce.Left == 0 {
 			fileUser.Completed = true
+			file.Completed = file.Completed + 1
+			go file.Save()
 		} else {
 			fileUser.Completed = false
 		}
