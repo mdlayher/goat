@@ -22,7 +22,15 @@ func TrackerAnnounce(user UserRecord, query map[string]string, udp bool, transId
 		event = announce.Event + " "
 	}
 
-	Static.LogChan <- fmt.Sprintf("announce: [%s:%d] %s%s", announce.Ip, announce.Port, event, announce.InfoHash)
+	// Report protocol
+	proto := ""
+	if announce.Udp {
+		proto = " udp"
+	} else {
+		proto = "http"
+	}
+
+	Static.LogChan <- fmt.Sprintf("announce: [%s %s:%d] %s%s", proto, announce.Ip, announce.Port, event, announce.InfoHash)
 
 	// Check for a matching file via info_hash
 	file := new(FileRecord).Load(announce.InfoHash, "info_hash")

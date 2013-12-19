@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/hex"
-	"fmt"
 	"net"
 	"strconv"
 	"strings"
@@ -31,8 +30,7 @@ func (u UdpConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 
 	for {
 		buf := make([]byte, 2048)
-		rlen, addr, err := l.ReadFromUDP(buf)
-		Static.LogChan <- fmt.Sprintf("len: %d, addr: %s, err: %s", rlen, addr, err)
+		rlen, addr, _ := l.ReadFromUDP(buf)
 
 		// Verify length is at least 16 bytes
 		if rlen < 16 {
@@ -40,11 +38,9 @@ func (u UdpConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 			continue
 		}
 
-		connId := binary.BigEndian.Uint64(buf[0:8])
+		//connId := binary.BigEndian.Uint64(buf[0:8])
 		action := binary.BigEndian.Uint32(buf[8:12])
 		transId := binary.BigEndian.Uint32(buf[12:16])
-
-		Static.LogChan <- fmt.Sprintf("id: %d, action: %d, trans: %d", connId, action, transId)
 
 		// Verify valid connection ID
 		_ = initId
@@ -59,7 +55,6 @@ func (u UdpConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 		switch action {
 		// Connect
 		case 0:
-			Static.LogChan <- "connect()"
 			res := bytes.NewBuffer(make([]byte, 0))
 
 			// Action
@@ -69,18 +64,15 @@ func (u UdpConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 			// Connection ID
 			binary.Write(res, binary.BigEndian, uint64(1234))
 
-			rlen, err := l.WriteToUDP(res.Bytes(), addr)
+			_, err := l.WriteToUDP(res.Bytes(), addr)
 			if err != nil {
 				Static.LogChan <- err.Error()
 				continue
 			}
 
-			Static.LogChan <- fmt.Sprintf("udp: Wrote %d bytes, %s", rlen, hex.EncodeToString(res.Bytes()))
 			continue
 		// Announce
 		case 1:
-			Static.LogChan <- "announce()"
-
 			query := map[string]string{}
 
 			// Mark client as UDP
@@ -105,17 +97,14 @@ func (u UdpConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 			// Downloaded
 			t, _ := strconv.ParseInt(hex.EncodeToString(buf[56:64]), 16, 64)
 			query["downloaded"] = strconv.FormatInt(t, 10)
-			Static.LogChan <- fmt.Sprintf("downloaded: %s", query["downloaded"])
 
 			// Left
 			t, _ = strconv.ParseInt(hex.EncodeToString(buf[64:72]), 16, 64)
 			query["left"] = strconv.FormatInt(t, 10)
-			Static.LogChan <- fmt.Sprintf("left: %s", query["left"])
 
 			// Uploaded
 			t, _ = strconv.ParseInt(hex.EncodeToString(buf[72:80]), 16, 64)
 			query["uploaded"] = strconv.FormatInt(t, 10)
-			Static.LogChan <- fmt.Sprintf("uploaded: %s", query["uploaded"])
 
 			// Event
 			t, _ = strconv.ParseInt(hex.EncodeToString(buf[80:84]), 16, 32)
@@ -133,8 +122,6 @@ func (u UdpConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 				query["event"] = "stopped"
 			}
 
-			Static.LogChan <- fmt.Sprintf("event: %s", query["event"])
-
 			// IP address
 			t, _ = strconv.ParseInt(hex.EncodeToString(buf[84:88]), 16, 32)
 			query["ip"] = strconv.FormatInt(t, 10)
@@ -144,11 +131,8 @@ func (u UdpConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 				query["ip"] = strings.Split(addr.String(), ":")[0]
 			}
 
-			Static.LogChan <- fmt.Sprintf("ip: %s", query["ip"])
-
 			// Key
 			query["key"] = hex.EncodeToString(buf[88:92])
-			Static.LogChan <- fmt.Sprintf("key: %s", query["key"])
 
 			// Numwant
 			query["numwant"] = hex.EncodeToString(buf[92:96])
@@ -158,12 +142,9 @@ func (u UdpConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 				query["numwant"] = "50"
 			}
 
-			Static.LogChan <- fmt.Sprintf("numwant: %s", query["numwant"])
-
 			// Port
 			t, _ = strconv.ParseInt(hex.EncodeToString(buf[96:98]), 16, 32)
 			query["port"] = strconv.FormatInt(t, 10)
-			Static.LogChan <- fmt.Sprintf("port: %s", query["port"])
 
 			_, _, _ = connId, transId, action
 
@@ -174,13 +155,11 @@ func (u UdpConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 			resChan := make(chan []byte)
 			go TrackerAnnounce(user, query, true, transIdBuf, resChan)
 
-			rlen, err := l.WriteToUDP(<-resChan, addr)
+			_, err := l.WriteToUDP(<-resChan, addr)
 			if err != nil {
 				Static.LogChan <- err.Error()
 				continue
 			}
-
-			Static.LogChan <- fmt.Sprintf("udp: Wrote %d bytes", rlen)
 		default:
 			Static.LogChan <- "Invalid action"
 			continue
