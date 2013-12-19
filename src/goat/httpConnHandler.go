@@ -159,7 +159,7 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Perform tracker announce
-		go TrackerAnnounce(user, query, false, nil, resChan)
+		go TrackerAnnounce(user, query, nil, resChan)
 	// Tracker status
 	case "status":
 		w.Header().Add("Content-Type", "application/json")

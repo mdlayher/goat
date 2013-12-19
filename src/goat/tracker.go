@@ -9,7 +9,7 @@ import (
 )
 
 // Tracker announce request
-func TrackerAnnounce(user UserRecord, query map[string]string, udp bool, transId []byte, resChan chan []byte) {
+func TrackerAnnounce(user UserRecord, query map[string]string, transId []byte, resChan chan []byte) {
 	// Store announce information in struct
 	announce := MapToAnnounceLog(query)
 
@@ -36,7 +36,7 @@ func TrackerAnnounce(user UserRecord, query map[string]string, udp bool, transId
 	file := new(FileRecord).Load(announce.InfoHash, "info_hash")
 	if file == (FileRecord{}) {
 		// Torrent is not currently registered
-		if !udp {
+		if !announce.Udp {
 			resChan <- HttpTrackerError("Unregistered torrent")
 		} else {
 			resChan <- UdpTrackerError("Unregistered torrent", transId)
@@ -55,7 +55,7 @@ func TrackerAnnounce(user UserRecord, query map[string]string, udp bool, transId
 
 	// Ensure file is verified, meaning we will permit tracking of it
 	if !file.Verified {
-		if !udp {
+		if !announce.Udp {
 			resChan <- HttpTrackerError("Unverified torrent")
 		} else {
 			resChan <- UdpTrackerError("Unverified torrent", transId)
@@ -65,6 +65,12 @@ func TrackerAnnounce(user UserRecord, query map[string]string, udp bool, transId
 
 	// Launch peer reaper to remove old peers from this file
 	go file.PeerReaper()
+
+	// If UDP tracker, we cannot reliably detect user, so we announce anonymously
+	if announce.Udp {
+		resChan <- UdpTrackerAnnounce(query, file, transId)
+		return
+	}
 
 	// Check existing record for this user with this file
 	fileUser := new(FileUserRecord).Load(file.Id, user.Id)
@@ -138,11 +144,8 @@ func TrackerAnnounce(user UserRecord, query map[string]string, udp bool, transId
 	go fileUser.Save()
 
 	// Create announce
-	if !udp {
-		resChan <- HttpTrackerAnnounce(query, file, fileUser)
-	} else {
-		resChan <- UdpTrackerAnnounce(query, file, transId)
-	}
+	resChan <- HttpTrackerAnnounce(query, file, fileUser)
+	return
 }
 
 // Announce using HTTP format

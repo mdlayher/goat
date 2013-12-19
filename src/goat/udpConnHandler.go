@@ -148,12 +148,9 @@ func (u UdpConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 
 			_, _, _ = connId, transId, action
 
-			// TODO: temporary, load user
-			user := new(UserRecord).Load(1, "id")
-
 			// Trigger an announce
 			resChan := make(chan []byte)
-			go TrackerAnnounce(user, query, true, transIdBuf, resChan)
+			go TrackerAnnounce(UserRecord{}, query, transIdBuf, resChan)
 
 			_, err := l.WriteToUDP(<-resChan, addr)
 			if err != nil {
