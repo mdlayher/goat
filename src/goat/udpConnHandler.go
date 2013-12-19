@@ -83,6 +83,9 @@ func (u UdpConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 
 			query := map[string]string{}
 
+			// Mark client as UDP
+			query["udp"] = "1"
+
 			// Connection ID
 			connId := binary.BigEndian.Uint64(buf[0:8])
 

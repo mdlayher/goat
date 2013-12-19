@@ -19,6 +19,9 @@ func MapToAnnounceLog(query map[string]string) AnnounceLog {
 	// passkey
 	announce.Passkey = query["passkey"]
 
+	// key
+	announce.Key = query["key"]
+
 	// ip
 	announce.Ip = query["ip"]
 
@@ -27,6 +30,13 @@ func MapToAnnounceLog(query map[string]string) AnnounceLog {
 	// port
 	port, _ := strconv.Atoi(query["port"])
 	announce.Port = port
+
+	// udp
+	if query["udp"] == "1" {
+		announce.Udp = true
+	} else {
+		announce.Udp = false
+	}
 
 	// uploaded
 	uploaded, _ := strconv.ParseInt(query["uploaded"], 10, 64)
