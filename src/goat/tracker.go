@@ -76,7 +76,7 @@ func TrackerAnnounce(user UserRecord, query map[string]string, transId []byte, r
 	fileUser := new(FileUserRecord).Load(file.Id, user.Id)
 
 	// New user, starting torrent
-	if announce.Event == "started" && fileUser == (FileUserRecord{}) {
+	if announce.Event == "started" || fileUser == (FileUserRecord{}) {
 		// Create new relationship
 		fileUser.FileId = file.Id
 		fileUser.UserId = user.Id
