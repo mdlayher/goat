@@ -159,7 +159,7 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Perform tracker announce
-		go TrackerAnnounce(user, query, resChan)
+		go TrackerAnnounce(user, query, false, nil, resChan)
 	// Tracker status
 	case "status":
 		w.Header().Add("Content-Type", "application/json")
@@ -258,6 +258,7 @@ func (u UdpConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 
 			// Transaction ID
 			transId := binary.BigEndian.Uint32(buf[12:16])
+			transIdBuf := buf[12:16]
 
 			// Info hash
 			query["info_hash"] = string(buf[16:36])
@@ -330,33 +331,20 @@ func (u UdpConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 
 			_, _, _ = connId, transId, action
 
-			// Response buffer
-			res := bytes.NewBuffer(make([]byte, 0))
+			// TODO: temporary, load user
+			user := new(UserRecord).Load(1, "id")
 
-			// Load matching file
-			file := new(FileRecord).Load(query["info_hash"], "info_hash")
+			// Trigger an announce
+			resChan := make(chan []byte)
+			go TrackerAnnounce(user, query, true, transIdBuf, resChan)
 
-			// Action (1 for announce)
-			binary.Write(res, binary.BigEndian, uint32(1))
-			// Transaction ID
-			binary.Write(res, binary.BigEndian, uint32(transId))
-			// Interval
-			binary.Write(res, binary.BigEndian, uint32(RandRange(Static.Config.Interval - 600, Static.Config.Interval)))
-			// Leechers
-			binary.Write(res, binary.BigEndian, uint32(file.Leechers()))
-			// Seeders
-			binary.Write(res, binary.BigEndian, uint32(file.Seeders()))
-			// Peer list
-			numwant, _ := strconv.Atoi(query["numwant"])
-			binary.Write(res, binary.BigEndian, file.PeerList(query["ip"], numwant))
-
-			rlen, err := l.WriteToUDP(res.Bytes(), addr)
+			rlen, err := l.WriteToUDP(<-resChan, addr)
 			if err != nil {
 				Static.LogChan <- err.Error()
 				continue
 			}
 
-			Static.LogChan <- fmt.Sprintf("udp: Wrote %d bytes, %s", rlen, hex.EncodeToString(res.Bytes()))
+			Static.LogChan <- fmt.Sprintf("udp: Wrote %d bytes", rlen)
 		default:
 			Static.LogChan <- "Invalid action"
 			continue

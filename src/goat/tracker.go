@@ -9,7 +9,7 @@ import (
 )
 
 // Tracker announce request
-func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []byte) {
+func TrackerAnnounce(user UserRecord, query map[string]string, udp bool, transId []byte, resChan chan []byte) {
 	// Store announce information in struct
 	announce := MapToAnnounceLog(query)
 
@@ -28,7 +28,11 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 	file := new(FileRecord).Load(announce.InfoHash, "info_hash")
 	if file == (FileRecord{}) {
 		// Torrent is not currently registered
-		resChan <- HttpTrackerError("Unregistered torrent")
+		if !udp {
+			resChan <- HttpTrackerError("Unregistered torrent")
+		} else {
+			resChan <- UdpTrackerError("Unregistered torrent", transId)
+		}
 
 		// Create an entry in file table for this hash, but mark it as unverified
 		file.InfoHash = announce.InfoHash
@@ -43,7 +47,11 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 
 	// Ensure file is verified, meaning we will permit tracking of it
 	if !file.Verified {
-		resChan <- HttpTrackerError("Unverified torrent")
+		if !udp {
+			resChan <- HttpTrackerError("Unverified torrent")
+		} else {
+			resChan <- UdpTrackerError("Unverified torrent", transId)
+		}
 		return
 	}
 
@@ -121,6 +129,16 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 	// Update file/user relationship record
 	go fileUser.Save()
 
+	// Create announce
+	if !udp {
+		resChan <- HttpTrackerAnnounce(query, file, fileUser)
+	} else {
+		resChan <- UdpTrackerAnnounce(query, file, transId)
+	}
+}
+
+// Announce using HTTP format
+func HttpTrackerAnnounce(query map[string]string, file FileRecord, fileUser FileUserRecord) []byte {
 	// Begin generating response map, with current number of known seeders/leechers
 	res := map[string][]byte{
 		"complete":   bencode.EncInt(file.Seeders()),
@@ -153,7 +171,7 @@ func TrackerAnnounce(user UserRecord, query map[string]string, resChan chan []by
 	res["peers"] = bencode.EncBytes(file.PeerList(query["ip"], numwant))
 
 	// Bencode entire map and return
-	resChan <- bencode.EncDictMap(res)
+	return bencode.EncDictMap(res)
 }
 
 // Report a bencoded []byte response as specified by input string
@@ -163,6 +181,28 @@ func HttpTrackerError(err string) []byte {
 		"interval":       bencode.EncInt(RandRange(Static.Config.Interval - 600, Static.Config.Interval)),
 		"min interval":   bencode.EncInt(Static.Config.Interval / 2),
 	})
+}
+
+// Announce using UDP format
+func UdpTrackerAnnounce(query map[string]string, file FileRecord, transId []byte) []byte {
+	// Response buffer
+	res := bytes.NewBuffer(make([]byte, 0))
+
+	// Action (1 for announce)
+	binary.Write(res, binary.BigEndian, uint32(1))
+	// Transaction ID
+	binary.Write(res, binary.BigEndian, transId)
+	// Interval
+	binary.Write(res, binary.BigEndian, uint32(RandRange(Static.Config.Interval - 600, Static.Config.Interval)))
+	// Leechers
+	binary.Write(res, binary.BigEndian, uint32(file.Leechers()))
+	// Seeders
+	binary.Write(res, binary.BigEndian, uint32(file.Seeders()))
+	// Peer list
+	numwant, _ := strconv.Atoi(query["numwant"])
+	binary.Write(res, binary.BigEndian, file.PeerList(query["ip"], numwant))
+
+	return res.Bytes()
 }
 
 // Report a []byte response packed datagram
