@@ -171,11 +171,11 @@ func (f FileRecord) PeerReaper() {
 
 	// Query for user IDs associated with this file, who are marked active but have not announced recently
 	query := "SELECT user_id FROM files_users " +
-	"WHERE time < (UNIX_TIMESTAMP() - ?) " +
-	"AND active = 1 " +
-	"AND file_id = ?;"
+		"WHERE time < (UNIX_TIMESTAMP() - ?) " +
+		"AND active = 1 " +
+		"AND file_id = ?;"
 
-	rows, err := db.Queryx(query, Static.Config.Interval + 60, f.Id)
+	rows, err := db.Queryx(query, Static.Config.Interval+60, f.Id)
 	if err != nil {
 		Static.LogChan <- err.Error()
 		return

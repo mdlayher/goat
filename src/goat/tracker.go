@@ -152,7 +152,7 @@ func HttpTrackerAnnounce(query map[string]string, file FileRecord, fileUser File
 		res["min interval"] = bencode.EncInt(300)
 	} else {
 		// Once a torrent has been completed, report statistics less frequently
-		res["interval"] = bencode.EncInt(RandRange(Static.Config.Interval - 600, Static.Config.Interval))
+		res["interval"] = bencode.EncInt(RandRange(Static.Config.Interval-600, Static.Config.Interval))
 		res["min interval"] = bencode.EncInt(Static.Config.Interval / 2)
 	}
 
@@ -178,7 +178,7 @@ func HttpTrackerAnnounce(query map[string]string, file FileRecord, fileUser File
 func HttpTrackerError(err string) []byte {
 	return bencode.EncDictMap(map[string][]byte{
 		"failure reason": bencode.EncString(err),
-		"interval":       bencode.EncInt(RandRange(Static.Config.Interval - 600, Static.Config.Interval)),
+		"interval":       bencode.EncInt(RandRange(Static.Config.Interval-600, Static.Config.Interval)),
 		"min interval":   bencode.EncInt(Static.Config.Interval / 2),
 	})
 }
@@ -193,7 +193,7 @@ func UdpTrackerAnnounce(query map[string]string, file FileRecord, transId []byte
 	// Transaction ID
 	binary.Write(res, binary.BigEndian, transId)
 	// Interval
-	binary.Write(res, binary.BigEndian, uint32(RandRange(Static.Config.Interval - 600, Static.Config.Interval)))
+	binary.Write(res, binary.BigEndian, uint32(RandRange(Static.Config.Interval-600, Static.Config.Interval)))
 	// Leechers
 	binary.Write(res, binary.BigEndian, uint32(file.Leechers()))
 	// Seeders
