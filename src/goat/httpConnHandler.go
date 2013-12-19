@@ -18,7 +18,7 @@ func (h HttpConnHandler) Handle(l net.Listener, httpDoneChan chan bool) {
 	// Create shutdown function
 	go func(l net.Listener, httpDoneChan chan bool) {
 		// Wait for done signal
-		<-Static.ShutdownChan
+		Static.ShutdownChan <- <-Static.ShutdownChan
 
 		// Close listener
 		l.Close()

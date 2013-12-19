@@ -21,7 +21,7 @@ func (u UdpConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 	// Create shutdown function
 	go func(l *net.UDPConn, udpDoneChan chan bool) {
 		// Wait for done signal
-		<-Static.ShutdownChan
+		Static.ShutdownChan <- <-Static.ShutdownChan
 
 		// Close listener
 		l.Close()
@@ -32,9 +32,10 @@ func (u UdpConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 	for {
 		buf := make([]byte, 2048)
 		rlen, addr, err := l.ReadFromUDP(buf)
+
+		// Triggered on graceful shutdown
 		if err != nil {
-			Static.LogChan <- err.Error()
-			continue
+			return
 		}
 
 		// Verify length is at least 16 bytes

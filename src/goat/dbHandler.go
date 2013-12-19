@@ -24,7 +24,8 @@ func DbManager(dbDoneChan chan bool) {
 	// Shutdown function
 	go func(dbDoneChan chan bool, mapDb *MapDb, sqlDb *SqlDb) {
 		// Wait for shutdown
-		<-Static.ShutdownChan
+		Static.ShutdownChan <- <-Static.ShutdownChan
+		Static.ShutdownChan <- true
 
 		if Static.Config.Map {
 			mapDb.Shutdown()
