@@ -17,3 +17,16 @@ type ErrorRes struct {
 	Time        int64
 	Error       string
 }
+
+// Holds information for request from database
+type Request struct {
+	Data         interface{}
+	ResponseChan chan Response
+}
+
+// Holds information for response from database
+type Response struct {
+	Id   string
+	Db   string
+	Data interface{}
+}

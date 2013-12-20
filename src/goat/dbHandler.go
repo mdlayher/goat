@@ -37,16 +37,6 @@ func DbManager(dbDoneChan chan bool) {
 		dbDoneChan <- true
 	}(dbDoneChan, mapDb, sqlDb)
 
-	// launch databases
-	if Static.Config.Map {
-		go mapDb.HandleDb(mapRequestChan)
-		Static.LogChan <- "MapDb instance launched"
-	}
-	if Static.Config.Sql {
-		go sqlDb.HandleDb(sqlRequestChan)
-		Static.LogChan <- "SqlDb instance launched"
-	}
-
 	if Static.Config.Map && Static.Config.Sql {
 		for {
 			select {
@@ -80,91 +70,35 @@ func DbManager(dbDoneChan chan bool) {
 	}
 }
 
-// Holds information for request from database
-type Request struct {
-	Id           string
-	Data         interface{}
-	ResponseChan chan Response
-}
-
-// Holds information for response from database
-type Response struct {
-	Id   string
-	Db   string
-	Data interface{}
-}
-type WriteResponse struct {
-	Complete bool
-}
-
 // DbHandler interface method HandleDb defines a database handler which handles requests
 type DbHandler interface {
-	HandleDb(chan Request)
+	Read(chan Request)
+	Write(chan Request)
 	Shutdown()
 }
 
 // MapDb is a key value storage database
 // Id will be an identification for sharding
 type MapDb struct {
-	Id      string
-	Db      map[string]map[string]interface{}
-	Workers map[string]MapWorker
-	Busy    bool
+	Id   string
+	Busy bool
 }
 
-// Handle data MapDb requests
-func (db MapDb) HandleDb(mapChan chan Request) {
-	// Initialize map database
-	db.Db = make(map[string]map[string]interface{})
-
-	// Loop until shutdown
-	for {
-		db.Busy = false
-		select {
-		case hold := <-mapChan:
-
-			if len(hold.Id) < Static.Config.CacheSize {
-				// Mark database as busy
-				db.Busy = true
-
-				l := len(hold.Id)
-				s := Static.Config.CacheSize
-				key := hold.Id[l-s : l-1]
-				switch {
-				// This logic needs to be refactored so that the number of shards can be
-				// determined via the config file, which will define the number of digits
-				// used from the ID for the shard name
-				case hold.Data == nil:
-					// check if key exits
-					_, ok := db.Db[key]
-					if !ok {
-						// if key does not exist, make a new map with the given key
-						db.Db[key] = make(map[string]interface{})
-					}
-					go new(MapWorker).Read(hold, db.Db[key])
-				case hold.Data != nil:
-					// check if key exits
-					_, ok := db.Db[key]
-					if !ok {
-						// if key does not exist, make a new map with the given key
-						db.Db[key] = make(map[string]interface{})
-					}
-					go new(MapWorker).Write(hold, db.Db[key])
-				}
-			} else {
-				var err ErrorRes
-				err.ErrLocation = "HandleDb"
-				err.Time = time.Now().UnixNano()
-				var res Response
-				res.Id = hold.Id
-				res.Data = err
-				Static.ErrChan <- res
-			}
-
-		case <-Static.ShutdownChan:
-			db.Busy = false
-			break
-		}
+//MapDb write
+func (db MapDb) Write(req Request) {
+	switch req.Data.(type) {
+	case AnnounceLog:
+	case FileRecord:
+	case FileUserRecord:
+	default:
+	}
+}
+func (db MapDb) Read(req Request) {
+	switch req.Data.(type) {
+	case AnnounceLog:
+	case FileRecord:
+	case FileUserRecord:
+	default:
 	}
 }
 
@@ -182,8 +116,22 @@ func (db MapDb) Shutdown() {
 type SqlDb struct {
 }
 
-// Handle Sql based requests
-func (s SqlDb) HandleDb(sqlChan chan Request) {
+//MapDb write
+func (db SqlDb) Write(req Request) {
+	switch req.Data.(type) {
+	case AnnounceLog:
+	case FileRecord:
+	case FileUserRecord:
+	default:
+	}
+}
+func (db SqlDb) Read(req Request) {
+	switch req.Data.(type) {
+	case AnnounceLog:
+	case FileRecord:
+	case FileUserRecord:
+	default:
+	}
 }
 
 // Shutdown SqlDb
