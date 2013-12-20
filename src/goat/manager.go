@@ -53,11 +53,11 @@ func Manager(killChan chan bool, exitChan chan int) {
 			// Stop listeners
 			if Static.Config.Http {
 				Static.LogChan <- "stopping HTTP listener"
-				 <-httpDoneChan
+				//<-httpDoneChan
 			}
 			if Static.Config.Udp {
 				Static.LogChan <- "stopping UDP listener"
-				<-udpDoneChan
+				//<-udpDoneChan
 			}
 
 			// Stop storage manager
