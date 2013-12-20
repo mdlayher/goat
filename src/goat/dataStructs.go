@@ -20,6 +20,7 @@ type ErrorRes struct {
 
 // Holds information for request from database
 type Request struct {
+	Id           string
 	Data         interface{}
 	ResponseChan chan Response
 }

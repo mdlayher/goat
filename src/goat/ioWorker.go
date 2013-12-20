@@ -48,11 +48,13 @@ func (m MapWorker) Read(request Request, shard map[string]interface{}) {
 // takes a pointer to a map shard and writes the data from a request and
 // sends back a conformation that the write has taken place.
 func (m MapWorker) Write(request Request, shard map[string]interface{}) {
-	var comp WriteResponse
+	//var comp WriteResponse
 	var response Response
 	shard[request.Id] = request.Data
+	/*
 	comp.Complete = true
 	response.Data = comp
+	*/
 	response.Db = "map"
 	response.Id = request.Id
 	request.ResponseChan <- response
