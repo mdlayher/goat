@@ -11,7 +11,6 @@ type FileRecord struct {
 	Id         int
 	InfoHash   string `db:"info_hash"`
 	Verified   bool
-	Completed  int
 	CreateTime int64 `db:"create_time"`
 	UpdateTime int64 `db:"update_time"`
 }
@@ -27,14 +26,14 @@ func (f FileRecord) Save() bool {
 
 	// Store or update file information
 	query := "INSERT INTO files " +
-		"(`info_hash`, `verified`, `completed`, `create_time`, `update_time`) " +
-		"VALUES (?, ?, ?, UNIX_TIMESTAMP(), UNIX_TIMESTAMP()) " +
+		"(`info_hash`, `verified`, `create_time`, `update_time`) " +
+		"VALUES (?, ?, UNIX_TIMESTAMP(), UNIX_TIMESTAMP()) " +
 		"ON DUPLICATE KEY UPDATE " +
-		"`verified`=values(`verified`), `completed`=values(`completed`), `update_time`=UNIX_TIMESTAMP();"
+		"`verified`=values(`verified`), `update_time`=UNIX_TIMESTAMP();"
 
 	// Create database transaction, do insert, commit
 	tx := db.MustBegin()
-	tx.Execl(query, f.InfoHash, f.Verified, f.Completed)
+	tx.Execl(query, f.InfoHash, f.Verified)
 	tx.Commit()
 
 	return true
@@ -55,6 +54,27 @@ func (f FileRecord) Load(id interface{}, col string) FileRecord {
 	return f
 }
 
+// Return number of completions, active or not, on this file
+func (f FileRecord) Completed() int {
+	// Open database connection
+	db, err := DbConnect()
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return 0
+	}
+
+	// Anonymous Completeds struct
+	completed := struct {
+		Completed int
+	}{
+		0,
+	}
+
+	// Calculate number of completions on this file, defined as users who are completed, and 0 left
+	db.Get(&completed, "SELECT COUNT(user_id) AS completed FROM files_users WHERE file_id = ? AND completed = 1 AND `left` = 0;", f.Id)
+	return completed.Completed
+}
+
 // Return number of seeders on this file
 func (f FileRecord) Seeders() int {
 	// Open database connection
@@ -72,7 +92,7 @@ func (f FileRecord) Seeders() int {
 	}
 
 	// Calculate number of seeders on this file, defined as users who are active, completed, and 0 left
-	db.Get(&seeders, "SELECT COUNT(user_id) AS seeders FROM files_users WHERE active = 1 AND completed = 1 AND `left` = 0;")
+	db.Get(&seeders, "SELECT COUNT(user_id) AS seeders FROM files_users WHERE file_id = ? AND active = 1 AND completed = 1 AND `left` = 0;", f.Id)
 	return seeders.Seeders
 }
 
@@ -93,7 +113,7 @@ func (f FileRecord) Leechers() int {
 	}
 
 	// Calculate number of leechers on this file, defined as users who are active, completed, and 0 left
-	db.Get(&leechers, "SELECT COUNT(user_id) AS leechers FROM files_users WHERE active = 1 AND completed = 0 AND `left` > 0;")
+	db.Get(&leechers, "SELECT COUNT(user_id) AS leechers FROM files_users WHERE file_id = ? AND active = 1 AND completed = 0 AND `left` > 0;", f.Id)
 	return leechers.Leechers
 }
 

@@ -77,7 +77,6 @@ func TrackerAnnounce(user UserRecord, query map[string]string, transId []byte, r
 		// Create an entry in file table for this hash, but mark it as unverified
 		file.InfoHash = announce.InfoHash
 		file.Verified = false
-		file.Completed = 0
 
 		Static.LogChan <- fmt.Sprintf("tracker: detected new file, awaiting manual approval [hash: %s]", announce.InfoHash)
 
@@ -118,8 +117,6 @@ func TrackerAnnounce(user UserRecord, query map[string]string, transId []byte, r
 		// If announce reports 0 left, but no existing record, user is probably the initial seeder
 		if announce.Left == 0 {
 			fileUser.Completed = true
-			file.Completed = file.Completed + 1
-			go file.Save()
 		} else {
 			fileUser.Completed = false
 		}
@@ -144,12 +141,6 @@ func TrackerAnnounce(user UserRecord, query map[string]string, transId []byte, r
 		// Could be from a peer stating completed, or a seed reporting 0 left
 		if announce.Event == "completed" || announce.Left == 0 {
 			fileUser.Completed = true
-
-			// If status completed, mark file as completed by another user
-			if announce.Event == "completed" {
-				file.Completed = file.Completed + 1
-				go file.Save()
-			}
 		} else {
 			fileUser.Completed = false
 		}
@@ -230,7 +221,7 @@ func HttpTrackerScrape(query map[string]string, file FileRecord) []byte {
 	return bencode.EncDictMap(map[string][]byte{
 		"files":      bencode.EncBytes(hash),
 		"complete":   bencode.EncInt(file.Seeders()),
-		"downloaded": bencode.EncInt(file.Completed),
+		"downloaded": bencode.EncInt(file.Completed()),
 		"incomplete": bencode.EncInt(file.Leechers()),
 		// optional field: name, string
 	})
