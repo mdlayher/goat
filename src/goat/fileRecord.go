@@ -142,6 +142,7 @@ func (f FileRecord) PeerList(exclude string, numwant int) []byte {
 	query := "SELECT DISTINCT announce_log.ip,announce_log.port FROM announce_log " +
 		"JOIN files ON announce_log.info_hash = files.info_hash " +
 		"JOIN files_users ON files.id = files_users.file_id " +
+		"AND announce_log.ip = files_users.ip " +
 		"WHERE files_users.active=1 " +
 		"AND files.info_hash=? " +
 		"AND announce_log.ip != ? " +
