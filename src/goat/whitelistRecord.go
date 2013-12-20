@@ -2,6 +2,7 @@ package goat
 
 // Struct representing a whitelist entry
 type WhitelistRecord struct {
+	Id       int
 	Client   string
 	Approved bool
 }

@@ -82,6 +82,11 @@ func parseHttp(w http.ResponseWriter, r *http.Request) {
 		if whitelist == (WhitelistRecord{}) || !whitelist.Approved {
 			w.Write(HttpTrackerError("Your client is not whitelisted"))
 
+			// Block things like browsers and web crawlers, because they will just clutter up the table
+			if strings.Contains(client, "Mozilla") || strings.Contains(client, "Opera") {
+				return
+			}
+
 			// Insert unknown clients into list for later approval
 			if whitelist == (WhitelistRecord{}) {
 				whitelist.Client = client
