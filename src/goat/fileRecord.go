@@ -187,12 +187,14 @@ func (f FileRecord) PeerReaper() {
 	// Anonymous result struct
 	result := struct {
 		UserId int `db:"user_id"`
+		Ip     string
 	}{
 		0,
+		"",
 	}
 
 	// Query for user IDs associated with this file, who are marked active but have not announced recently
-	query := "SELECT user_id FROM files_users " +
+	query := "SELECT user_id, ip FROM files_users " +
 		"WHERE time < (UNIX_TIMESTAMP() - ?) " +
 		"AND active = 1 " +
 		"AND file_id = ?;"
@@ -213,8 +215,8 @@ func (f FileRecord) PeerReaper() {
 		rows.StructScan(&result)
 
 		// Mark peer as inactive
-		reapQuery := "UPDATE files_users SET active = 0 WHERE file_id = ? AND user_id = ?;"
-		tx.Execl(reapQuery, f.Id, result.UserId)
+		reapQuery := "UPDATE files_users SET active = 0 WHERE file_id = ? AND user_id = ? AND ip = ?;"
+		tx.Execl(reapQuery, f.Id, result.UserId, result.Ip)
 
 		count++
 	}

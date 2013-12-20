@@ -103,15 +103,15 @@ func TrackerAnnounce(user UserRecord, query map[string]string, transId []byte, r
 		return
 	}
 
-	// Check existing record for this user with this file
-	// TODO: consider making this a triple with client IP as well
-	fileUser := new(FileUserRecord).Load(file.Id, user.Id)
+	// Check existing record for this user with this file and this IP
+	fileUser := new(FileUserRecord).Load(file.Id, user.Id, query["ip"])
 
 	// New user, starting torrent
 	if fileUser == (FileUserRecord{}) {
 		// Create new relationship
 		fileUser.FileId = file.Id
 		fileUser.UserId = user.Id
+		fileUser.Ip = query["ip"]
 		fileUser.Active = true
 		fileUser.Announced = 1
 
