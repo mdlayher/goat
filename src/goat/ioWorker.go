@@ -52,8 +52,8 @@ func (m MapWorker) Write(request Request, shard map[string]interface{}) {
 	var response Response
 	shard[request.Id] = request.Data
 	/*
-	comp.Complete = true
-	response.Data = comp
+		comp.Complete = true
+		response.Data = comp
 	*/
 	response.Db = "map"
 	response.Id = request.Id
