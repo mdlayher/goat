@@ -1,5 +1,9 @@
 package goat
 
+import (
+	"time"
+)
+
 // MapDb is a key value storage database
 // Id will be an identification for sharding
 type MapDb struct {
