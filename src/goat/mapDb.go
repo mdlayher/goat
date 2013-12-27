@@ -1,6 +1,9 @@
 package goat
 
 import (
+	"encoding/hex"
+	"math"
+	"strconv"
 	"time"
 )
 
@@ -9,13 +12,27 @@ import (
 type MapDb struct {
 	Id        string
 	Busy      bool
-	MapStor   map[string]map[string]interface{}
+	MapStor   map[string]interface{}
 	MapLookup map[string]*interface{}
 }
 
+func addMap(m map[string]interface{}, size int) {
+
+	for i := 0; i < 16; i++ {
+		c := hex.EncodeToString([]byte(strconv.Itoa(i)))
+		m[c] = make(map[string]interface{})
+		go addMap(m[c].(map[string]interface{}), size-1)
+
+	}
+
+}
 func (db MapDb) init() {
 	if db.MapStor == nil {
-		db.MapStor = make(map[string]map[string]interface{})
+		s := (math.Log(float64(Static.Config.Size))) / (math.Log(16))
+		s = math.Ceil(s)
+		size := int(s)
+		db.MapStor = make(map[string]interface{})
+		addMap(db.MapStor, size)
 	}
 	if db.MapLookup == nil {
 		db.MapLookup = make(map[string]*interface{})

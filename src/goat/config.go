@@ -25,6 +25,7 @@ func LoadConfig() Conf {
 		conf.Map = true
 		conf.Sql = false
 		conf.CacheSize = 3
+		conf.Size = 10000000000
 	}
 
 	return conf
