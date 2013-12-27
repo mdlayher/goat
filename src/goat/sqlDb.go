@@ -10,7 +10,7 @@ import (
 type SqlDb struct {
 }
 
-//MapDb write
+// SqlDb write
 func (db SqlDb) Write(req Request) {
 	switch req.Data.(type) {
 	case AnnounceLog:
@@ -19,6 +19,8 @@ func (db SqlDb) Write(req Request) {
 	default:
 	}
 }
+
+// SqlDb Read
 func (db SqlDb) Read(req Request) {
 	switch req.Data.(type) {
 	case AnnounceLog:

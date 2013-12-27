@@ -19,18 +19,16 @@ type MapDb struct {
 func addMap(m map[string]interface{}, size int) {
 
 	for i := 0; i < 16; i++ {
-		c := hex.EncodeToString([]byte(strconv.Itoa(i)))
+		c := hex.EncodeToString([]byte(string(i)))[1:]
 		m[c] = make(map[string]interface{})
-		go addMap(m[c].(map[string]interface{}), size-1)
-
+		if size > 0 {
+			addMap(m[c].(map[string]interface{}), size-1)
+		}
 	}
-
 }
 func (db MapDb) init() {
 	if db.MapStor == nil {
-		s := (math.Log(float64(Static.Config.Size))) / (math.Log(16))
-		s = math.Ceil(s)
-		size := int(s)
+		size := 2
 		db.MapStor = make(map[string]interface{})
 		addMap(db.MapStor, size)
 	}
