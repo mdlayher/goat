@@ -2,8 +2,6 @@ package goat
 
 import (
 	"encoding/hex"
-	"math"
-	"strconv"
 	"time"
 )
 
@@ -16,6 +14,7 @@ type MapDb struct {
 	MapLookup map[string]*interface{}
 }
 
+// addes new maps recursivly depending on how deep the structure needs to be
 func addMap(m map[string]interface{}, size int) {
 
 	for i := 0; i < 16; i++ {
