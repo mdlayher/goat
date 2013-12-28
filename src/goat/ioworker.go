@@ -1,23 +1,25 @@
 package goat
 
-type IoWorker interface {
-	Lookup(MapDb, Request)
-	UpdateLookup(MapDb, Request)
-}
-type Worker struct {
+type IoWorker struct {
+	db *MapDb
 }
 
 // looks up where in the dbStor the requested data is stored
-func (worker Worker) Lookup(db MapDb, id string) []*interface{} {
-	return db.MapLookup[id]
+func (worker IoWorker) Lookup(id string) []*interface{} {
+	return worker.db.MapLookup[id]
 
 }
 
 // reqplaces the pointer in the lookup with a new pointer to the new data
-func (worker Worker) UpdateLookup(db MapDb, id string, data interface{}) {
-	db.MapLookup[id][0] = &data
+func (worker IoWorker) UpdateLookup(id string, data interface{}) {
+	worker.db.MapLookup[id][0] = &data
 }
 
-func (worker Worker) AppendLookup(db MapDb, id string, data interface{}) {
-	db.MapLookup[id] = append(db.MapLookup[id], &data)
+// append a pointer on the end of the lookup
+func (worker IoWorker) AppendLookup(id string, data interface{}) {
+	worker.db.MapLookup[id] = append(worker.db.MapLookup[id], &data)
+}
+
+func (worker IoWorker) RemoveLookup(id string) {
+	worker.db.MapLookup[id] = nil
 }
