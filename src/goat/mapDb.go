@@ -11,7 +11,7 @@ type MapDb struct {
 	Id        string
 	Busy      bool
 	MapStor   map[string]interface{}
-	MapLookup map[string]*interface{}
+	MapLookup map[string][]*interface{}
 }
 
 // addes new maps recursivly depending on how deep the structure needs to be
@@ -32,7 +32,7 @@ func (db MapDb) init() {
 		addMap(db.MapStor, size)
 	}
 	if db.MapLookup == nil {
-		db.MapLookup = make(map[string]*interface{})
+		db.MapLookup = make(map[string][]*interface{})
 	}
 }
 
