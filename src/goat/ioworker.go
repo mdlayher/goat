@@ -17,3 +17,4 @@ func (worker Worker) Lookup(db MapDb, id string) *interface{} {
 func (worker Worker) UpdateLookup(db MapDb, id string, data interface{}) {
 	db.MapLookup[id] = &data
 }
+`
