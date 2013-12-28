@@ -9,7 +9,7 @@ type IoWorker struct {
 }
 
 // looks up where in the dbStor the requested data is stored
-func (worker IoWorker) Lookup(id string) ([]*interface{}, error) {
+func (worker IoWorker) Lookup(id string) (interface{}, error) {
 	if val, ok := worker.db.MapLookup[id]; ok {
 		return val, nil
 	} else {
@@ -20,13 +20,13 @@ func (worker IoWorker) Lookup(id string) ([]*interface{}, error) {
 
 // replaces the pointer in the lookup with a new pointer to the new data
 func (worker IoWorker) UpdateLookup(id string, update interface{}) {
-	worker.db.MapLookup[id][0] = &update
+	worker.db.MapLookup[id] = &update
 }
 
-// append a pointer on the end of the lookup
-func (worker IoWorker) AppendLookup(id string, data interface{}) {
-	worker.db.MapLookup[id] = append(worker.db.MapLookup[id], &data)
-}
+// // append a pointer on the end of the lookup
+// func (worker IoWorker) AppendLookup(id string, data interface{}) {
+// 	worker.db.MapLookup[id] = append(worker.db.MapLookup[id], &data)
+// }
 
 // remove a pointer from lookup
 func (worker IoWorker) RemoveLookup(id string) {
