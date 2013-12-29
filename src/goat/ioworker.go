@@ -23,10 +23,13 @@ func (worker IoWorker) UpdateLookup(id string, update interface{}) {
 	worker.db.MapLookup[id] = &update
 }
 
-// // append a pointer on the end of the lookup
-// func (worker IoWorker) AppendLookup(id string, data interface{}) {
-// 	worker.db.MapLookup[id] = append(worker.db.MapLookup[id], &data)
-// }
+// append a pointer on the end of the lookup
+func (worker IoWorker) AppendLookup(id string, data *interface{}) {
+	hold := worker.db.MapLookup[id].(Relation)
+	hold.Index = append(hold.Index, data)
+	worker.db.MapLookup[id] = hold
+
+}
 
 // remove a pointer from lookup
 func (worker IoWorker) RemoveLookup(id string) {

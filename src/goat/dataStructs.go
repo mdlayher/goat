@@ -31,3 +31,8 @@ type Response struct {
 	Db   string
 	Data interface{}
 }
+
+// Specifies pointers for a given relationship of data
+type Relation struct {
+	Index []*interface{}
+}
