@@ -1,7 +1,7 @@
 package goat
 
 import (
-	"errors"
+	"time"
 )
 
 type IoWorker struct {
@@ -9,11 +9,19 @@ type IoWorker struct {
 }
 
 // looks up where in the dbStor the requested data is stored
-func (worker IoWorker) Lookup(id string) (interface{}, error) {
+func (worker IoWorker) Lookup(id string) interface{} {
 	if val, ok := worker.db.MapLookup[id]; ok {
-		return val, nil
+		return val
 	} else {
-		return nil, errors.New("Key does not exist in this map")
+		var err ErrorRes
+		err.ErrLocation = "Lookup"
+		err.Error = "id not found in map"
+		err.Time = time.Now().Unix()
+		var res Response
+		res.Data = err
+		res.Id = id
+		Static.ErrChan <- res
+		return nil
 	}
 
 }
@@ -44,6 +52,15 @@ func (worker IoWorker) RemoveRelation(id string, data *interface{}) {
 				hold.Index = append(hold.Index[:i], hold.Index[i+1:]...)
 			}
 		}
+	} else {
+		var err ErrorRes
+		err.ErrLocation = "RemoveRelation"
+		err.Error = "id not found in map"
+		err.Time = time.Now().Unix()
+		var res Response
+		res.Data = err
+		res.Id = id
+		Static.ErrChan <- res
 	}
 }
 
