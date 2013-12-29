@@ -23,7 +23,7 @@ func (worker IoWorker) UpdateLookup(id string, update interface{}) {
 	worker.db.MapLookup[id] = &update
 }
 
-// append a pointer on the end of the lookup
+// Append new pointer to the end of a relation or create a new one if relation is not found
 func (worker IoWorker) AppendRelation(id string, data *interface{}) {
 
 	if hold, ok := worker.db.MapLookup[id].(Relation); ok {
@@ -34,7 +34,17 @@ func (worker IoWorker) AppendRelation(id string, data *interface{}) {
 		n.Index[0] = data
 		worker.db.MapLookup[id] = n
 	}
+}
 
+// Removes a given item from the index of a relation
+func (worker IoWorker) RemoveRelation(id string, data *interface{}) {
+	if hold, ok := worker.db.MapLookup[id].(Relation); ok {
+		for i := 0; i < len(hold.Index); i++ {
+			if hold.Index[i] == data {
+				hold.Index = append(hold.Index[:i], hold.Index[i+1:]...)
+			}
+		}
+	}
 }
 
 // remove a pointer from lookup
