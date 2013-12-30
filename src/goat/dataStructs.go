@@ -36,3 +36,5 @@ type Response struct {
 type Relation struct {
 	Index []*interface{}
 }
+
+type MapStorage map[string]interface{}

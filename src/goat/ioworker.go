@@ -5,12 +5,13 @@ import (
 )
 
 type IoWorker struct {
-	db *MapDb
+	myLookup MapStorage
+	db       MapDb
 }
 
 // looks up where in the dbStor the requested data is stored
 func (worker IoWorker) Lookup(id string) interface{} {
-	if val, ok := worker.db.MapLookup[id]; ok {
+	if val, ok := worker.myLookup[id]; ok {
 		return val
 	} else {
 		var err ErrorRes
@@ -34,19 +35,19 @@ func (worker IoWorker) UpdateLookup(id string, update interface{}) {
 // Append new pointer to the end of a relation or create a new one if relation is not found
 func (worker IoWorker) AppendRelation(id string, data *interface{}) {
 
-	if hold, ok := worker.db.MapLookup[id].(Relation); ok {
+	if hold, ok := worker.myLookup[id].(Relation); ok {
 		hold.Index = append(hold.Index, data)
-		worker.db.MapLookup[id] = hold
+		worker.myLookup[id] = hold
 	} else {
 		n := new(Relation)
 		n.Index[0] = data
-		worker.db.MapLookup[id] = n
+		worker.myLookup[id] = n
 	}
 }
 
 // Removes a given item from the index of a relation
 func (worker IoWorker) RemoveRelation(id string, data *interface{}) {
-	if hold, ok := worker.db.MapLookup[id].(Relation); ok {
+	if hold, ok := worker.myLookup[id].(Relation); ok {
 		for i := 0; i < len(hold.Index); i++ {
 			if hold.Index[i] == data {
 				hold.Index = append(hold.Index[:i], hold.Index[i+1:]...)
@@ -66,7 +67,7 @@ func (worker IoWorker) RemoveRelation(id string, data *interface{}) {
 
 // remove a pointer from lookup
 func (worker IoWorker) RemoveLookup(id string) {
-	worker.db.MapLookup[id] = nil
+	worker.myLookup[id] = nil
 }
 
 // replace the data for a given id where ever it might be(which is identified by the Lookup function)

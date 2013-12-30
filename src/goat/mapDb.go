@@ -10,8 +10,8 @@ import (
 type MapDb struct {
 	Id        string
 	Busy      bool
-	MapStor   map[string]interface{}
-	MapLookup map[string]interface{}
+	MapStor   MapStorage
+	MapLookup MapStorage
 }
 
 // addes new maps recursivly depending on how deep the structure needs to be
