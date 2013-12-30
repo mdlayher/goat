@@ -79,10 +79,11 @@ func (worker IoWorker) RemoveRelation(id string, data *interface{}) {
 
 // remove a pointer from lookup
 func (worker IoWorker) RemoveLookup(id string) {
-	worker.myLookup[id] = nil
+	worker.db.MapLookup[id] = nil
 }
 
 // replace the data for a given id where ever it might be(which is identified by the Lookup function)
 func (worker IoWorker) UpdateStor(id string, data interface{}, location map[string]interface{}) {
 	location[id] = data
+	worker.UpdateLookup(id, location)
 }
