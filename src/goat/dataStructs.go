@@ -34,7 +34,8 @@ type Response struct {
 
 // Specifies pointers for a given relationship of data
 type Relation struct {
-	Index []*interface{}
+	Index map[string]*interface{}
 }
 
+// Generic type for a map that stores a interface
 type MapStorage map[string]interface{}
