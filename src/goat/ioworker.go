@@ -29,7 +29,19 @@ func (worker IoWorker) Lookup(id string) interface{} {
 
 // replaces the pointer in the lookup with a new pointer to the new data
 func (worker IoWorker) UpdateLookup(id string, update interface{}) {
-	worker.db.MapLookup[id] = &update
+	if _, ok := worker.db.MapLookup[id]; ok {
+		worker.db.MapLookup[id] = &update
+	} else {
+		var err ErrorRes
+		err.ErrLocation = "UpdateLookup"
+		err.Error = "id not found in map"
+		err.Time = time.Now().Unix()
+		var res Response
+		res.Data = err
+		res.Id = id
+		Static.ErrChan <- res
+	}
+
 }
 
 // Append new pointer to the end of a relation or create a new one if relation is not found
