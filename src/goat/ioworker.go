@@ -45,26 +45,22 @@ func (worker IoWorker) UpdateLookup(id string, update interface{}) {
 }
 
 // Append new pointer to the end of a relation or create a new one if relation is not found
-func (worker IoWorker) AppendRelation(id string, data *interface{}) {
+func (worker IoWorker) AppendRelation(id string, dataId string, data *interface{}) {
 
 	if hold, ok := worker.myLookup[id].(Relation); ok {
-		hold.Index = append(hold.Index, data)
+		hold.Index[dataId] = data
 		worker.myLookup[id] = hold
 	} else {
 		n := new(Relation)
-		n.Index[0] = data
+		n.Index[dataId] = data
 		worker.myLookup[id] = n
 	}
 }
 
 // Removes a given item from the index of a relation
-func (worker IoWorker) RemoveRelation(id string, data *interface{}) {
+func (worker IoWorker) RemoveRelation(id string, dataId string, data *interface{}) {
 	if hold, ok := worker.myLookup[id].(Relation); ok {
-		for i := 0; i < len(hold.Index); i++ {
-			if hold.Index[i] == data {
-				hold.Index = append(hold.Index[:i], hold.Index[i+1:]...)
-			}
-		}
+		hold.Index[dataId] = nil
 	} else {
 		var err ErrorRes
 		err.ErrLocation = "RemoveRelation"
@@ -86,4 +82,7 @@ func (worker IoWorker) RemoveLookup(id string) {
 func (worker IoWorker) UpdateStor(id string, data interface{}, location map[string]interface{}) {
 	location[id] = data
 	worker.UpdateLookup(id, location)
+}
+
+type Task struct {
 }
