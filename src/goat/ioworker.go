@@ -6,7 +6,7 @@ import (
 
 type IoWorker struct {
 	myLookup MapStorage
-	db       MapDb
+	db       *MapDb
 }
 
 // looks up where in the dbStor the requested data is stored
