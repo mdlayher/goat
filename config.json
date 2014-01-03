@@ -4,5 +4,5 @@
 	"Whitelist": true,
 	"Interval": 3600,
 	"Http": true,
-	"Udp": true
+	"Udp": false
 }
