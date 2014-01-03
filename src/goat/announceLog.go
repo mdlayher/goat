@@ -1,5 +1,11 @@
 package goat
 
+import (
+	"encoding/hex"
+	"strconv"
+	"time"
+)
+
 // Struct representing an announce, to be logged to storage
 type AnnounceLog struct {
 	Id         int
@@ -52,5 +58,65 @@ func (a AnnounceLog) Load(id interface{}, col string) AnnounceLog {
 	a = AnnounceLog{}
 	db.Get(&a, "SELECT * FROM announce_log WHERE `"+col+"`=?", id)
 
+	return a
+}
+
+// Generate an AnnounceLog struct from a query map
+func (a AnnounceLog) FromMap(query map[string]string) AnnounceLog {
+	a = AnnounceLog{}
+
+	// Required parameters
+
+	// info_hash
+	a.InfoHash = hex.EncodeToString([]byte(query["info_hash"]))
+
+	// passkey
+	a.Passkey = query["passkey"]
+
+	// key
+	a.Key = query["key"]
+
+	// ip
+	a.Ip = query["ip"]
+
+	// Note: integers previously validated
+
+	// port
+	port, _ := strconv.Atoi(query["port"])
+	a.Port = port
+
+	// udp
+	if query["udp"] == "1" {
+		a.Udp = true
+	} else {
+		a.Udp = false
+	}
+
+	// uploaded
+	uploaded, _ := strconv.ParseInt(query["uploaded"], 10, 64)
+	a.Uploaded = uploaded
+
+	// downloaded
+	downloaded, _ := strconv.ParseInt(query["downloaded"], 10, 64)
+	a.Downloaded = downloaded
+
+	// left
+	left, _ := strconv.ParseInt(query["left"], 10, 64)
+	a.Left = left
+
+	// Optional parameters
+
+	// event
+	if event, ok := query["event"]; ok {
+		a.Event = event
+	}
+
+	// BitTorrent client, User-Agent header
+	a.Client = query["client"]
+
+	// Current UNIX timestamp
+	a.Time = time.Now().Unix()
+
+	// Return the created announce
 	return a
 }

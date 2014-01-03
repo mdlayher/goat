@@ -1,5 +1,10 @@
 package goat
 
+import (
+	"encoding/hex"
+	"time"
+)
+
 // Struct representing a scrapelog, to be logged to storage
 type ScrapeLog struct {
 	Id       int
@@ -44,5 +49,27 @@ func (s ScrapeLog) Load(id interface{}, col string) ScrapeLog {
 	s = ScrapeLog{}
 	db.Get(&s, "SELECT * FROM announce_log WHERE `"+col+"`=?", id)
 
+	return s
+}
+
+// Generate a ScrapeLog struct from a query map
+func (s ScrapeLog) FromMap(query map[string]string) ScrapeLog {
+	s = ScrapeLog{}
+
+	// Required parameters
+
+	// info_hash
+	s.InfoHash = hex.EncodeToString([]byte(query["info_hash"]))
+
+	// passkey
+	s.Passkey = query["passkey"]
+
+	// ip
+	s.Ip = query["ip"]
+
+	// Current UNIX timestamp
+	s.Time = time.Now().Unix()
+
+	// Return the created scrape
 	return s
 }

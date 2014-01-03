@@ -12,7 +12,7 @@ import (
 // Tracker scrape request
 func TrackerScrape(user UserRecord, query map[string]string, resChan chan []byte) {
 	// Store scrape information in struct
-	scrape := MapToScrapeLog(query)
+	scrape := new(ScrapeLog).FromMap(query)
 
 	// Request to store scrape
 	go scrape.Save()
@@ -43,7 +43,7 @@ func TrackerScrape(user UserRecord, query map[string]string, resChan chan []byte
 // Tracker announce request
 func TrackerAnnounce(user UserRecord, query map[string]string, transId []byte, resChan chan []byte) {
 	// Store announce information in struct
-	announce := MapToAnnounceLog(query)
+	announce := new(AnnounceLog).FromMap(query)
 
 	// Request to store announce
 	go announce.Save()
