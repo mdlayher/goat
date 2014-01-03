@@ -2,24 +2,74 @@ package goat
 
 import (
 	"encoding/json"
+	"io"
 	"os"
-	"path/filepath"
+	"os/user"
 )
 
 // Load configuration
 func LoadConfig() Conf {
-	// Read in JSON file
-	var conf Conf
-	file, err := filepath.Abs("config.json")
-	configFile, err := os.Open(file)
-	read := json.NewDecoder(configFile)
+	// Load current user from OS, to get home directory
+	user, err := user.Current()
+	if err != nil {
+		Static.LogChan <- err.Error()
+	}
+
+	// Configuration path
+	path := user.HomeDir + "/.config/goat/"
+	config := "config.json"
+
+	Static.LogChan <- "Loading configuration: " + path + config
+
+	// Check file existence
+	_, err = os.Stat(path + config)
+	if err != nil {
+		if os.IsNotExist(err) {
+			Static.LogChan <- "Could not find configuration, attempting to create it..."
+
+			err = os.MkdirAll(path, 0775)
+			if err != nil {
+				Static.LogChan <- "Could not create directories: " + path
+			}
+
+			// Attempt to copy config to home directory
+			source, err := os.Open(config)
+			if err != nil {
+				Static.LogChan <- "Failed to read source file: " + config
+			}
+
+			// Open destination file
+			dest, err := os.Create(path + config)
+			if err != nil {
+				Static.LogChan <- "Failed to create destination file: " + path + config
+			}
+
+			// Copy contents
+			_, err = io.Copy(dest, source)
+			if err != nil {
+				Static.LogChan <- "Failed to copy to configuration file: " + path + config
+			}
+
+			// Close files
+			source.Close()
+			dest.Close()
+		}
+	}
+
+	// Load configuration file
+	configFile, err := os.Open(path + config)
 
 	// Decode JSON
-	err = read.Decode(&conf)
+	var conf Conf
+	err = json.NewDecoder(configFile).Decode(&conf)
 	if err != nil {
-		Static.LogChan <- "config.json could not be read, using default configuration"
+		Static.LogChan <- "Could not be read config.json, using defaults..."
+
+		// Sane configuration defaults
 		conf.Port = "8080"
-		conf.Passkey = false
+		conf.Passkey = true
+		conf.Whitelist = true
+		conf.Interval = 3600
 		conf.Http = true
 		conf.Udp = false
 	}
