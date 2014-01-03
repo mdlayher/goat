@@ -5,7 +5,4 @@
 	"Interval": 3600,
 	"Http": true,
 	"Udp": true,
-	"Map": true,
-	"Sql": false,
-	"CacheSize": 8
 }
