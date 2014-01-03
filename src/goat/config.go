@@ -29,7 +29,7 @@ func LoadConfig() Conf {
 
 			err = os.MkdirAll(path, 0775)
 			if err != nil {
-				Static.LogChan <- "Could not create directories: " + path
+				Static.LogChan <- "Failed to create directory: " + path
 			}
 
 			// Attempt to copy config to home directory
@@ -63,10 +63,10 @@ func LoadConfig() Conf {
 	var conf Conf
 	err = json.NewDecoder(configFile).Decode(&conf)
 	if err != nil {
-		Static.LogChan <- "Could not be read config.json, using defaults..."
+		Static.LogChan <- "Could not read config.json, using defaults..."
 
 		// Sane configuration defaults
-		conf.Port = "8080"
+		conf.Port = 8080
 		conf.Passkey = true
 		conf.Whitelist = true
 		conf.Interval = 3600

@@ -1,5 +1,9 @@
 package goat
 
+import (
+	"strconv"
+)
+
 // Application name and version
 const APP = "goat"
 const VERSION = "git-master"
@@ -29,11 +33,11 @@ func Manager(killChan chan bool, exitChan chan int) {
 	// Launch listeners as configured
 	if Static.Config.Http {
 		go new(HttpListener).Listen(httpDoneChan)
-		Static.LogChan <- "HTTP listener launched on port " + Static.Config.Port
+		Static.LogChan <- "HTTP listener launched on port " + strconv.Itoa(Static.Config.Port)
 	}
 	if Static.Config.Udp {
 		go new(UdpListener).Listen(udpDoneChan)
-		Static.LogChan <- "UDP listener launched on port " + Static.Config.Port
+		Static.LogChan <- "UDP listener launched on port " + strconv.Itoa(Static.Config.Port)
 	}
 
 	// Wait for shutdown signal

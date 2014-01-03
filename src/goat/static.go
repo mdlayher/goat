@@ -2,7 +2,7 @@ package goat
 
 // Server configuration
 type Conf struct {
-	Port      string
+	Port      int
 	Passkey   bool
 	Whitelist bool
 	Interval  int

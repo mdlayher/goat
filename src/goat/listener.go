@@ -2,6 +2,7 @@ package goat
 
 import (
 	"net"
+	"strconv"
 )
 
 // Listener interface method Listen defines a network listener which accepts connections
@@ -16,7 +17,7 @@ type HttpListener struct {
 // Listen and handle HTTP (TCP) connections
 func (h HttpListener) Listen(httpDoneChan chan bool) {
 	// Listen on specified TCP port
-	l, err := net.Listen("tcp", ":"+Static.Config.Port)
+	l, err := net.Listen("tcp", ":"+strconv.Itoa(Static.Config.Port))
 	if err != nil {
 		Static.LogChan <- err.Error()
 	}
@@ -32,7 +33,7 @@ type UdpListener struct {
 // Listen on specified UDP port, accept and handle connections
 func (u UdpListener) Listen(udpDoneChan chan bool) {
 	// Listen on specified UDP port
-	addr, err := net.ResolveUDPAddr("udp", ":"+Static.Config.Port)
+	addr, err := net.ResolveUDPAddr("udp", ":"+strconv.Itoa(Static.Config.Port))
 	l, err := net.ListenUDP("udp", addr)
 	if err != nil {
 		Static.LogChan <- err.Error()
