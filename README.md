@@ -9,7 +9,7 @@ Configuration
 goat is configured using a JSON file, which will be created under `~/.config/goat/config.json`.  Here is an example
 configuration, describing the settings available to the user.
 
-```json
+```
 {
 	// Port: the port number on which goat will listen using both HTTP and UDP interfaces
 	"Port": 8080,
