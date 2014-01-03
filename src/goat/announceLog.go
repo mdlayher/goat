@@ -1,10 +1,5 @@
 package goat
 
-import (
-	"crypto/sha1"
-	"fmt"
-)
-
 // Struct representing an announce, to be logged to storage
 type AnnounceLog struct {
 	Id         int
@@ -20,13 +15,6 @@ type AnnounceLog struct {
 	Event      string
 	Client     string
 	Time       int64
-}
-
-// Generate a SHA1 hash of the form: announce_log_InfoHash
-func (log AnnounceLog) Hash() string {
-	hash := sha1.New()
-	hash.Write([]byte("announce_log" + log.InfoHash))
-	return fmt.Sprintf("%x", hash.Sum(nil))
 }
 
 // Save AnnounceLog to storage

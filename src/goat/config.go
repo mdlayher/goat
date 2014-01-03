@@ -22,8 +22,6 @@ func LoadConfig() Conf {
 		conf.Passkey = false
 		conf.Http = true
 		conf.Udp = false
-		conf.Map = true
-		conf.Sql = false
 	}
 
 	return conf

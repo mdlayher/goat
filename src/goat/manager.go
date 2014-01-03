@@ -19,12 +19,6 @@ func Manager(killChan chan bool, exitChan chan int) {
 	// Print startup status banner
 	go PrintStatusBanner()
 
-	// Set up database manager
-	dbDoneChan := make(chan bool)
-	requestChan := make(chan Request, 100)
-	Static.RequestChan = requestChan
-	go DbManager(dbDoneChan)
-
 	// Load configuration
 	Static.Config = LoadConfig()
 
@@ -59,10 +53,6 @@ func Manager(killChan chan bool, exitChan chan int) {
 				Static.LogChan <- "stopping UDP listener"
 				//<-udpDoneChan
 			}
-
-			// Stop storage manager
-			Static.LogChan <- "stopping database manager"
-			<-dbDoneChan
 
 			// Report that program should exit gracefully
 			exitChan <- 0

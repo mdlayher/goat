@@ -8,11 +8,6 @@ type Conf struct {
 	Interval  int
 	Http      bool
 	Udp       bool
-	Map       bool
-	Sql       bool
-	// Must be an int between 1-8
-	// Higher values result in faster performance and larger memory requirements
-	CacheSize int
 }
 
 // Statistics regarding HTTP server
@@ -28,15 +23,6 @@ var Static struct {
 
 	// Trigger a graceful shutdown
 	ShutdownChan chan bool
-
-	// Buffered request channel for DB manager
-	RequestChan chan Request
-
-	// Backup request channel for persistant storage
-	PersistentChan chan Request
-
-	// Error handling chan for various errors in goroutines
-	ErrChan chan Response
 
 	// Configuration object
 	Config Conf
