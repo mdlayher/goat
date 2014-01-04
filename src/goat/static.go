@@ -1,15 +1,5 @@
 package goat
 
-// Server configuration
-type Conf struct {
-	Port      int
-	Passkey   bool
-	Whitelist bool
-	Interval  int
-	Http      bool
-	Udp       bool
-}
-
 // Statistics regarding HTTP server
 type HttpStats struct {
 	Current int64

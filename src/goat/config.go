@@ -7,6 +7,17 @@ import (
 	"os/user"
 )
 
+// Server configuration
+type Conf struct {
+	Port      int
+	Passkey   bool
+	Whitelist bool
+	Interval  int
+	Http      bool
+	Udp       bool
+}
+
+
 // Load configuration
 func LoadConfig() Conf {
 	// Load current user from OS, to get home directory
