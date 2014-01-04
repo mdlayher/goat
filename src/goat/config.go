@@ -7,6 +7,13 @@ import (
 	"os/user"
 )
 
+// DBConf represents database configuration
+type DBConf struct {
+	Database string
+	Username string
+	Password string
+}
+
 // Conf represents server configuration
 type Conf struct {
 	Port      int
@@ -15,6 +22,7 @@ type Conf struct {
 	Interval  int
 	HTTP      bool
 	UDP       bool
+	DB        DBConf
 }
 
 // LoadConfig loads configuration

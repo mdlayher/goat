@@ -3,6 +3,11 @@
 	"Passkey": true,
 	"Whitelist": true,
 	"Interval": 3600,
-	"Http": true,
-	"Udp": false
+	"HTTP": true,
+	"UDP": false,
+	"DB": {
+		"Database": "goat",
+		"Username": "goat",
+		"Password": "goat"
+	}
 }

@@ -27,12 +27,24 @@ configuration, describing the settings available to the user.
 	// note: this entropy is introduced to stagger time between many client announces
 	"Interval": 3600,
 
-	// Http: enable listening for client connections via HTTP
-	"Http": true,
+	// HTTP: enable listening for client connections via HTTP
+	"HTTP": true,
 
-	// Udp: enable listening for client connections via UDP
+	// UDP: enable listening for client connections via UDP
 	// note: it is not possible to use a passkey with this listener, so this listener should
 	// only be used for public trackers
-	"Udp": false
+	"UDP": false,
+
+	// Db: MySQL database configuration
+	"DB": {
+		// Database: the database goat will use to store its tracker data
+		"Database": "goat",
+
+		// Username: the username used to access goat's database
+		"Username": "goat",
+
+		// Password: the password used to access goat's database
+		"Password": "goat"
+	}
 }
 ```
