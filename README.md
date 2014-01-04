@@ -33,6 +33,18 @@ configuration, describing the settings available to the user.
 	// Udp: enable listening for client connections via UDP
 	// note: it is not possible to use a passkey with this listener, so this listener should
 	// only be used for public trackers
-	"Udp": false
+	"Udp": false,
+
+	// Db: MySQL database configuration
+	"Db": {
+		// Database: the database goat will use to store its tracker data
+		"Database": "goat",
+
+		// Username: the username used to access goat's database
+		"Username": "goat",
+
+		// Password: the password used to access goat's database
+		"Password": "goat"
+	}
 }
 ```
