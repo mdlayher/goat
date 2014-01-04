@@ -6,8 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strconv"
-
-	"github.com/mdlayher/goat/src/bencode"
+	"github.com/mdlayher/bencode"
 )
 
 // TrackerScrape scrapes a tracker request
