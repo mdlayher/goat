@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
-	"goat"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/mdlayher/goat/src/goat"
 )
 
-const APP = "goat"
+const app = "goat"
 
 func main() {
 	// Launch manager via goroutine
@@ -22,7 +23,7 @@ func main() {
 	signal.Notify(sigChan, syscall.SIGTERM)
 	for sig := range sigChan {
 		// Trigger manager shutdown
-		fmt.Println(APP, ": caught signal:", sig)
+		fmt.Println(app, ": caught signal:", sig)
 		killChan <- true
 		break
 	}
@@ -31,13 +32,13 @@ func main() {
 	go func(sigChan chan os.Signal) {
 		for sig := range sigChan {
 			_ = sig
-			fmt.Println(APP, ": force halting now!")
+			fmt.Println(app, ": force halting now!")
 			os.Exit(1)
 		}
 	}(sigChan)
 
 	// Exit with specified code from manager
 	code := <-exitChan
-	fmt.Println(APP, ": graceful shutdown complete")
+	fmt.Println(app, ": graceful shutdown complete")
 	os.Exit(code)
 }
