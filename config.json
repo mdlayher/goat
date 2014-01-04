@@ -4,5 +4,10 @@
 	"Whitelist": true,
 	"Interval": 3600,
 	"Http": true,
-	"Udp": false
+	"Udp": false,
+	"Db": {
+		"Database": "goat",
+		"Username": "goat",
+		"Password": "goat"
+	}
 }

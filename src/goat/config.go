@@ -7,6 +7,13 @@ import (
 	"os/user"
 )
 
+// Database configuration
+type DbConf struct {
+	Database string
+	Username string
+	Password string
+}
+
 // Server configuration
 type Conf struct {
 	Port      int
@@ -15,6 +22,7 @@ type Conf struct {
 	Interval  int
 	Http      bool
 	Udp       bool
+	Db        DbConf
 }
 
 
