@@ -6,15 +6,15 @@ import (
 	"time"
 )
 
-// Struct representing an announce, to be logged to storage
+// AnnounceLog represents an announce, to be logged to storage
 type AnnounceLog struct {
-	Id         int
+	ID         int
 	InfoHash   string `db:"info_hash"`
 	Passkey    string
 	Key        string
-	Ip         string
+	IP         string
 	Port       int
-	Udp        bool
+	UDP        bool
 	Uploaded   int64
 	Downloaded int64
 	Left       int64
@@ -26,7 +26,7 @@ type AnnounceLog struct {
 // Save AnnounceLog to storage
 func (a AnnounceLog) Save() bool {
 	// Open database connection
-	db, err := DbConnect()
+	db, err := DBConnect()
 	if err != nil {
 		Static.LogChan <- err.Error()
 		return false
@@ -39,7 +39,7 @@ func (a AnnounceLog) Save() bool {
 
 	// Create database transaction, do insert, commit
 	tx := db.MustBegin()
-	tx.Execl(query, a.InfoHash, a.Passkey, a.Key, a.Ip, a.Port, a.Udp, a.Uploaded, a.Downloaded, a.Left, a.Event, a.Client)
+	tx.Execl(query, a.InfoHash, a.Passkey, a.Key, a.IP, a.Port, a.UDP, a.Uploaded, a.Downloaded, a.Left, a.Event, a.Client)
 	tx.Commit()
 
 	return true
@@ -48,7 +48,7 @@ func (a AnnounceLog) Save() bool {
 // Load AnnounceLog from storage
 func (a AnnounceLog) Load(id interface{}, col string) AnnounceLog {
 	// Open database connection
-	db, err := DbConnect()
+	db, err := DBConnect()
 	if err != nil {
 		Static.LogChan <- err.Error()
 		return a
@@ -61,7 +61,7 @@ func (a AnnounceLog) Load(id interface{}, col string) AnnounceLog {
 	return a
 }
 
-// Generate an AnnounceLog struct from a query map
+// FromMap generates an AnnounceLog struct from a query map
 func (a AnnounceLog) FromMap(query map[string]string) AnnounceLog {
 	a = AnnounceLog{}
 
@@ -77,7 +77,7 @@ func (a AnnounceLog) FromMap(query map[string]string) AnnounceLog {
 	a.Key = query["key"]
 
 	// ip
-	a.Ip = query["ip"]
+	a.IP = query["ip"]
 
 	// Note: integers previously validated
 
@@ -87,9 +87,9 @@ func (a AnnounceLog) FromMap(query map[string]string) AnnounceLog {
 
 	// udp
 	if query["udp"] == "1" {
-		a.Udp = true
+		a.UDP = true
 	} else {
-		a.Udp = false
+		a.UDP = false
 	}
 
 	// uploaded

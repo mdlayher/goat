@@ -10,12 +10,12 @@ type Listener interface {
 	Listen(chan bool)
 }
 
-// HttpListener listens for HTTP (TCP) connections
-type HttpListener struct {
+// HTTPListener listens for HTTP (TCP) connections
+type HTTPListener struct {
 }
 
 // Listen and handle HTTP (TCP) connections
-func (h HttpListener) Listen(httpDoneChan chan bool) {
+func (h HTTPListener) Listen(httpDoneChan chan bool) {
 	// Listen on specified TCP port
 	l, err := net.Listen("tcp", ":"+strconv.Itoa(Static.Config.Port))
 	if err != nil {
@@ -23,15 +23,15 @@ func (h HttpListener) Listen(httpDoneChan chan bool) {
 	}
 
 	// Send listener to HttpConnHandler
-	go new(HttpConnHandler).Handle(l, httpDoneChan)
+	go new(HTTPConnHandler).Handle(l, httpDoneChan)
 }
 
-// UdpListener listens for UDP connections
-type UdpListener struct {
+// UDPListener listens for UDP connections
+type UDPListener struct {
 }
 
 // Listen on specified UDP port, accept and handle connections
-func (u UdpListener) Listen(udpDoneChan chan bool) {
+func (u UDPListener) Listen(udpDoneChan chan bool) {
 	// Listen on specified UDP port
 	addr, err := net.ResolveUDPAddr("udp", ":"+strconv.Itoa(Static.Config.Port))
 	l, err := net.ListenUDP("udp", addr)
@@ -40,5 +40,5 @@ func (u UdpListener) Listen(udpDoneChan chan bool) {
 	}
 
 	// Send listener to UdpConnHandler
-	go new(UdpConnHandler).Handle(l, udpDoneChan)
+	go new(UDPConnHandler).Handle(l, udpDoneChan)
 }

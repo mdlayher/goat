@@ -5,19 +5,19 @@ import (
 	"time"
 )
 
-// Struct representing a scrapelog, to be logged to storage
+// ScrapeLog represents a scrapelog, to be logged to storage
 type ScrapeLog struct {
-	Id       int
+	ID       int
 	InfoHash string `db:"info_hash"`
 	Passkey  string
-	Ip       string
+	IP       string
 	Time     int64
 }
 
 // Save ScrapeLog to storage
 func (s ScrapeLog) Save() bool {
 	// Open database connection
-	db, err := DbConnect()
+	db, err := DBConnect()
 	if err != nil {
 		Static.LogChan <- err.Error()
 		return false
@@ -30,7 +30,7 @@ func (s ScrapeLog) Save() bool {
 
 	// Create database transaction, do insert, commit
 	tx := db.MustBegin()
-	tx.Execl(query, s.InfoHash, s.Passkey, s.Ip)
+	tx.Execl(query, s.InfoHash, s.Passkey, s.IP)
 	tx.Commit()
 
 	return true
@@ -39,7 +39,7 @@ func (s ScrapeLog) Save() bool {
 // Load ScrapeLog from storage
 func (s ScrapeLog) Load(id interface{}, col string) ScrapeLog {
 	// Open database connection
-	db, err := DbConnect()
+	db, err := DBConnect()
 	if err != nil {
 		Static.LogChan <- err.Error()
 		return s
@@ -52,7 +52,7 @@ func (s ScrapeLog) Load(id interface{}, col string) ScrapeLog {
 	return s
 }
 
-// Generate a ScrapeLog struct from a query map
+// FromMap generates a ScrapeLog struct from a query map
 func (s ScrapeLog) FromMap(query map[string]string) ScrapeLog {
 	s = ScrapeLog{}
 
@@ -65,7 +65,7 @@ func (s ScrapeLog) FromMap(query map[string]string) ScrapeLog {
 	s.Passkey = query["passkey"]
 
 	// ip
-	s.Ip = query["ip"]
+	s.IP = query["ip"]
 
 	// Current UNIX timestamp
 	s.Time = time.Now().Unix()

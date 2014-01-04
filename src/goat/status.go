@@ -8,20 +8,20 @@ import (
 	"sync/atomic"
 )
 
-// Struct to be serialized, containing information about the system running goat
+// ServerStatus represents a struct to be serialized, containing information about the system running goat
 type ServerStatus struct {
-	Pid          int     `json:"pid"`
+	PID          int     `json:"pid"`
 	Hostname     string  `json:"hostname"`
 	Platform     string  `json:"platform"`
 	Architecture string  `json:"architecture"`
-	NumCpu       int     `json:"numCpu"`
+	NumCPU       int     `json:"numCpu"`
 	NumGoroutine int     `json:"numGoroutine"`
-	MemoryMb     float64 `json:"memoryMb"`
-	HttpTotal    int64   `json:"httpTotal"`
-	HttpCurrent  int64   `json:"httpCurrent"`
+	MemoryMB     float64 `json:"memoryMb"`
+	HTTPTotal    int64   `json:"httpTotal"`
+	HTTPCurrent  int64   `json:"httpCurrent"`
 }
 
-// Tracker status request
+// GetServerStatus represents a tracker status request
 func GetServerStatus() ServerStatus {
 	// Get system hostname
 	hostname, _ := os.Hostname()
@@ -42,16 +42,16 @@ func GetServerStatus() ServerStatus {
 		runtime.NumCPU(),
 		runtime.NumGoroutine(),
 		memMb,
-		atomic.LoadInt64(&Static.Http.Total),
-		atomic.LoadInt64(&Static.Http.Current),
+		atomic.LoadInt64(&Static.HTTP.Total),
+		atomic.LoadInt64(&Static.HTTP.Current),
 	}
 
 	// Return status struct
 	return status
 }
 
-// Return JSON representation of server status
-func GetStatusJson(resChan chan []byte) {
+// GetStatusJSON returns a JSON representation of server status
+func GetStatusJSON(resChan chan []byte) {
 	// Marshal into JSON from request
 	res, err := json.Marshal(GetServerStatus())
 	if err != nil {
@@ -62,28 +62,28 @@ func GetStatusJson(resChan chan []byte) {
 	resChan <- res
 }
 
-// Log the startup status banner
+// PrintStatusBanner logs the startup status banner
 func PrintStatusBanner() {
 	// Grab initial server status
 	stat := GetServerStatus()
 
 	// Startup banner
-	Static.LogChan <- fmt.Sprintf("%s - %s_%s (%d CPU) [pid: %d]", stat.Hostname, stat.Platform, stat.Architecture, stat.NumCpu, stat.Pid)
+	Static.LogChan <- fmt.Sprintf("%s - %s_%s (%d CPU) [pid: %d]", stat.Hostname, stat.Platform, stat.Architecture, stat.NumCPU, stat.PID)
 }
 
-// Log the regular status check banner
+// PrintCurrentStatus logs the regular status check banner
 func PrintCurrentStatus() {
 	// Grab server status
 	stat := GetServerStatus()
 
 	// Regular status banner
-	Static.LogChan <- fmt.Sprintf("status - [goroutines: %d] [memory: %02.3f MB]", stat.NumGoroutine, stat.MemoryMb)
+	Static.LogChan <- fmt.Sprintf("status - [goroutines: %d] [memory: %02.3f MB]", stat.NumGoroutine, stat.MemoryMB)
 
 	// HTTP stats
-	if Static.Config.Http {
-		Static.LogChan <- fmt.Sprintf("  http - [current: %d] [total: %d]", stat.HttpCurrent, stat.HttpTotal)
+	if Static.Config.HTTP {
+		Static.LogChan <- fmt.Sprintf("  http - [current: %d] [total: %d]", stat.HTTPCurrent, stat.HTTPTotal)
 
 		// Reset current HTTP counter
-		atomic.StoreInt64(&Static.Http.Current, 0)
+		atomic.StoreInt64(&Static.HTTP.Current, 0)
 	}
 }

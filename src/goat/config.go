@@ -7,18 +7,17 @@ import (
 	"os/user"
 )
 
-// Server configuration
+// Conf represents server configuration
 type Conf struct {
 	Port      int
 	Passkey   bool
 	Whitelist bool
 	Interval  int
-	Http      bool
-	Udp       bool
+	HTTP      bool
+	UDP       bool
 }
 
-
-// Load configuration
+// LoadConfig loads configuration
 func LoadConfig() Conf {
 	// Load current user from OS, to get home directory
 	user, err := user.Current()
@@ -81,8 +80,8 @@ func LoadConfig() Conf {
 		conf.Passkey = true
 		conf.Whitelist = true
 		conf.Interval = 3600
-		conf.Http = true
-		conf.Udp = false
+		conf.HTTP = true
+		conf.UDP = false
 	}
 
 	return conf

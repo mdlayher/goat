@@ -1,10 +1,10 @@
 package goat
 
-// Struct representing a file tracked by tracker
+// FileUserRecord represents a file tracked by tracker
 type FileUserRecord struct {
-	FileId     int `db:"file_id"`
-	UserId     int `db:"user_id"`
-	Ip         string
+	FileID     int `db:"file_id"`
+	UserID     int `db:"user_id"`
+	IP         string
 	Active     bool
 	Completed  bool
 	Announced  int
@@ -17,7 +17,7 @@ type FileUserRecord struct {
 // Save FileUserRecord to storage
 func (f FileUserRecord) Save() bool {
 	// Open database connection
-	db, err := DbConnect()
+	db, err := DBConnect()
 	if err != nil {
 		Static.LogChan <- err.Error()
 		return false
@@ -34,16 +34,16 @@ func (f FileUserRecord) Save() bool {
 
 	// Create database transaction, do insert, commit
 	tx := db.MustBegin()
-	tx.Execl(query, f.FileId, f.UserId, f.Ip, f.Active, f.Completed, f.Announced, f.Uploaded, f.Downloaded, f.Left)
+	tx.Execl(query, f.FileID, f.UserID, f.IP, f.Active, f.Completed, f.Announced, f.Uploaded, f.Downloaded, f.Left)
 	tx.Commit()
 
 	return true
 }
 
 // Load FileUserRecord from storage
-func (f FileUserRecord) Load(fileId int, userId int, ip string) FileUserRecord {
+func (f FileUserRecord) Load(fileID int, userID int, ip string) FileUserRecord {
 	// Open database connection
-	db, err := DbConnect()
+	db, err := DBConnect()
 	if err != nil {
 		Static.LogChan <- err.Error()
 		return f
@@ -51,6 +51,6 @@ func (f FileUserRecord) Load(fileId int, userId int, ip string) FileUserRecord {
 
 	// Fetch announce log into struct
 	f = FileUserRecord{}
-	db.Get(&f, "SELECT * FROM files_users WHERE `file_id`=? AND `user_id`=? AND `ip`=?", fileId, userId, ip)
+	db.Get(&f, "SELECT * FROM files_users WHERE `file_id`=? AND `user_id`=? AND `ip`=?", fileID, userID, ip)
 	return f
 }

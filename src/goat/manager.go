@@ -4,10 +4,13 @@ import (
 	"strconv"
 )
 
-// Application name and version
-const APP = "goat"
-const VERSION = "git-master"
+// Application name
+const App = "goat"
 
+// Application version
+const Version = "git-master"
+
+// Manager is responsible for coordinating the application
 func Manager(killChan chan bool, exitChan chan int) {
 	// Set up graceful shutdown channel
 	shutdownChan := make(chan bool)
@@ -18,7 +21,7 @@ func Manager(killChan chan bool, exitChan chan int) {
 	Static.LogChan = logChan
 	go LogManager()
 
-	Static.LogChan <- "Starting " + APP + " " + VERSION
+	Static.LogChan <- "Starting " + App + " " + Version
 
 	// Print startup status banner
 	go PrintStatusBanner()
@@ -31,12 +34,12 @@ func Manager(killChan chan bool, exitChan chan int) {
 	udpDoneChan := make(chan bool)
 
 	// Launch listeners as configured
-	if Static.Config.Http {
-		go new(HttpListener).Listen(httpDoneChan)
+	if Static.Config.HTTP {
+		go new(HTTPListener).Listen(httpDoneChan)
 		Static.LogChan <- "HTTP listener launched on port " + strconv.Itoa(Static.Config.Port)
 	}
-	if Static.Config.Udp {
-		go new(UdpListener).Listen(udpDoneChan)
+	if Static.Config.UDP {
+		go new(UDPListener).Listen(udpDoneChan)
 		Static.LogChan <- "UDP listener launched on port " + strconv.Itoa(Static.Config.Port)
 	}
 
@@ -49,11 +52,11 @@ func Manager(killChan chan bool, exitChan chan int) {
 			Static.ShutdownChan <- true
 
 			// Stop listeners
-			if Static.Config.Http {
+			if Static.Config.HTTP {
 				Static.LogChan <- "stopping HTTP listener"
 				//<-httpDoneChan
 			}
-			if Static.Config.Udp {
+			if Static.Config.UDP {
 				Static.LogChan <- "stopping UDP listener"
 				//<-udpDoneChan
 			}

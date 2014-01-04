@@ -1,7 +1,7 @@
 package goat
 
-// Statistics regarding HTTP server
-type HttpStats struct {
+// HTTPStats represents statistics regarding HTTP server
+type HTTPStats struct {
 	Current int64
 	Total   int64
 }
@@ -18,5 +18,5 @@ var Static struct {
 	Config Conf
 
 	// Stats about HTTP server
-	Http HttpStats
+	HTTP HTTPStats
 }

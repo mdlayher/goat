@@ -1,8 +1,8 @@
 package goat
 
-// Struct representing a user on the tracker
+// UserRecord represents a user on the tracker
 type UserRecord struct {
-	Id           int
+	ID           int
 	Username     string
 	Passkey      string
 	TorrentLimit int `db:"torrent_limit"`
@@ -11,7 +11,7 @@ type UserRecord struct {
 // Save UserRecord to storage
 func (u UserRecord) Save() bool {
 	// Open database connection
-	db, err := DbConnect()
+	db, err := DBConnect()
 	if err != nil {
 		Static.LogChan <- err.Error()
 		return false
@@ -35,7 +35,7 @@ func (u UserRecord) Save() bool {
 // Load UserRecord from storage
 func (u UserRecord) Load(id interface{}, col string) UserRecord {
 	// Open database connection
-	db, err := DbConnect()
+	db, err := DBConnect()
 	if err != nil {
 		Static.LogChan <- err.Error()
 		return u
@@ -47,10 +47,10 @@ func (u UserRecord) Load(id interface{}, col string) UserRecord {
 	return u
 }
 
-// Load this user's total upload
+// Uploaded loads this user's total upload
 func (u UserRecord) Uploaded() int64 {
 	// Open database connection
-	db, err := DbConnect()
+	db, err := DBConnect()
 	if err != nil {
 		Static.LogChan <- err.Error()
 		return 0
@@ -64,14 +64,14 @@ func (u UserRecord) Uploaded() int64 {
 	}
 
 	// Calculate sum of this user's upload via their file/user relationship records
-	db.Get(&uploaded, "SELECT SUM(uploaded) AS uploaded FROM files_users WHERE user_id=?", u.Id)
+	db.Get(&uploaded, "SELECT SUM(uploaded) AS uploaded FROM files_users WHERE user_id=?", u.ID)
 	return uploaded.Uploaded
 }
 
-// Load this user's total download
+// Downloaded loads this user's total download
 func (u UserRecord) Downloaded() int64 {
 	// Open database connection
-	db, err := DbConnect()
+	db, err := DBConnect()
 	if err != nil {
 		Static.LogChan <- err.Error()
 		return 0
@@ -85,6 +85,6 @@ func (u UserRecord) Downloaded() int64 {
 	}
 
 	// Calculate sum of this user's download via their file/user relationship records
-	db.Get(&downloaded, "SELECT SUM(downloaded) AS downloaded FROM files_users WHERE user_id=?", u.Id)
+	db.Get(&downloaded, "SELECT SUM(downloaded) AS downloaded FROM files_users WHERE user_id=?", u.ID)
 	return downloaded.Downloaded
 }

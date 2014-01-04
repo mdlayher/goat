@@ -1,8 +1,8 @@
 package goat
 
-// Struct representing a whitelist entry
+// WhitelistRecord represents a whitelist entry
 type WhitelistRecord struct {
-	Id       int
+	ID       int
 	Client   string
 	Approved bool
 }
@@ -10,7 +10,7 @@ type WhitelistRecord struct {
 // Save WhitelistRecord to storage
 func (w WhitelistRecord) Save() bool {
 	// Open database connection
-	db, err := DbConnect()
+	db, err := DBConnect()
 	if err != nil {
 		Static.LogChan <- err.Error()
 		return false
@@ -35,7 +35,7 @@ func (w WhitelistRecord) Save() bool {
 // Load WhitelistRecord from storage
 func (w WhitelistRecord) Load(id interface{}, col string) WhitelistRecord {
 	// Open database connection
-	db, err := DbConnect()
+	db, err := DBConnect()
 	if err != nil {
 		Static.LogChan <- err.Error()
 		return w

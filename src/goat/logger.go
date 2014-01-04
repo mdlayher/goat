@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+// LogManager is responsible for creating the main loggers
 func LogManager() {
 	// Create log directory and file, and pull current date to add to logfile name
 	now := time.Now()
@@ -28,14 +29,14 @@ func LogManager() {
 		select {
 		case msg := <-Static.LogChan:
 			now := time.Now()
-			log := fmt.Sprintf("%s : [%4d-%02d-%02d %02d:%02d:%02d] %s\n", APP, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second(), msg)
+			log := fmt.Sprintf("%s : [%4d-%02d-%02d %02d:%02d:%02d] %s\n", App, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second(), msg)
 			logger.Print(log)
 			fmt.Print(log)
 		}
 	}
 }
 
-// Log and display system status at regular intervals
+// StatusLogger logs and displays system status at regular intervals
 func StatusLogger() {
 	ticker := time.NewTicker(5 * time.Minute)
 

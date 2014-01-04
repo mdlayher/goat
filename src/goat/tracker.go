@@ -1,15 +1,16 @@
 package goat
 
 import (
-	"bencode"
 	"bytes"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"strconv"
+
+	"github.com/mdlayher/goat/src/bencode"
 )
 
-// Tracker scrape request
+// TrackerScrape scrapes a tracker request
 func TrackerScrape(user UserRecord, query map[string]string, resChan chan []byte) {
 	// Store scrape information in struct
 	scrape := new(ScrapeLog).FromMap(query)
@@ -17,19 +18,19 @@ func TrackerScrape(user UserRecord, query map[string]string, resChan chan []byte
 	// Request to store scrape
 	go scrape.Save()
 
-	Static.LogChan <- fmt.Sprintf("scrape: [%s] %s", scrape.Ip, scrape.InfoHash)
+	Static.LogChan <- fmt.Sprintf("scrape: [%s] %s", scrape.IP, scrape.InfoHash)
 
 	// Check for a matching file via info_hash
 	file := new(FileRecord).Load(scrape.InfoHash, "info_hash")
 	if file == (FileRecord{}) {
 		// Torrent is not currently registered
-		resChan <- HttpTrackerError("Unregistered torrent")
+		resChan <- HTTPTrackerError("Unregistered torrent")
 		return
 	}
 
 	// Ensure file is verified, meaning we will permit scraping of it
 	if !file.Verified {
-		resChan <- HttpTrackerError("Unverified torrent")
+		resChan <- HTTPTrackerError("Unverified torrent")
 		return
 	}
 
@@ -37,11 +38,11 @@ func TrackerScrape(user UserRecord, query map[string]string, resChan chan []byte
 	go file.PeerReaper()
 
 	// Create scrape
-	resChan <- HttpTrackerScrape(query, file)
+	resChan <- HTTPTrackerScrape(query, file)
 }
 
-// Tracker announce request
-func TrackerAnnounce(user UserRecord, query map[string]string, transId []byte, resChan chan []byte) {
+// TrackerAnnounce nnounces a tracker request
+func TrackerAnnounce(user UserRecord, query map[string]string, transID []byte, resChan chan []byte) {
 	// Store announce information in struct
 	announce := new(AnnounceLog).FromMap(query)
 
@@ -56,22 +57,22 @@ func TrackerAnnounce(user UserRecord, query map[string]string, transId []byte, r
 
 	// Report protocol
 	proto := ""
-	if announce.Udp {
+	if announce.UDP {
 		proto = " udp"
 	} else {
 		proto = "http"
 	}
 
-	Static.LogChan <- fmt.Sprintf("announce: [%s %s:%d] %s%s", proto, announce.Ip, announce.Port, event, announce.InfoHash)
+	Static.LogChan <- fmt.Sprintf("announce: [%s %s:%d] %s%s", proto, announce.IP, announce.Port, event, announce.InfoHash)
 
 	// Check for a matching file via info_hash
 	file := new(FileRecord).Load(announce.InfoHash, "info_hash")
 	if file == (FileRecord{}) {
 		// Torrent is not currently registered
-		if !announce.Udp {
-			resChan <- HttpTrackerError("Unregistered torrent")
+		if !announce.UDP {
+			resChan <- HTTPTrackerError("Unregistered torrent")
 		} else {
-			resChan <- UdpTrackerError("Unregistered torrent", transId)
+			resChan <- UDPTrackerError("Unregistered torrent", transID)
 		}
 
 		// Create an entry in file table for this hash, but mark it as unverified
@@ -86,10 +87,10 @@ func TrackerAnnounce(user UserRecord, query map[string]string, transId []byte, r
 
 	// Ensure file is verified, meaning we will permit tracking of it
 	if !file.Verified {
-		if !announce.Udp {
-			resChan <- HttpTrackerError("Unverified torrent")
+		if !announce.UDP {
+			resChan <- HTTPTrackerError("Unverified torrent")
 		} else {
-			resChan <- UdpTrackerError("Unverified torrent", transId)
+			resChan <- UDPTrackerError("Unverified torrent", transID)
 		}
 		return
 	}
@@ -98,20 +99,20 @@ func TrackerAnnounce(user UserRecord, query map[string]string, transId []byte, r
 	go file.PeerReaper()
 
 	// If UDP tracker, we cannot reliably detect user, so we announce anonymously
-	if announce.Udp {
-		resChan <- UdpTrackerAnnounce(query, file, transId)
+	if announce.UDP {
+		resChan <- UDPTrackerAnnounce(query, file, transID)
 		return
 	}
 
 	// Check existing record for this user with this file and this IP
-	fileUser := new(FileUserRecord).Load(file.Id, user.Id, query["ip"])
+	fileUser := new(FileUserRecord).Load(file.ID, user.ID, query["ip"])
 
 	// New user, starting torrent
 	if fileUser == (FileUserRecord{}) {
 		// Create new relationship
-		fileUser.FileId = file.Id
-		fileUser.UserId = user.Id
-		fileUser.Ip = query["ip"]
+		fileUser.FileID = file.ID
+		fileUser.UserID = user.ID
+		fileUser.IP = query["ip"]
 		fileUser.Active = true
 		fileUser.Announced = 1
 
@@ -170,12 +171,12 @@ func TrackerAnnounce(user UserRecord, query map[string]string, transId []byte, r
 	go fileUser.Save()
 
 	// Create announce
-	resChan <- HttpTrackerAnnounce(query, file, fileUser)
+	resChan <- HTTPTrackerAnnounce(query, file, fileUser)
 	return
 }
 
-// Announce using HTTP format
-func HttpTrackerAnnounce(query map[string]string, file FileRecord, fileUser FileUserRecord) []byte {
+// HTTPTrackerAnnounce announces using HTTP format
+func HTTPTrackerAnnounce(query map[string]string, file FileRecord, fileUser FileUserRecord) []byte {
 	// Begin generating response map, with current number of known seeders/leechers
 	res := map[string][]byte{
 		"complete":   bencode.EncInt(file.Seeders()),
@@ -211,8 +212,8 @@ func HttpTrackerAnnounce(query map[string]string, file FileRecord, fileUser File
 	return bencode.EncDictMap(res)
 }
 
-// Report scrape using HTTP format
-func HttpTrackerScrape(query map[string]string, file FileRecord) []byte {
+// HTTPTrackerScrape reports scrape using HTTP format
+func HTTPTrackerScrape(query map[string]string, file FileRecord) []byte {
 	// Decode hex string to byte format
 	hash, err := hex.DecodeString(file.InfoHash)
 	if err != nil {
@@ -228,8 +229,8 @@ func HttpTrackerScrape(query map[string]string, file FileRecord) []byte {
 	})
 }
 
-// Report a bencoded []byte response as specified by input string
-func HttpTrackerError(err string) []byte {
+// HTTPTrackerError reports a bencoded []byte response as specified by input string
+func HTTPTrackerError(err string) []byte {
 	return bencode.EncDictMap(map[string][]byte{
 		"failure reason": bencode.EncString(err),
 		"interval":       bencode.EncInt(RandRange(Static.Config.Interval-600, Static.Config.Interval)),
@@ -237,15 +238,15 @@ func HttpTrackerError(err string) []byte {
 	})
 }
 
-// Announce using UDP format
-func UdpTrackerAnnounce(query map[string]string, file FileRecord, transId []byte) []byte {
+// UDPTrackerAnnounce announces using UDP format
+func UDPTrackerAnnounce(query map[string]string, file FileRecord, transID []byte) []byte {
 	// Response buffer
 	res := bytes.NewBuffer(make([]byte, 0))
 
 	// Action (1 for announce)
 	binary.Write(res, binary.BigEndian, uint32(1))
 	// Transaction ID
-	binary.Write(res, binary.BigEndian, transId)
+	binary.Write(res, binary.BigEndian, transID)
 	// Interval
 	binary.Write(res, binary.BigEndian, uint32(RandRange(Static.Config.Interval-600, Static.Config.Interval)))
 	// Leechers
@@ -259,15 +260,15 @@ func UdpTrackerAnnounce(query map[string]string, file FileRecord, transId []byte
 	return res.Bytes()
 }
 
-// Report a []byte response packed datagram
-func UdpTrackerError(err string, transId []byte) []byte {
+// UDPTrackerError reports a []byte response packed datagram
+func UDPTrackerError(err string, transID []byte) []byte {
 	// Response buffer
 	res := bytes.NewBuffer(make([]byte, 0))
 
 	// Action (3 for error)
 	binary.Write(res, binary.BigEndian, uint32(3))
 	// Transaction ID
-	binary.Write(res, binary.BigEndian, transId)
+	binary.Write(res, binary.BigEndian, transID)
 	// Error message
 	binary.Write(res, binary.BigEndian, []byte(err))
 

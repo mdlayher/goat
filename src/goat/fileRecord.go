@@ -6,9 +6,9 @@ import (
 	"net"
 )
 
-// Struct representing a file tracked by tracker
+// FileRecord represents a file tracked by tracker
 type FileRecord struct {
-	Id         int
+	ID         int
 	InfoHash   string `db:"info_hash"`
 	Verified   bool
 	CreateTime int64 `db:"create_time"`
@@ -18,7 +18,7 @@ type FileRecord struct {
 // Save FileRecord to storage
 func (f FileRecord) Save() bool {
 	// Open database connection
-	db, err := DbConnect()
+	db, err := DBConnect()
 	if err != nil {
 		Static.LogChan <- err.Error()
 		return false
@@ -42,7 +42,7 @@ func (f FileRecord) Save() bool {
 // Load FileRecord from storage
 func (f FileRecord) Load(id interface{}, col string) FileRecord {
 	// Open database connection
-	db, err := DbConnect()
+	db, err := DBConnect()
 	if err != nil {
 		Static.LogChan <- err.Error()
 		return f
@@ -54,10 +54,10 @@ func (f FileRecord) Load(id interface{}, col string) FileRecord {
 	return f
 }
 
-// Return number of completions, active or not, on this file
+// Completed returns the number of completions, active or not, on this file
 func (f FileRecord) Completed() int {
 	// Open database connection
-	db, err := DbConnect()
+	db, err := DBConnect()
 	if err != nil {
 		Static.LogChan <- err.Error()
 		return 0
@@ -71,14 +71,14 @@ func (f FileRecord) Completed() int {
 	}
 
 	// Calculate number of completions on this file, defined as users who are completed, and 0 left
-	db.Get(&completed, "SELECT COUNT(user_id) AS completed FROM files_users WHERE file_id = ? AND completed = 1 AND `left` = 0;", f.Id)
+	db.Get(&completed, "SELECT COUNT(user_id) AS completed FROM files_users WHERE file_id = ? AND completed = 1 AND `left` = 0;", f.ID)
 	return completed.Completed
 }
 
-// Return number of seeders on this file
+// Seeders returns the number of seeders on this file
 func (f FileRecord) Seeders() int {
 	// Open database connection
-	db, err := DbConnect()
+	db, err := DBConnect()
 	if err != nil {
 		Static.LogChan <- err.Error()
 		return 0
@@ -92,14 +92,14 @@ func (f FileRecord) Seeders() int {
 	}
 
 	// Calculate number of seeders on this file, defined as users who are active, completed, and 0 left
-	db.Get(&seeders, "SELECT COUNT(user_id) AS seeders FROM files_users WHERE file_id = ? AND active = 1 AND completed = 1 AND `left` = 0;", f.Id)
+	db.Get(&seeders, "SELECT COUNT(user_id) AS seeders FROM files_users WHERE file_id = ? AND active = 1 AND completed = 1 AND `left` = 0;", f.ID)
 	return seeders.Seeders
 }
 
-// Return number of leechers on this file
+// Leechers returns the number of leechers on this file
 func (f FileRecord) Leechers() int {
 	// Open database connection
-	db, err := DbConnect()
+	db, err := DBConnect()
 	if err != nil {
 		Static.LogChan <- err.Error()
 		return 0
@@ -113,14 +113,14 @@ func (f FileRecord) Leechers() int {
 	}
 
 	// Calculate number of leechers on this file, defined as users who are active, completed, and 0 left
-	db.Get(&leechers, "SELECT COUNT(user_id) AS leechers FROM files_users WHERE file_id = ? AND active = 1 AND completed = 0 AND `left` > 0;", f.Id)
+	db.Get(&leechers, "SELECT COUNT(user_id) AS leechers FROM files_users WHERE file_id = ? AND active = 1 AND completed = 0 AND `left` > 0;", f.ID)
 	return leechers.Leechers
 }
 
-// Return compact peer buffer for tracker announce, excluding self
+// PeerList returns the compact peer buffer for tracker announce, excluding self
 func (f FileRecord) PeerList(exclude string, numwant int) []byte {
 	// Open database connection
-	db, err := DbConnect()
+	db, err := DBConnect()
 	if err != nil {
 		Static.LogChan <- err.Error()
 		return nil
@@ -128,7 +128,7 @@ func (f FileRecord) PeerList(exclude string, numwant int) []byte {
 
 	// Anonymous Peer struct
 	peer := struct {
-		Ip   string
+		IP   string
 		Port uint16
 	}{
 		"",
@@ -159,11 +159,11 @@ func (f FileRecord) PeerList(exclude string, numwant int) []byte {
 		// Scan row results
 		rows.StructScan(&peer)
 
-		Static.LogChan <- fmt.Sprintf("peer: %s:%d", peer.Ip, peer.Port)
+		Static.LogChan <- fmt.Sprintf("peer: %s:%d", peer.IP, peer.Port)
 
 		// Parse IP into byte buffer
 		ip := [4]byte{}
-		binary.BigEndian.PutUint32(ip[:], binary.BigEndian.Uint32(net.ParseIP(peer.Ip).To4()))
+		binary.BigEndian.PutUint32(ip[:], binary.BigEndian.Uint32(net.ParseIP(peer.IP).To4()))
 
 		// Parse port into byte buffer
 		port := [2]byte{}
@@ -176,10 +176,10 @@ func (f FileRecord) PeerList(exclude string, numwant int) []byte {
 	return buf
 }
 
-// Reap peers who have not recently announced on this torrent, and mark them inactive
+// PeerReaper reaps peers who have not recently announced on this torrent, and mark them inactive
 func (f FileRecord) PeerReaper() {
 	// Open database connection
-	db, err := DbConnect()
+	db, err := DBConnect()
 	if err != nil {
 		Static.LogChan <- err.Error()
 		return
@@ -187,8 +187,8 @@ func (f FileRecord) PeerReaper() {
 
 	// Anonymous result struct
 	result := struct {
-		UserId int `db:"user_id"`
-		Ip     string
+		UserID int `db:"user_id"`
+		IP     string
 	}{
 		0,
 		"",
@@ -200,7 +200,7 @@ func (f FileRecord) PeerReaper() {
 		"AND active = 1 " +
 		"AND file_id = ?;"
 
-	rows, err := db.Queryx(query, Static.Config.Interval+60, f.Id)
+	rows, err := db.Queryx(query, Static.Config.Interval+60, f.ID)
 	if err != nil {
 		Static.LogChan <- err.Error()
 		return
@@ -217,7 +217,7 @@ func (f FileRecord) PeerReaper() {
 
 		// Mark peer as inactive
 		reapQuery := "UPDATE files_users SET active = 0 WHERE file_id = ? AND user_id = ? AND ip = ?;"
-		tx.Execl(reapQuery, f.Id, result.UserId, result.Ip)
+		tx.Execl(reapQuery, f.ID, result.UserID, result.IP)
 
 		count++
 	}
@@ -226,6 +226,6 @@ func (f FileRecord) PeerReaper() {
 	tx.Commit()
 
 	if count > 0 {
-		Static.LogChan <- fmt.Sprintf("reaper: reaped %d peer(s) on file %d", count, f.Id)
+		Static.LogChan <- fmt.Sprintf("reaper: reaped %d peer(s) on file %d", count, f.ID)
 	}
 }
