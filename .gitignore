@@ -3,4 +3,4 @@
 *.prof
 bin/
 pkg/
-src/github.com/
+src/
