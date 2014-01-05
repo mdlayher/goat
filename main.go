@@ -6,7 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/mdlayher/goat/src/goat"
+	"github.com/mdlayher/goat/goat"
 )
 
 const app = "goat"
