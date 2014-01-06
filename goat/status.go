@@ -24,7 +24,12 @@ type ServerStatus struct {
 // GetServerStatus represents a tracker status request
 func GetServerStatus() ServerStatus {
 	// Get system hostname
-	hostname, _ := os.Hostname()
+	var hostname string
+	hostname, err := os.Hostname()
+	if err != nil {
+		Static.LogChan<- err.Error()
+		return ServerStatus{}
+	}
 
 	// Get current memory profile
 	mem := &runtime.MemStats{}
@@ -66,6 +71,10 @@ func GetStatusJSON(resChan chan []byte) {
 func PrintStatusBanner() {
 	// Grab initial server status
 	stat := GetServerStatus()
+	if stat == (ServerStatus{}) {
+		Static.LogChan <- "Could not print startup status banner"
+		return
+	}
 
 	// Startup banner
 	Static.LogChan <- fmt.Sprintf("%s - %s_%s (%d CPU) [pid: %d]", stat.Hostname, stat.Platform, stat.Architecture, stat.NumCPU, stat.PID)
@@ -75,6 +84,10 @@ func PrintStatusBanner() {
 func PrintCurrentStatus() {
 	// Grab server status
 	stat := GetServerStatus()
+	if stat == (ServerStatus{}) {
+		Static.LogChan <- "Could not print current status"
+		return
+	}
 
 	// Regular status banner
 	Static.LogChan <- fmt.Sprintf("status - [goroutines: %d] [memory: %02.3f MB]", stat.NumGoroutine, stat.MemoryMB)
