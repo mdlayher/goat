@@ -47,7 +47,11 @@ func (s ScrapeLog) Load(id interface{}, col string) ScrapeLog {
 
 	// Fetch announce log into struct
 	s = ScrapeLog{}
-	db.Get(&s, "SELECT * FROM announce_log WHERE `"+col+"`=?", id)
+	err = db.Get(&s, "SELECT * FROM announce_log WHERE `"+col+"`=?", id)
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return ScrapeLog{}
+	}
 
 	return s
 }
