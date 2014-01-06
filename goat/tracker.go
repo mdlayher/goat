@@ -13,6 +13,10 @@ import (
 func TrackerScrape(user UserRecord, query map[string]string, resChan chan []byte) {
 	// Store scrape information in struct
 	scrape := new(ScrapeLog).FromMap(query)
+	if scrape == (ScrapeLog{}) {
+		resChan <- HTTPTrackerError("Malformed scrape")
+		return
+	}
 
 	// Request to store scrape
 	go scrape.Save()
@@ -44,6 +48,10 @@ func TrackerScrape(user UserRecord, query map[string]string, resChan chan []byte
 func TrackerAnnounce(user UserRecord, query map[string]string, transID []byte, resChan chan []byte) {
 	// Store announce information in struct
 	announce := new(AnnounceLog).FromMap(query)
+	if announce == (AnnounceLog{}) {
+		resChan <- HTTPTrackerError("Malformed announce")
+		return
+	}
 
 	// Request to store announce
 	go announce.Save()
@@ -91,6 +99,7 @@ func TrackerAnnounce(user UserRecord, query map[string]string, transID []byte, r
 		} else {
 			resChan <- UDPTrackerError("Unverified torrent", transID)
 		}
+
 		return
 	}
 
@@ -243,33 +252,81 @@ func UDPTrackerAnnounce(query map[string]string, file FileRecord, transID []byte
 	res := bytes.NewBuffer(make([]byte, 0))
 
 	// Action (1 for announce)
-	binary.Write(res, binary.BigEndian, uint32(1))
+	err := binary.Write(res, binary.BigEndian, uint32(1))
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return UDPTrackerError("Could not create UDP announce response", transID)
+	}
+
 	// Transaction ID
-	binary.Write(res, binary.BigEndian, transID)
+	err = binary.Write(res, binary.BigEndian, transID)
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return UDPTrackerError("Could not create UDP announce response", transID)
+	}
+
 	// Interval
-	binary.Write(res, binary.BigEndian, uint32(RandRange(Static.Config.Interval-600, Static.Config.Interval)))
+	err = binary.Write(res, binary.BigEndian, uint32(RandRange(Static.Config.Interval-600, Static.Config.Interval)))
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return UDPTrackerError("Could not create UDP announce response", transID)
+	}
+
 	// Leechers
-	binary.Write(res, binary.BigEndian, uint32(file.Leechers()))
+	err = binary.Write(res, binary.BigEndian, uint32(file.Leechers()))
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return UDPTrackerError("Could not create UDP announce response", transID)
+	}
+
 	// Seeders
-	binary.Write(res, binary.BigEndian, uint32(file.Seeders()))
+	err = binary.Write(res, binary.BigEndian, uint32(file.Seeders()))
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return UDPTrackerError("Could not create UDP announce response", transID)
+	}
+
 	// Peer list
-	numwant, _ := strconv.Atoi(query["numwant"])
-	binary.Write(res, binary.BigEndian, file.PeerList(query["ip"], numwant))
+	numwant, err := strconv.Atoi(query["numwant"])
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return UDPTrackerError("Could not create UDP announce response", transID)
+	}
+
+	err = binary.Write(res, binary.BigEndian, file.PeerList(query["ip"], numwant))
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return UDPTrackerError("Could not create UDP announce response", transID)
+	}
 
 	return res.Bytes()
 }
 
 // UDPTrackerError reports a []byte response packed datagram
-func UDPTrackerError(err string, transID []byte) []byte {
+func UDPTrackerError(msg string, transID []byte) []byte {
 	// Response buffer
 	res := bytes.NewBuffer(make([]byte, 0))
 
 	// Action (3 for error)
-	binary.Write(res, binary.BigEndian, uint32(3))
+	err := binary.Write(res, binary.BigEndian, uint32(3))
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return nil
+	}
+
 	// Transaction ID
-	binary.Write(res, binary.BigEndian, transID)
+	err = binary.Write(res, binary.BigEndian, transID)
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return nil
+	}
+
 	// Error message
-	binary.Write(res, binary.BigEndian, []byte(err))
+	err = binary.Write(res, binary.BigEndian, []byte(msg))
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return nil
+	}
 
 	return res.Bytes()
 }
