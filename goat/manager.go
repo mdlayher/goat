@@ -1,6 +1,7 @@
 package goat
 
 import (
+	"os"
 	"strconv"
 )
 
@@ -27,7 +28,11 @@ func Manager(killChan chan bool, exitChan chan int) {
 	go PrintStatusBanner()
 
 	// Load configuration
-	Static.Config = LoadConfig()
+	config := LoadConfig()
+	if config == (Conf{}) {
+		Static.LogChan <- "Cannot load configuration, exiting now."
+		os.Exit(1)
+	}
 
 	// Set up graceful shutdown channels
 	httpDoneChan := make(chan bool)

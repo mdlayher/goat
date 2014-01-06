@@ -79,32 +79,18 @@ func LoadConfig() Conf {
 	}
 
 	// Load configuration file
-	var conf Conf
+	conf := Conf{}
 	configFile, err := os.Open(path + config)
 	if err == nil {
 		// Decode JSON
 		err = json.NewDecoder(configFile).Decode(&conf)
 		if err != nil {
-			Static.LogChan <- "Could not read config.json, using defaults..."
-
-			// Sane configuration defaults
-			conf.Port = 8080
-			conf.Passkey = true
-			conf.Whitelist = true
-			conf.Interval = 3600
-			conf.HTTP = true
-			conf.UDP = false
+			Static.LogChan <- "Could not parse config.json"
+			return Conf{}
 		}
 	} else {
-		Static.LogChan <- "Failed to open config file, using defaults..."
-
-		// Sane configuration defaults
-		conf.Port = 8080
-		conf.Passkey = true
-		conf.Whitelist = true
-		conf.Interval = 3600
-		conf.HTTP = true
-		conf.UDP = false
+		Static.LogChan <- "Failed to open config.json"
+		return Conf{}
 	}
 
 	return conf
