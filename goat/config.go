@@ -27,15 +27,19 @@ type Conf struct {
 
 // LoadConfig loads configuration
 func LoadConfig() Conf {
+	// Configuration path
+	var path string
+	config := "config.json"
+
 	// Load current user from OS, to get home directory
 	user, err := user.Current()
 	if err != nil {
 		Static.LogChan <- err.Error()
+		path = "."
+	} else {
+		// Store config in standard location
+		path = user.HomeDir + "/.config/goat/"
 	}
-
-	// Configuration path
-	path := user.HomeDir + "/.config/goat/"
-	config := "config.json"
 
 	Static.LogChan <- "Loading configuration: " + path + config
 
@@ -75,13 +79,24 @@ func LoadConfig() Conf {
 	}
 
 	// Load configuration file
-	configFile, err := os.Open(path + config)
-
-	// Decode JSON
 	var conf Conf
-	err = json.NewDecoder(configFile).Decode(&conf)
-	if err != nil {
-		Static.LogChan <- "Could not read config.json, using defaults..."
+	configFile, err := os.Open(path + config)
+	if err == nil {
+		// Decode JSON
+		err = json.NewDecoder(configFile).Decode(&conf)
+		if err != nil {
+			Static.LogChan <- "Could not read config.json, using defaults..."
+
+			// Sane configuration defaults
+			conf.Port = 8080
+			conf.Passkey = true
+			conf.Whitelist = true
+			conf.Interval = 3600
+			conf.HTTP = true
+			conf.UDP = false
+		}
+	} else {
+		Static.LogChan <- "Failed to open config file, using defaults..."
 
 		// Sane configuration defaults
 		conf.Port = 8080
