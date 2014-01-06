@@ -15,20 +15,10 @@ func (w WhitelistRecord) Save() bool {
 		Static.LogChan <- err.Error()
 		return false
 	}
-
-	// Store whitelist record
-	// NOTE: Not using INSERT IGNORE because it ignores all errors
-	// Thanks: http://stackoverflow.com/questions/2366813/on-duplicate-key-ignore
-	query := "INSERT INTO whitelist " +
-		"(`client`, `approved`) " +
-		"VALUES (?, ?) " +
-		"ON DUPLICATE KEY UPDATE `client`=`client`;"
-
-	// Create database transaction, do insert, commit
-	tx := db.MustBegin()
-	tx.Execl(query, w.Client, w.Approved)
-	tx.Commit()
-
+	if err := db.SaveWhitelistRecord(w); nil != err {
+		Static.LogChan <- err.Error()
+		return false
+	}
 	return true
 }
 
@@ -40,14 +30,10 @@ func (w WhitelistRecord) Load(id interface{}, col string) WhitelistRecord {
 		Static.LogChan <- err.Error()
 		return w
 	}
-
-	// Fetch record into struct
-	w = WhitelistRecord{}
-	err = db.Get(&w, "SELECT * FROM whitelist WHERE `"+col+"`=?", id)
+	w, err = db.LoadWhitelistRecord(id, col)
 	if err != nil {
 		Static.LogChan <- err.Error()
 		return WhitelistRecord{}
 	}
-
 	return w
 }

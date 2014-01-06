@@ -23,19 +23,10 @@ func (f FileUserRecord) Save() bool {
 		return false
 	}
 
-	// Insert or update a file/user relationship record
-	query := "INSERT INTO files_users " +
-		"(`file_id`, `user_id`, `ip`, `active`, `completed`, `announced`, `uploaded`, `downloaded`, `left`, `time`) " +
-		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, UNIX_TIMESTAMP()) " +
-		"ON DUPLICATE KEY UPDATE " +
-		"`active`=values(`active`), `completed`=values(`completed`), `announced`=values(`announced`), " +
-		"`uploaded`=values(`uploaded`), `downloaded`=values(`downloaded`), `left`=values(`left`), " +
-		"`time`=UNIX_TIMESTAMP();"
-
-	// Create database transaction, do insert, commit
-	tx := db.MustBegin()
-	tx.Execl(query, f.FileID, f.UserID, f.IP, f.Active, f.Completed, f.Announced, f.Uploaded, f.Downloaded, f.Left)
-	tx.Commit()
+	if err := db.SaveFileUserRecord(f); nil != err {
+		Static.LogChan <- err.Error()
+		return false
+	}
 
 	return true
 }
@@ -49,13 +40,9 @@ func (f FileUserRecord) Load(fileID int, userID int, ip string) FileUserRecord {
 		return f
 	}
 
-	// Fetch announce log into struct
-	f = FileUserRecord{}
-	err = db.Get(&f, "SELECT * FROM files_users WHERE `file_id`=? AND `user_id`=? AND `ip`=?", fileID, userID, ip)
+	f, err = db.LoadFileUserRecord(fileID, userID, ip)
 	if err != nil {
 		Static.LogChan <- err.Error()
-		return FileUserRecord{}
 	}
-
 	return f
 }

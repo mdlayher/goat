@@ -22,17 +22,10 @@ func (s ScrapeLog) Save() bool {
 		Static.LogChan <- err.Error()
 		return false
 	}
-
-	// Store scrape log
-	query := "INSERT INTO scrape_log " +
-		"(`info_hash`, `passkey`, `ip`, `time`) " +
-		"VALUES (?, ?, ?, UNIX_TIMESTAMP());"
-
-	// Create database transaction, do insert, commit
-	tx := db.MustBegin()
-	tx.Execl(query, s.InfoHash, s.Passkey, s.IP)
-	tx.Commit()
-
+	if err := db.SaveScrapeLog(s); nil != err {
+		Static.LogChan <- err.Error()
+		return false
+	}
 	return true
 }
 
@@ -44,15 +37,11 @@ func (s ScrapeLog) Load(id interface{}, col string) ScrapeLog {
 		Static.LogChan <- err.Error()
 		return s
 	}
-
-	// Fetch announce log into struct
-	s = ScrapeLog{}
-	err = db.Get(&s, "SELECT * FROM announce_log WHERE `"+col+"`=?", id)
+	s, err = db.LoadScrapeLog(id, col)
 	if err != nil {
 		Static.LogChan <- err.Error()
 		return ScrapeLog{}
 	}
-
 	return s
 }
 

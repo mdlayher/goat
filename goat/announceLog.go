@@ -32,15 +32,10 @@ func (a AnnounceLog) Save() bool {
 		return false
 	}
 
-	// Store announce log
-	query := "INSERT INTO announce_log " +
-		"(`info_hash`, `passkey`, `key`, `ip`, `port`, `udp`, `uploaded`, `downloaded`, `left`, `event`, `client`, `time`) " +
-		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UNIX_TIMESTAMP());"
-
-	// Create database transaction, do insert, commit
-	tx := db.MustBegin()
-	tx.Execl(query, a.InfoHash, a.Passkey, a.Key, a.IP, a.Port, a.UDP, a.Uploaded, a.Downloaded, a.Left, a.Event, a.Client)
-	tx.Commit()
+	if err := db.SaveAnnounceLog(a); nil != err {
+		Static.LogChan <- err.Error()
+		return false
+	}
 
 	return true
 }
@@ -54,12 +49,8 @@ func (a AnnounceLog) Load(id interface{}, col string) AnnounceLog {
 		return AnnounceLog{}
 	}
 
-	// Fetch announce log into struct
-	a = AnnounceLog{}
-	err = db.Get(&a, "SELECT * FROM announce_log WHERE `"+col+"`=?", id)
-	if err != nil {
+	if a, err = db.LoadAnnounceLog(id, col); nil != err {
 		Static.LogChan <- err.Error()
-		return AnnounceLog{}
 	}
 
 	return a

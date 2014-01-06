@@ -16,19 +16,10 @@ func (u UserRecord) Save() bool {
 		Static.LogChan <- err.Error()
 		return false
 	}
-
-	// Insert or update a user record
-	query := "INSERT INTO users " +
-		"(`username`, `passkey`, `torrent_limit`) " +
-		"VALUES (?, ?, ?) " +
-		"ON DUPLICATE KEY UPDATE " +
-		"`username`=values(`username`), `passkey`=values(`passkey`), `torrent_limit`=values(`torrent_limit`);"
-
-	// Create database transaction, do insert, commit
-	tx := db.MustBegin()
-	tx.Execl(query, u.Username, u.Passkey, u.TorrentLimit)
-	tx.Commit()
-
+	if err := db.SaveUserRecord(u); err != nil {
+		Static.LogChan <- err.Error()
+		return false
+	}
 	return true
 }
 
@@ -40,15 +31,11 @@ func (u UserRecord) Load(id interface{}, col string) UserRecord {
 		Static.LogChan <- err.Error()
 		return u
 	}
-
-	// Fetch announce log into struct
-	u = UserRecord{}
-	err = db.Get(&u, "SELECT * FROM users WHERE `"+col+"`=?", id)
+	u, err = db.LoadUserRecord(id, col)
 	if err != nil {
 		Static.LogChan <- err.Error()
 		return UserRecord{}
 	}
-
 	return u
 }
 
@@ -60,22 +47,12 @@ func (u UserRecord) Uploaded() int64 {
 		Static.LogChan <- err.Error()
 		return -1
 	}
-
-	// Anonymous Uploaded struct
-	uploaded := struct {
-		Uploaded int64
-	}{
-		0,
-	}
-
-	// Calculate sum of this user's upload via their file/user relationship records
-	err = db.Get(&uploaded, "SELECT SUM(uploaded) AS uploaded FROM files_users WHERE user_id=?", u.ID)
+	uploaded, err := db.GetUserUploaded(u.ID)
 	if err != nil {
 		Static.LogChan <- err.Error()
 		return -1
 	}
-
-	return uploaded.Uploaded
+	return uploaded
 }
 
 // Downloaded loads this user's total download
@@ -86,20 +63,10 @@ func (u UserRecord) Downloaded() int64 {
 		Static.LogChan <- err.Error()
 		return 0
 	}
-
-	// Anonymous Downloaded struct
-	downloaded := struct {
-		Downloaded int64
-	}{
-		0,
-	}
-
-	// Calculate sum of this user's download via their file/user relationship records
-	err = db.Get(&downloaded, "SELECT SUM(downloaded) AS downloaded FROM files_users WHERE user_id=?", u.ID)
+	downloaded, err := db.GetUserDownloaded(u.ID)
 	if err != nil {
 		Static.LogChan <- err.Error()
 		return -1
 	}
-
-	return downloaded.Downloaded
+	return downloaded
 }
