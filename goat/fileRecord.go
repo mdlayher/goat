@@ -50,7 +50,12 @@ func (f FileRecord) Load(id interface{}, col string) FileRecord {
 
 	// Fetch announce log into struct
 	f = FileRecord{}
-	db.Get(&f, "SELECT * FROM files WHERE `"+col+"`=?", id)
+	err = db.Get(&f, "SELECT * FROM files WHERE `"+col+"`=?", id)
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return FileRecord{}
+	}
+
 	return f
 }
 
@@ -71,7 +76,12 @@ func (f FileRecord) Completed() int {
 	}
 
 	// Calculate number of completions on this file, defined as users who are completed, and 0 left
-	db.Get(&completed, "SELECT COUNT(user_id) AS completed FROM files_users WHERE file_id = ? AND completed = 1 AND `left` = 0;", f.ID)
+	err = db.Get(&completed, "SELECT COUNT(user_id) AS completed FROM files_users WHERE file_id = ? AND completed = 1 AND `left` = 0;", f.ID)
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return -1
+	}
+
 	return completed.Completed
 }
 
@@ -92,7 +102,12 @@ func (f FileRecord) Seeders() int {
 	}
 
 	// Calculate number of seeders on this file, defined as users who are active, completed, and 0 left
-	db.Get(&seeders, "SELECT COUNT(user_id) AS seeders FROM files_users WHERE file_id = ? AND active = 1 AND completed = 1 AND `left` = 0;", f.ID)
+	err = db.Get(&seeders, "SELECT COUNT(user_id) AS seeders FROM files_users WHERE file_id = ? AND active = 1 AND completed = 1 AND `left` = 0;", f.ID)
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return -1
+	}
+
 	return seeders.Seeders
 }
 
@@ -114,6 +129,11 @@ func (f FileRecord) Leechers() int {
 
 	// Calculate number of leechers on this file, defined as users who are active, completed, and 0 left
 	db.Get(&leechers, "SELECT COUNT(user_id) AS leechers FROM files_users WHERE file_id = ? AND active = 1 AND completed = 0 AND `left` > 0;", f.ID)
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return -1
+	}
+
 	return leechers.Leechers
 }
 
@@ -151,7 +171,7 @@ func (f FileRecord) PeerList(exclude string, numwant int) []byte {
 	rows, err := db.Queryx(query, f.InfoHash, exclude, numwant)
 	if err != nil {
 		Static.LogChan <- err.Error()
-		return buf
+		return nil
 	}
 
 	// Iterate all rows
@@ -177,12 +197,12 @@ func (f FileRecord) PeerList(exclude string, numwant int) []byte {
 }
 
 // PeerReaper reaps peers who have not recently announced on this torrent, and mark them inactive
-func (f FileRecord) PeerReaper() {
+func (f FileRecord) PeerReaper() bool {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
 		Static.LogChan <- err.Error()
-		return
+		return false
 	}
 
 	// Anonymous result struct
@@ -203,7 +223,7 @@ func (f FileRecord) PeerReaper() {
 	rows, err := db.Queryx(query, Static.Config.Interval+60, f.ID)
 	if err != nil {
 		Static.LogChan <- err.Error()
-		return
+		return false
 	}
 
 	// Count of reaped peers
@@ -228,4 +248,6 @@ func (f FileRecord) PeerReaper() {
 	if count > 0 {
 		Static.LogChan <- fmt.Sprintf("reaper: reaped %d peer(s) on file %d", count, f.ID)
 	}
+
+	return true
 }
