@@ -33,6 +33,7 @@ func Manager(killChan chan bool, exitChan chan int) {
 		Static.LogChan <- "Cannot load configuration, exiting now."
 		os.Exit(1)
 	}
+	Static.Config = config
 
 	// Set up graceful shutdown channels
 	httpDoneChan := make(chan bool)
