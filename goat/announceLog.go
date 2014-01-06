@@ -51,12 +51,16 @@ func (a AnnounceLog) Load(id interface{}, col string) AnnounceLog {
 	db, err := DBConnect()
 	if err != nil {
 		Static.LogChan <- err.Error()
-		return a
+		return AnnounceLog{}
 	}
 
 	// Fetch announce log into struct
 	a = AnnounceLog{}
-	db.Get(&a, "SELECT * FROM announce_log WHERE `"+col+"`=?", id)
+	err = db.Get(&a, "SELECT * FROM announce_log WHERE `"+col+"`=?", id)
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return AnnounceLog{}
+	}
 
 	return a
 }
@@ -79,12 +83,6 @@ func (a AnnounceLog) FromMap(query map[string]string) AnnounceLog {
 	// ip
 	a.IP = query["ip"]
 
-	// Note: integers previously validated
-
-	// port
-	port, _ := strconv.Atoi(query["port"])
-	a.Port = port
-
 	// udp
 	if query["udp"] == "1" {
 		a.UDP = true
@@ -92,16 +90,36 @@ func (a AnnounceLog) FromMap(query map[string]string) AnnounceLog {
 		a.UDP = false
 	}
 
+	// port
+	port, err := strconv.Atoi(query["port"])
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return AnnounceLog{}
+	}
+	a.Port = port
+
 	// uploaded
-	uploaded, _ := strconv.ParseInt(query["uploaded"], 10, 64)
+	uploaded, err := strconv.ParseInt(query["uploaded"], 10, 64)
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return AnnounceLog{}
+	}
 	a.Uploaded = uploaded
 
 	// downloaded
-	downloaded, _ := strconv.ParseInt(query["downloaded"], 10, 64)
+	downloaded, err := strconv.ParseInt(query["downloaded"], 10, 64)
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return AnnounceLog{}
+	}
 	a.Downloaded = downloaded
 
 	// left
-	left, _ := strconv.ParseInt(query["left"], 10, 64)
+	left, err := strconv.ParseInt(query["left"], 10, 64)
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return AnnounceLog{}
+	}
 	a.Left = left
 
 	// Optional parameters
