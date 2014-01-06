@@ -51,6 +51,11 @@ func (f FileUserRecord) Load(fileID int, userID int, ip string) FileUserRecord {
 
 	// Fetch announce log into struct
 	f = FileUserRecord{}
-	db.Get(&f, "SELECT * FROM files_users WHERE `file_id`=? AND `user_id`=? AND `ip`=?", fileID, userID, ip)
+	err = db.Get(&f, "SELECT * FROM files_users WHERE `file_id`=? AND `user_id`=? AND `ip`=?", fileID, userID, ip)
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return FileUserRecord{}
+	}
+
 	return f
 }
