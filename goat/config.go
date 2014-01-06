@@ -81,15 +81,15 @@ func LoadConfig() Conf {
 	// Load configuration file
 	conf := Conf{}
 	configFile, err := os.Open(path + config)
-	if err == nil {
-		// Decode JSON
-		err = json.NewDecoder(configFile).Decode(&conf)
-		if err != nil {
-			Static.LogChan <- "Could not parse config.json"
-			return Conf{}
-		}
-	} else {
+	if err != nil {
 		Static.LogChan <- "Failed to open config.json"
+		return Conf{}
+	}
+
+	// Decode JSON
+	err = json.NewDecoder(configFile).Decode(&conf)
+	if err != nil {
+		Static.LogChan <- "Could not parse config.json"
 		return Conf{}
 	}
 
