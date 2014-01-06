@@ -43,6 +43,11 @@ func (w WhitelistRecord) Load(id interface{}, col string) WhitelistRecord {
 
 	// Fetch record into struct
 	w = WhitelistRecord{}
-	db.Get(&w, "SELECT * FROM whitelist WHERE `"+col+"`=?", id)
+	err = db.Get(&w, "SELECT * FROM whitelist WHERE `"+col+"`=?", id)
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return WhitelistRecord{}
+	}
+
 	return w
 }
