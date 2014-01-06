@@ -43,7 +43,12 @@ func (u UserRecord) Load(id interface{}, col string) UserRecord {
 
 	// Fetch announce log into struct
 	u = UserRecord{}
-	db.Get(&u, "SELECT * FROM users WHERE `"+col+"`=?", id)
+	err = db.Get(&u, "SELECT * FROM users WHERE `"+col+"`=?", id)
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return UserRecord{}
+	}
+
 	return u
 }
 
@@ -53,7 +58,7 @@ func (u UserRecord) Uploaded() int64 {
 	db, err := DBConnect()
 	if err != nil {
 		Static.LogChan <- err.Error()
-		return 0
+		return -1
 	}
 
 	// Anonymous Uploaded struct
@@ -64,7 +69,12 @@ func (u UserRecord) Uploaded() int64 {
 	}
 
 	// Calculate sum of this user's upload via their file/user relationship records
-	db.Get(&uploaded, "SELECT SUM(uploaded) AS uploaded FROM files_users WHERE user_id=?", u.ID)
+	err = db.Get(&uploaded, "SELECT SUM(uploaded) AS uploaded FROM files_users WHERE user_id=?", u.ID)
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return -1
+	}
+
 	return uploaded.Uploaded
 }
 
@@ -85,6 +95,11 @@ func (u UserRecord) Downloaded() int64 {
 	}
 
 	// Calculate sum of this user's download via their file/user relationship records
-	db.Get(&downloaded, "SELECT SUM(downloaded) AS downloaded FROM files_users WHERE user_id=?", u.ID)
+	err = db.Get(&downloaded, "SELECT SUM(downloaded) AS downloaded FROM files_users WHERE user_id=?", u.ID)
+	if err != nil {
+		Static.LogChan <- err.Error()
+		return -1
+	}
+
 	return downloaded.Downloaded
 }
