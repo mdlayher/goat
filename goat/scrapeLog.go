@@ -2,6 +2,7 @@ package goat
 
 import (
 	"encoding/hex"
+	"log"
 	"time"
 )
 
@@ -19,7 +20,7 @@ func (s ScrapeLog) Save() bool {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return false
 	}
 
@@ -41,7 +42,7 @@ func (s ScrapeLog) Load(id interface{}, col string) ScrapeLog {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return s
 	}
 
@@ -49,7 +50,7 @@ func (s ScrapeLog) Load(id interface{}, col string) ScrapeLog {
 	s = ScrapeLog{}
 	err = db.Get(&s, "SELECT * FROM announce_log WHERE `"+col+"`=?", id)
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return ScrapeLog{}
 	}
 

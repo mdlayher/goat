@@ -2,6 +2,7 @@ package goat
 
 import (
 	"encoding/hex"
+	"log"
 	"strconv"
 	"time"
 )
@@ -28,7 +29,7 @@ func (a AnnounceLog) Save() bool {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return false
 	}
 
@@ -50,7 +51,7 @@ func (a AnnounceLog) Load(id interface{}, col string) AnnounceLog {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return AnnounceLog{}
 	}
 
@@ -58,7 +59,7 @@ func (a AnnounceLog) Load(id interface{}, col string) AnnounceLog {
 	a = AnnounceLog{}
 	err = db.Get(&a, "SELECT * FROM announce_log WHERE `"+col+"`=?", id)
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return AnnounceLog{}
 	}
 
@@ -93,7 +94,7 @@ func (a AnnounceLog) FromMap(query map[string]string) AnnounceLog {
 	// port
 	port, err := strconv.Atoi(query["port"])
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return AnnounceLog{}
 	}
 	a.Port = port
@@ -101,7 +102,7 @@ func (a AnnounceLog) FromMap(query map[string]string) AnnounceLog {
 	// uploaded
 	uploaded, err := strconv.ParseInt(query["uploaded"], 10, 64)
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return AnnounceLog{}
 	}
 	a.Uploaded = uploaded
@@ -109,7 +110,7 @@ func (a AnnounceLog) FromMap(query map[string]string) AnnounceLog {
 	// downloaded
 	downloaded, err := strconv.ParseInt(query["downloaded"], 10, 64)
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return AnnounceLog{}
 	}
 	a.Downloaded = downloaded
@@ -117,7 +118,7 @@ func (a AnnounceLog) FromMap(query map[string]string) AnnounceLog {
 	// left
 	left, err := strconv.ParseInt(query["left"], 10, 64)
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return AnnounceLog{}
 	}
 	a.Left = left

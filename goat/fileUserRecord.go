@@ -1,5 +1,9 @@
 package goat
 
+import (
+	"log"
+)
+
 // FileUserRecord represents a file tracked by tracker
 type FileUserRecord struct {
 	FileID     int `db:"file_id"`
@@ -19,7 +23,7 @@ func (f FileUserRecord) Save() bool {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return false
 	}
 
@@ -45,7 +49,7 @@ func (f FileUserRecord) Load(fileID int, userID int, ip string) FileUserRecord {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return f
 	}
 
@@ -53,7 +57,7 @@ func (f FileUserRecord) Load(fileID int, userID int, ip string) FileUserRecord {
 	f = FileUserRecord{}
 	err = db.Get(&f, "SELECT * FROM files_users WHERE `file_id`=? AND `user_id`=? AND `ip`=?", fileID, userID, ip)
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return FileUserRecord{}
 	}
 

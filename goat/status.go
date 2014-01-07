@@ -2,7 +2,7 @@ package goat
 
 import (
 	"encoding/json"
-	"fmt"
+	"log"
 	"os"
 	"runtime"
 	"sync/atomic"
@@ -27,7 +27,7 @@ func GetServerStatus() ServerStatus {
 	var hostname string
 	hostname, err := os.Hostname()
 	if err != nil {
-		Static.LogChan<- err.Error()
+		log.Println(err.Error())
 		return ServerStatus{}
 	}
 
@@ -72,12 +72,12 @@ func PrintStatusBanner() {
 	// Grab initial server status
 	stat := GetServerStatus()
 	if stat == (ServerStatus{}) {
-		Static.LogChan <- "Could not print startup status banner"
+		log.Println("Could not print startup status banner")
 		return
 	}
 
 	// Startup banner
-	Static.LogChan <- fmt.Sprintf("%s - %s_%s (%d CPU) [pid: %d]", stat.Hostname, stat.Platform, stat.Architecture, stat.NumCPU, stat.PID)
+	log.Printf("%s - %s_%s (%d CPU) [pid: %d]", stat.Hostname, stat.Platform, stat.Architecture, stat.NumCPU, stat.PID)
 }
 
 // PrintCurrentStatus logs the regular status check banner
@@ -85,16 +85,16 @@ func PrintCurrentStatus() {
 	// Grab server status
 	stat := GetServerStatus()
 	if stat == (ServerStatus{}) {
-		Static.LogChan <- "Could not print current status"
+		log.Println("Could not print current status")
 		return
 	}
 
 	// Regular status banner
-	Static.LogChan <- fmt.Sprintf("status - [goroutines: %d] [memory: %02.3f MB]", stat.NumGoroutine, stat.MemoryMB)
+	log.Printf("status - [goroutines: %d] [memory: %02.3f MB]", stat.NumGoroutine, stat.MemoryMB)
 
 	// HTTP stats
 	if Static.Config.HTTP {
-		Static.LogChan <- fmt.Sprintf("  http - [current: %d] [total: %d]", stat.HTTPCurrent, stat.HTTPTotal)
+		log.Printf("  http - [current: %d] [total: %d]", stat.HTTPCurrent, stat.HTTPTotal)
 
 		// Reset current HTTP counter
 		atomic.StoreInt64(&Static.HTTP.Current, 0)

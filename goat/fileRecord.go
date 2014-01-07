@@ -2,7 +2,7 @@ package goat
 
 import (
 	"encoding/binary"
-	"fmt"
+	"log"
 	"net"
 )
 
@@ -20,7 +20,7 @@ func (f FileRecord) Save() bool {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return false
 	}
 
@@ -44,7 +44,7 @@ func (f FileRecord) Load(id interface{}, col string) FileRecord {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return f
 	}
 
@@ -52,7 +52,7 @@ func (f FileRecord) Load(id interface{}, col string) FileRecord {
 	f = FileRecord{}
 	err = db.Get(&f, "SELECT * FROM files WHERE `"+col+"`=?", id)
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return FileRecord{}
 	}
 
@@ -64,7 +64,7 @@ func (f FileRecord) Completed() int {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return 0
 	}
 
@@ -78,7 +78,7 @@ func (f FileRecord) Completed() int {
 	// Calculate number of completions on this file, defined as users who are completed, and 0 left
 	err = db.Get(&completed, "SELECT COUNT(user_id) AS completed FROM files_users WHERE file_id = ? AND completed = 1 AND `left` = 0;", f.ID)
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return -1
 	}
 
@@ -90,7 +90,7 @@ func (f FileRecord) Seeders() int {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return 0
 	}
 
@@ -104,7 +104,7 @@ func (f FileRecord) Seeders() int {
 	// Calculate number of seeders on this file, defined as users who are active, completed, and 0 left
 	err = db.Get(&seeders, "SELECT COUNT(user_id) AS seeders FROM files_users WHERE file_id = ? AND active = 1 AND completed = 1 AND `left` = 0;", f.ID)
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return -1
 	}
 
@@ -116,7 +116,7 @@ func (f FileRecord) Leechers() int {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return 0
 	}
 
@@ -130,7 +130,7 @@ func (f FileRecord) Leechers() int {
 	// Calculate number of leechers on this file, defined as users who are active, completed, and 0 left
 	db.Get(&leechers, "SELECT COUNT(user_id) AS leechers FROM files_users WHERE file_id = ? AND active = 1 AND completed = 0 AND `left` > 0;", f.ID)
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return -1
 	}
 
@@ -142,7 +142,7 @@ func (f FileRecord) PeerList(exclude string, numwant int) []byte {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return nil
 	}
 
@@ -170,7 +170,7 @@ func (f FileRecord) PeerList(exclude string, numwant int) []byte {
 
 	rows, err := db.Queryx(query, f.InfoHash, exclude, numwant)
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return nil
 	}
 
@@ -179,7 +179,7 @@ func (f FileRecord) PeerList(exclude string, numwant int) []byte {
 		// Scan row results
 		rows.StructScan(&peer)
 
-		Static.LogChan <- fmt.Sprintf("peer: %s:%d", peer.IP, peer.Port)
+		log.Printf("peer: %s:%d\n", peer.IP, peer.Port)
 
 		// Parse IP into byte buffer
 		ip := [4]byte{}
@@ -201,7 +201,7 @@ func (f FileRecord) PeerReaper() bool {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return false
 	}
 
@@ -222,7 +222,7 @@ func (f FileRecord) PeerReaper() bool {
 
 	rows, err := db.Queryx(query, Static.Config.Interval+60, f.ID)
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return false
 	}
 
@@ -246,7 +246,7 @@ func (f FileRecord) PeerReaper() bool {
 	tx.Commit()
 
 	if count > 0 {
-		Static.LogChan <- fmt.Sprintf("reaper: reaped %d peer(s) on file %d", count, f.ID)
+		log.Printf("reaper: reaped %d peer(s) on file %d\n", count, f.ID)
 	}
 
 	return true

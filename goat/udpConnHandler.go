@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/hex"
+	"log"
 	"net"
 	"strconv"
 	"strings"
@@ -40,7 +41,7 @@ func (u UDPConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 
 		// Verify length is at least 16 bytes
 		if rlen < 16 {
-			Static.LogChan <- "Invalid length"
+			log.Println("Invalid length")
 			continue
 		}
 
@@ -54,10 +55,10 @@ func (u UDPConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 		// On first run, verify valid connection ID
 		if first {
 			if connID != InitID {
-				Static.LogChan <- "Invalid connection handshake"
+				log.Println("Invalid connection handshake")
 				_, err = l.WriteToUDP(UDPTrackerError("Invalid connection handshake", transID), addr)
 				if err != nil {
-					Static.LogChan <- err.Error()
+					log.Println(err.Error())
 					return
 				}
 				continue
@@ -74,27 +75,27 @@ func (u UDPConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 			// Action
 			err = binary.Write(res, binary.BigEndian, uint32(0))
 			if err != nil {
-				Static.LogChan <- err.Error()
+				log.Println(err.Error())
 				return
 			}
 
 			// Transaction ID
 			err = binary.Write(res, binary.BigEndian, transID)
 			if err != nil {
-				Static.LogChan <- err.Error()
+				log.Println(err.Error())
 				return
 			}
 
 			// Connection ID, generated for this session
 			err = binary.Write(res, binary.BigEndian, uint64(RandRange(0, 1000000000)))
 			if err != nil {
-				Static.LogChan <- err.Error()
+				log.Println(err.Error())
 				return
 			}
 
 			_, err := l.WriteToUDP(res.Bytes(), addr)
 			if err != nil {
-				Static.LogChan <- err.Error()
+				log.Println(err.Error())
 				return
 			}
 
@@ -121,7 +122,7 @@ func (u UDPConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 			// Downloaded
 			t, err := strconv.ParseInt(hex.EncodeToString(buf[56:64]), 16, 64)
 			if err != nil {
-				Static.LogChan <- err.Error()
+				log.Println(err.Error())
 				return
 			}
 			query["downloaded"] = strconv.FormatInt(t, 10)
@@ -129,7 +130,7 @@ func (u UDPConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 			// Left
 			t, err = strconv.ParseInt(hex.EncodeToString(buf[64:72]), 16, 64)
 			if err != nil {
-				Static.LogChan <- err.Error()
+				log.Println(err.Error())
 				return
 			}
 			query["left"] = strconv.FormatInt(t, 10)
@@ -137,7 +138,7 @@ func (u UDPConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 			// Uploaded
 			t, err = strconv.ParseInt(hex.EncodeToString(buf[72:80]), 16, 64)
 			if err != nil {
-				Static.LogChan <- err.Error()
+				log.Println(err.Error())
 				return
 			}
 			query["uploaded"] = strconv.FormatInt(t, 10)
@@ -145,7 +146,7 @@ func (u UDPConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 			// Event
 			t, err = strconv.ParseInt(hex.EncodeToString(buf[80:84]), 16, 32)
 			if err != nil {
-				Static.LogChan <- err.Error()
+				log.Println(err.Error())
 				return
 			}
 			query["event"] = strconv.FormatInt(t, 10)
@@ -165,7 +166,7 @@ func (u UDPConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 			// IP address
 			t, err = strconv.ParseInt(hex.EncodeToString(buf[84:88]), 16, 32)
 			if err != nil {
-				Static.LogChan <- err.Error()
+				log.Println(err.Error())
 				return
 			}
 			query["ip"] = strconv.FormatInt(t, 10)
@@ -189,7 +190,7 @@ func (u UDPConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 			// Port
 			t, err = strconv.ParseInt(hex.EncodeToString(buf[96:98]), 16, 32)
 			if err != nil {
-				Static.LogChan <- err.Error()
+				log.Println(err.Error())
 				return
 			}
 			query["port"] = strconv.FormatInt(t, 10)
@@ -201,11 +202,11 @@ func (u UDPConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 			_, err = l.WriteToUDP(<-resChan, addr)
 			close(resChan)
 			if err != nil {
-				Static.LogChan <- err.Error()
+				log.Println(err.Error())
 				return
 			}
 		default:
-			Static.LogChan <- "Invalid action"
+			log.Println("Invalid action")
 			continue
 		}
 	}

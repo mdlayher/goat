@@ -2,6 +2,7 @@ package goat
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"strconv"
@@ -92,7 +93,7 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 				whitelist.Client = client
 				whitelist.Approved = false
 
-				Static.LogChan <- fmt.Sprintf("whitelist: detected new client '%s', awaiting manual approval", client)
+				log.Printf("whitelist: detected new client '%s', awaiting manual approval", client)
 
 				go whitelist.Save()
 			}

@@ -1,5 +1,10 @@
 package goat
 
+import (
+	"log"
+	"database/sql"
+)
+
 // WhitelistRecord represents a whitelist entry
 type WhitelistRecord struct {
 	ID       int
@@ -12,7 +17,7 @@ func (w WhitelistRecord) Save() bool {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return false
 	}
 
@@ -37,15 +42,15 @@ func (w WhitelistRecord) Load(id interface{}, col string) WhitelistRecord {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return w
 	}
 
 	// Fetch record into struct
 	w = WhitelistRecord{}
 	err = db.Get(&w, "SELECT * FROM whitelist WHERE `"+col+"`=?", id)
-	if err != nil {
-		Static.LogChan <- err.Error()
+	if err != nil && err != sql.ErrNoRows {
+		log.Println(err.Error())
 		return WhitelistRecord{}
 	}
 

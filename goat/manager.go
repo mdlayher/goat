@@ -1,6 +1,7 @@
 package goat
 
 import (
+	"log"
 	"os"
 	"strconv"
 )
@@ -18,11 +19,9 @@ func Manager(killChan chan bool, exitChan chan int) {
 	Static.ShutdownChan = shutdownChan
 
 	// Set up logger
-	logChan := make(chan string)
-	Static.LogChan = logChan
 	go LogManager()
 
-	Static.LogChan <- "Starting " + App + " " + Version
+	log.Println("Starting " + App + " " + Version)
 
 	// Print startup status banner
 	go PrintStatusBanner()
@@ -30,7 +29,7 @@ func Manager(killChan chan bool, exitChan chan int) {
 	// Load configuration
 	config := LoadConfig()
 	if config == (Conf{}) {
-		Static.LogChan <- "Cannot load configuration, exiting now."
+		log.Println("Cannot load configuration, exiting now.")
 		os.Exit(1)
 	}
 	Static.Config = config
@@ -42,11 +41,11 @@ func Manager(killChan chan bool, exitChan chan int) {
 	// Launch listeners as configured
 	if Static.Config.HTTP {
 		go new(HTTPListener).Listen(httpDoneChan)
-		Static.LogChan <- "HTTP listener launched on port " + strconv.Itoa(Static.Config.Port)
+		log.Println("HTTP listener launched on port " + strconv.Itoa(Static.Config.Port))
 	}
 	if Static.Config.UDP {
 		go new(UDPListener).Listen(udpDoneChan)
-		Static.LogChan <- "UDP listener launched on port " + strconv.Itoa(Static.Config.Port)
+		log.Println("UDP listener launched on port " + strconv.Itoa(Static.Config.Port))
 	}
 
 	// Wait for shutdown signal
@@ -54,16 +53,16 @@ func Manager(killChan chan bool, exitChan chan int) {
 		select {
 		case <-killChan:
 			// Trigger a graceful shutdown
-			Static.LogChan <- "triggering graceful shutdown, press Ctrl+C again to force halt"
+			log.Println("triggering graceful shutdown, press Ctrl+C again to force halt")
 			Static.ShutdownChan <- true
 
 			// Stop listeners
 			if Static.Config.HTTP {
-				Static.LogChan <- "stopping HTTP listener"
+				log.Println("stopping HTTP listener")
 				//<-httpDoneChan
 			}
 			if Static.Config.UDP {
-				Static.LogChan <- "stopping UDP listener"
+				log.Println("stopping UDP listener")
 				//<-udpDoneChan
 			}
 

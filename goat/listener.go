@@ -1,6 +1,7 @@
 package goat
 
 import (
+	"log"
 	"net"
 	"strconv"
 )
@@ -19,7 +20,7 @@ func (h HTTPListener) Listen(httpDoneChan chan bool) {
 	// Listen on specified TCP port
 	l, err := net.Listen("tcp", ":"+strconv.Itoa(Static.Config.Port))
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 	}
 
 	// Send listener to HttpConnHandler
@@ -36,7 +37,7 @@ func (u UDPListener) Listen(udpDoneChan chan bool) {
 	addr, err := net.ResolveUDPAddr("udp", ":"+strconv.Itoa(Static.Config.Port))
 	l, err := net.ListenUDP("udp", addr)
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 	}
 
 	// Send listener to UdpConnHandler

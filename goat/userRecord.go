@@ -1,5 +1,9 @@
 package goat
 
+import (
+	"log"
+)
+
 // UserRecord represents a user on the tracker
 type UserRecord struct {
 	ID           int
@@ -13,7 +17,7 @@ func (u UserRecord) Save() bool {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return false
 	}
 
@@ -37,7 +41,7 @@ func (u UserRecord) Load(id interface{}, col string) UserRecord {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return u
 	}
 
@@ -45,7 +49,7 @@ func (u UserRecord) Load(id interface{}, col string) UserRecord {
 	u = UserRecord{}
 	err = db.Get(&u, "SELECT * FROM users WHERE `"+col+"`=?", id)
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return UserRecord{}
 	}
 
@@ -57,7 +61,7 @@ func (u UserRecord) Uploaded() int64 {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return -1
 	}
 
@@ -71,7 +75,7 @@ func (u UserRecord) Uploaded() int64 {
 	// Calculate sum of this user's upload via their file/user relationship records
 	err = db.Get(&uploaded, "SELECT SUM(uploaded) AS uploaded FROM files_users WHERE user_id=?", u.ID)
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return -1
 	}
 
@@ -83,7 +87,7 @@ func (u UserRecord) Downloaded() int64 {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return 0
 	}
 
@@ -97,7 +101,7 @@ func (u UserRecord) Downloaded() int64 {
 	// Calculate sum of this user's download via their file/user relationship records
 	err = db.Get(&downloaded, "SELECT SUM(downloaded) AS downloaded FROM files_users WHERE user_id=?", u.ID)
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return -1
 	}
 

@@ -8,9 +8,6 @@ type HTTPStats struct {
 
 // "Static" struct containing values which should be shared globally
 var Static struct {
-	// Server logging
-	LogChan chan string
-
 	// Trigger a graceful shutdown
 	ShutdownChan chan bool
 
