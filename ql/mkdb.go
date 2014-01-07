@@ -24,13 +24,14 @@ func init() {
 func main() {
 
 	if "" != *flagDbName {
-		db, err = ql.OpenFile(*flagDbName, &ql.Options{})
+		db, err = ql.OpenFile(*flagDbName, &ql.Options{CanCreate: true})
 	} else {
 		db, err = ql.OpenMem()
 	}
 	if nil != err {
 		log.Fatalln(err.Error())
 	}
+	defer db.Close()
 
 	files, err := filepath.Glob("*.ql")
 	if nil != err {

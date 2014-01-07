@@ -7,9 +7,9 @@ CREATE TABLE files_users (
 	active     bool,
 	completed  bool,
 	announced  int,
-	uploaded   uint64,
-	downloaded uint64,
-	left       uint64,
+	uploaded   int64,
+	downloaded int64,
+	left       int64,
 	ts         time
 );
 

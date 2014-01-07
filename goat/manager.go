@@ -67,6 +67,10 @@ func Manager(killChan chan bool, exitChan chan int) {
 				//<-udpDoneChan
 			}
 
+			// TODO Is this the right place?
+			Static.LogChan <- "calling dbCloseFunc"
+			dbCloseFunc()
+
 			// Report that program should exit gracefully
 			exitChan <- 0
 		}
