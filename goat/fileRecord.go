@@ -1,6 +1,7 @@
 package goat
 
 import (
+	"database/sql"
 	"encoding/binary"
 	"log"
 	"net"
@@ -51,7 +52,7 @@ func (f FileRecord) Load(id interface{}, col string) FileRecord {
 	// Fetch announce log into struct
 	f = FileRecord{}
 	err = db.Get(&f, "SELECT * FROM files WHERE `"+col+"`=?", id)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		log.Println(err.Error())
 		return FileRecord{}
 	}
