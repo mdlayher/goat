@@ -3,6 +3,7 @@ package goat
 import (
 	"database/sql"
 	"encoding/binary"
+	"encoding/json"
 	"log"
 	"net"
 )
@@ -27,16 +28,26 @@ type JSONFileRecord struct {
 }
 
 // ToJSON converts a FileRecord to a JSONFileRecord struct
-func (f FileRecord) ToJSON() JSONFileRecord {
+func (f FileRecord) ToJSON() []byte {
+	// Convert all standard fields to the JSON equivalent struct
 	j := JSONFileRecord{}
 	j.ID = f.ID
 	j.InfoHash = f.InfoHash
 	j.Verified = f.Verified
 	j.CreateTime = f.CreateTime
 	j.UpdateTime = f.UpdateTime
+
+	// Load in FileUserRecords associated with this file
 	j.FileUsers = f.Users()
 
-	return j
+	// Marshal into JSON
+	out, err := json.Marshal(j)
+	if err != nil {
+		log.Println(err.Error())
+		return nil
+	}
+
+	return out
 }
 
 // FileRecordRepository is used to contain methods to load multiple FileRecord structs
