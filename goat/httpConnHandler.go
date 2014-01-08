@@ -70,14 +70,22 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// If configured, Detect if client is making an API call
 	url = urlArr[1]
-	if Static.Config.API && url == "api" {
-		// Log API calls
-		log.Printf("API: %s\n", r.URL.Path)
-
-		// Handle API calls, output JSON
+	if url == "api" {
+		// Output JSON
 		w.Header().Add("Content-Type", "application/json")
-		APIRouter(w, r)
-		return
+
+		// API enabled
+		if Static.Config.API {
+			// Log API calls
+			log.Printf("API: %s\n", r.URL.Path)
+
+			// Handle API calls, output JSON
+			APIRouter(w, r)
+			return
+		} else {
+			http.Error(w, string(APIErrorResponse("API is currently disabled")), 503)
+			return
+		}
 	}
 
 	// Detect if passkey present in URL
