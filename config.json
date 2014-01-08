@@ -4,6 +4,7 @@
 	"Whitelist": true,
 	"Interval": 3600,
 	"HTTP": true,
+	"API": true,
 	"UDP": false,
 	"DB": {
 		"Database": "goat",

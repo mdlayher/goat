@@ -26,11 +26,49 @@ func (h HTTPConnHandler) Handle(l net.Listener, httpDoneChan chan bool) {
 		httpDoneChan <- true
 	}(l, httpDoneChan)
 
+	// Add API route if configured
+	if Static.Config.API {
+		log.Println("API functionality enabled")
+		http.HandleFunc("/api", parseAPI)
+	}
+
 	// Set up HTTP routes for handling functions
 	http.HandleFunc("/", parseHTTP)
 
 	// Serve HTTP requests
 	http.Serve(l, nil)
+}
+
+// Parse incoming HTTP connections to API, before making API calls
+func parseAPI(w http.ResponseWriter, r *http.Request) {
+	// Count incoming connections
+	atomic.AddInt64(&Static.HTTP.Current, 1)
+	atomic.AddInt64(&Static.HTTP.Total, 1)
+
+	// Add header to identify goat and JSON response
+	w.Header().Add("Server", fmt.Sprintf("%s/%s", App, Version))
+	w.Header().Add("Content-Type", "application/json")
+
+	// Store current URL path
+	url := r.URL.Path
+
+	// Split URL into segments
+	urlArr := strings.Split(url, "/")
+
+	// If configured, Detect if client is making an API call
+	fmt.Println(urlArr)
+	url = urlArr[1]
+
+	// Create channel to return response to client
+	resChan := make(chan []byte)
+
+	// Handle API calls
+	go APIRouter(r, resChan)
+
+	// Wait for response, and send it when ready
+	w.Write(<-resChan)
+	close(resChan)
+	return
 }
 
 // Parse incoming HTTP connections before making tracker calls
@@ -54,20 +92,22 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 		query["ip"] = strings.Split(r.RemoteAddr, ":")[0]
 	}
 
-	// Store current passkey URL
-	var passkey string
+	// Add header to identify goat
+	w.Header().Add("Server", fmt.Sprintf("%s/%s", App, Version))
+
+	// Store current URL path
 	url := r.URL.Path
 
-	// Check for passkey present in URL, form: /ABDEF/announce
+	// Split URL into segments
 	urlArr := strings.Split(url, "/")
+
+	// Detect if passkey present in URL
 	url = urlArr[1]
+	var passkey string
 	if len(urlArr) == 3 {
 		passkey = urlArr[1]
 		url = urlArr[2]
 	}
-
-	// Add header to identify goat
-	w.Header().Add("Server", fmt.Sprintf("%s/%s", App, Version))
 
 	// Verify that torrent client is advertising its User-Agent, so we can use a whitelist
 	if _, ok := r.Header["User-Agent"]; !ok {
@@ -124,7 +164,7 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 	// Mark client as HTTP
 	query["udp"] = "0"
 
-	// Create channel to return bencoded response to client on
+	// Create channel to return response to client
 	resChan := make(chan []byte)
 
 	// Handle tracker functions via different URLs
@@ -169,10 +209,6 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 	// Tracker scrape
 	case "scrape":
 		go TrackerScrape(user, query, resChan)
-	// Tracker status
-	case "status":
-		w.Header().Add("Content-Type", "application/json")
-		go GetStatusJSON(resChan)
 	// Any undefined handlers
 	default:
 		w.Write(HTTPTrackerError("Malformed announce"))
