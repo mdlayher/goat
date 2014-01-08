@@ -1,6 +1,7 @@
 package goat
 
 import (
+	"database/sql"
 	"log"
 )
 
@@ -48,7 +49,7 @@ func (u UserRecord) Load(id interface{}, col string) UserRecord {
 	// Fetch announce log into struct
 	u = UserRecord{}
 	err = db.Get(&u, "SELECT * FROM users WHERE `"+col+"`=?", id)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		log.Println(err.Error())
 		return UserRecord{}
 	}

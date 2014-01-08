@@ -1,6 +1,7 @@
 package goat
 
 import (
+	"database/sql"
 	"encoding/hex"
 	"log"
 	"time"
@@ -49,7 +50,7 @@ func (s ScrapeLog) Load(id interface{}, col string) ScrapeLog {
 	// Fetch announce log into struct
 	s = ScrapeLog{}
 	err = db.Get(&s, "SELECT * FROM announce_log WHERE `"+col+"`=?", id)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		log.Println(err.Error())
 		return ScrapeLog{}
 	}

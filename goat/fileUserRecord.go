@@ -1,6 +1,7 @@
 package goat
 
 import (
+	"database/sql"
 	"log"
 )
 
@@ -56,7 +57,7 @@ func (f FileUserRecord) Load(fileID int, userID int, ip string) FileUserRecord {
 	// Fetch announce log into struct
 	f = FileUserRecord{}
 	err = db.Get(&f, "SELECT * FROM files_users WHERE `file_id`=? AND `user_id`=? AND `ip`=?", fileID, userID, ip)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		log.Println(err.Error())
 		return FileUserRecord{}
 	}
