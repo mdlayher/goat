@@ -22,6 +22,7 @@ type Conf struct {
 	Whitelist bool
 	Interval  int
 	HTTP      bool
+	API       bool
 	UDP       bool
 	DB        DBConf
 }

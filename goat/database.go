@@ -2,6 +2,7 @@ package goat
 
 import (
 	"fmt"
+	"log"
 
 	// Bring in the MySQL driver
 	_ "github.com/go-sql-driver/mysql"
@@ -15,4 +16,16 @@ func DBConnect() (*sqlx.DB, error) {
 
 	// Return connection and associated errors
 	return sqlx.Connect("mysql", conn)
+}
+
+// Attempt to "ping" the database to verify connectivity
+func DBPing() bool {
+	db, err := DBConnect()
+	if err != nil {
+		log.Println(err.Error())
+		return false
+	}
+
+	db.Close()
+	return true
 }

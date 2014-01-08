@@ -26,6 +26,11 @@ func (h HTTPConnHandler) Handle(l net.Listener, httpDoneChan chan bool) {
 		httpDoneChan <- true
 	}(l, httpDoneChan)
 
+	// Log API configuration
+	if Static.Config.API {
+		log.Println("API functionality enabled")
+	}
+
 	// Set up HTTP routes for handling functions
 	http.HandleFunc("/", parseHTTP)
 
@@ -54,20 +59,33 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 		query["ip"] = strings.Split(r.RemoteAddr, ":")[0]
 	}
 
-	// Store current passkey URL
-	var passkey string
+	// Add header to identify goat
+	w.Header().Add("Server", fmt.Sprintf("%s/%s", App, Version))
+
+	// Store current URL path
 	url := r.URL.Path
 
-	// Check for passkey present in URL, form: /ABDEF/announce
+	// Split URL into segments
 	urlArr := strings.Split(url, "/")
+
+	// If configured, Detect if client is making an API call
 	url = urlArr[1]
+	if Static.Config.API && url == "api" {
+		// Log API calls
+		log.Printf("API: %s\n", r.URL.Path)
+
+		// Handle API calls, output JSON
+		w.Header().Add("Content-Type", "application/json")
+		APIRouter(w, r)
+		return
+	}
+
+	// Detect if passkey present in URL
+	var passkey string
 	if len(urlArr) == 3 {
 		passkey = urlArr[1]
 		url = urlArr[2]
 	}
-
-	// Add header to identify goat
-	w.Header().Add("Server", fmt.Sprintf("%s/%s", App, Version))
 
 	// Verify that torrent client is advertising its User-Agent, so we can use a whitelist
 	if _, ok := r.Header["User-Agent"]; !ok {
@@ -124,7 +142,7 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 	// Mark client as HTTP
 	query["udp"] = "0"
 
-	// Create channel to return bencoded response to client on
+	// Create channel to return response to client
 	resChan := make(chan []byte)
 
 	// Handle tracker functions via different URLs
@@ -169,10 +187,6 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 	// Tracker scrape
 	case "scrape":
 		go TrackerScrape(user, query, resChan)
-	// Tracker status
-	case "status":
-		w.Header().Add("Content-Type", "application/json")
-		go GetStatusJSON(resChan)
 	// Any undefined handlers
 	default:
 		w.Write(HTTPTrackerError("Malformed announce"))

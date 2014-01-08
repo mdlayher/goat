@@ -3,6 +3,7 @@ package goat
 import (
 	"log"
 	"net"
+	"os"
 	"strconv"
 )
 
@@ -21,6 +22,8 @@ func (h HTTPListener) Listen(httpDoneChan chan bool) {
 	l, err := net.Listen("tcp", ":"+strconv.Itoa(Static.Config.Port))
 	if err != nil {
 		log.Println(err.Error())
+		log.Println("Cannot start HTTP server, exiting now.")
+		os.Exit(1)
 	}
 
 	// Send listener to HttpConnHandler
