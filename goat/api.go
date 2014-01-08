@@ -34,6 +34,7 @@ func APIRouter(w http.ResponseWriter, r *http.Request) {
 	// Return error response
 	default:
 		http.Error(w, string(APIErrorResponse("Undefined API call")), 404)
+		close(apiChan)
 		return
 	}
 
