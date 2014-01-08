@@ -46,7 +46,7 @@ describing the settings available to the user.
 		// listener should only be used for public trackers
 		"UDP": false,
 
-		// Db: MySQL database configuration
+		// DB: MySQL database configuration
 		"DB": {
 			// Database: the database goat will use to store its tracker data
 			"Database": "goat",
