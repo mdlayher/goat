@@ -5,8 +5,8 @@ import (
 	"log"
 )
 
-// FileUserRecord represents a file tracked by tracker
-type FileUserRecord struct {
+// fileUserRecord represents a file tracked by tracker
+type fileUserRecord struct {
 	FileID     int    `db:"file_id" json:"fileId"`
 	UserID     int    `db:"user_id" json:"userId"`
 	IP         string `json:"ip"`
@@ -19,14 +19,14 @@ type FileUserRecord struct {
 	Time       int64  `json:"time"`
 }
 
-// FileUserRecordRepository is used to contain methods to load multiple FileRecord structs
-type FileUserRecordRepository struct {
+// fileUserRecordRepository is used to contain methods to load multiple fileRecord structs
+type fileUserRecordRepository struct {
 }
 
-// Save FileUserRecord to storage
-func (f FileUserRecord) Save() bool {
+// Save fileUserRecord to storage
+func (f fileUserRecord) Save() bool {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
 		log.Println(err.Error())
 		return false
@@ -49,32 +49,32 @@ func (f FileUserRecord) Save() bool {
 	return true
 }
 
-// Load FileUserRecord from storage
-func (f FileUserRecord) Load(fileID int, userID int, ip string) FileUserRecord {
+// Load fileUserRecord from storage
+func (f fileUserRecord) Load(fileID int, userID int, ip string) fileUserRecord {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
 		log.Println(err.Error())
 		return f
 	}
 
 	// Fetch announce log into struct
-	f = FileUserRecord{}
+	f = fileUserRecord{}
 	err = db.Get(&f, "SELECT * FROM files_users WHERE `file_id`=? AND `user_id`=? AND `ip`=?", fileID, userID, ip)
 	if err != nil && err != sql.ErrNoRows {
 		log.Println(err.Error())
-		return FileUserRecord{}
+		return fileUserRecord{}
 	}
 
 	return f
 }
 
-// Select loads selected FileUserRecord structs from storage
-func (f FileUserRecordRepository) Select(id interface{}, col string) []FileUserRecord {
-	fileUsers := make([]FileUserRecord, 0)
+// Select loads selected fileUserRecord structs from storage
+func (f fileUserRecordRepository) Select(id interface{}, col string) []fileUserRecord {
+	fileUsers := make([]fileUserRecord, 0)
 
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
 		log.Println(err.Error())
 		return fileUsers
@@ -88,7 +88,7 @@ func (f FileUserRecordRepository) Select(id interface{}, col string) []FileUserR
 	}
 
 	// Iterate all rows and build array
-	fileUser := FileUserRecord{}
+	fileUser := fileUserRecord{}
 	for rows.Next() {
 		// Scan row results
 		rows.StructScan(&fileUser)

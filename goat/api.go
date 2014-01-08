@@ -9,12 +9,12 @@ import (
 )
 
 // APIError represents an error response from the API
-type APIError struct {
+type apiError struct {
 	Error string `json:"error"`
 }
 
 // APIRouter handles the routing of HTTP API requests
-func APIRouter(w http.ResponseWriter, r *http.Request) {
+func apiRouter(w http.ResponseWriter, r *http.Request) {
 	// Log API calls
 	log.Printf("API: [http %s] %s\n", r.RemoteAddr, r.URL.Path)
 
@@ -23,7 +23,7 @@ func APIRouter(w http.ResponseWriter, r *http.Request) {
 
 	// Verify API method set
 	if len(urlArr) < 3 {
-		http.Error(w, string(APIErrorResponse("No API call")), 404)
+		http.Error(w, string(apiErrorResponse("No API call")), 404)
 		return
 	}
 
@@ -32,7 +32,7 @@ func APIRouter(w http.ResponseWriter, r *http.Request) {
 	if len(urlArr) == 4 {
 		i, err := strconv.Atoi(urlArr[3])
 		if err != nil || i < 1 {
-			http.Error(w, string(APIErrorResponse("Invalid integer ID")), 400)
+			http.Error(w, string(apiErrorResponse("Invalid integer ID")), 400)
 			return
 		} else {
 			ID = i
@@ -46,13 +46,13 @@ func APIRouter(w http.ResponseWriter, r *http.Request) {
 	switch urlArr[2] {
 	// Files on tracker
 	case "files":
-		go GetFilesJSON(ID, apiChan)
+		go getFilesJSON(ID, apiChan)
 	// Server status
 	case "status":
-		go GetStatusJSON(apiChan)
+		go getStatusJSON(apiChan)
 	// Return error response
 	default:
-		http.Error(w, string(APIErrorResponse("Undefined API call")), 404)
+		http.Error(w, string(apiErrorResponse("Undefined API call")), 404)
 		close(apiChan)
 		return
 	}
@@ -62,9 +62,9 @@ func APIRouter(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-// APIErrorResponse return an APIError as JSON
-func APIErrorResponse(msg string) []byte {
-	res := APIError{
+// apiErrorResponse returns an apiError as JSON
+func apiErrorResponse(msg string) []byte {
+	res := apiError{
 		msg,
 	}
 

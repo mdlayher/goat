@@ -16,26 +16,26 @@ const Version = "git-master"
 func Manager(killChan chan bool, exitChan chan int) {
 	// Set up graceful shutdown channel
 	shutdownChan := make(chan bool)
-	Static.ShutdownChan = shutdownChan
+	static.ShutdownChan = shutdownChan
 
 	// Set up logger
-	go LogManager()
+	go logManager()
 
 	log.Println("Starting " + App + " " + Version)
 
 	// Print startup status banner
-	go PrintStatusBanner()
+	go printStatusBanner()
 
 	// Load configuration
-	config := LoadConfig()
-	if config == (Conf{}) {
+	config := loadConfig()
+	if config == (conf{}) {
 		log.Println("Cannot load configuration, exiting now.")
 		os.Exit(1)
 	}
-	Static.Config = config
+	static.Config = config
 
 	// Attempt database connection
-	if !DBPing() {
+	if !dbPing() {
 		log.Println("Cannot connect to MySQL database, exiting now.")
 		os.Exit(1)
 	}
@@ -45,13 +45,13 @@ func Manager(killChan chan bool, exitChan chan int) {
 	udpDoneChan := make(chan bool)
 
 	// Launch listeners as configured
-	if Static.Config.HTTP {
-		go new(HTTPListener).Listen(httpDoneChan)
-		log.Println("HTTP listener launched on port " + strconv.Itoa(Static.Config.Port))
+	if static.Config.HTTP {
+		go listenHTTP(httpDoneChan)
+		log.Println("HTTP listener launched on port " + strconv.Itoa(static.Config.Port))
 	}
-	if Static.Config.UDP {
-		go new(UDPListener).Listen(udpDoneChan)
-		log.Println("UDP listener launched on port " + strconv.Itoa(Static.Config.Port))
+	if static.Config.UDP {
+		go listenUDP(udpDoneChan)
+		log.Println("UDP listener launched on port " + strconv.Itoa(static.Config.Port))
 	}
 
 	// Wait for shutdown signal
@@ -60,14 +60,14 @@ func Manager(killChan chan bool, exitChan chan int) {
 		case <-killChan:
 			// Trigger a graceful shutdown
 			log.Println("triggering graceful shutdown, press Ctrl+C again to force halt")
-			Static.ShutdownChan <- true
+			static.ShutdownChan <- true
 
 			// Stop listeners
-			if Static.Config.HTTP {
+			if static.Config.HTTP {
 				log.Println("stopping HTTP listener")
 				//<-httpDoneChan
 			}
-			if Static.Config.UDP {
+			if static.Config.UDP {
 				log.Println("stopping UDP listener")
 				//<-udpDoneChan
 			}

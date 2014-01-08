@@ -8,8 +8,8 @@ import (
 	"time"
 )
 
-// AnnounceLog represents an announce, to be logged to storage
-type AnnounceLog struct {
+// announceLog represents an announce, to be logged to storage
+type announceLog struct {
 	ID         int
 	InfoHash   string `db:"info_hash"`
 	Passkey    string
@@ -25,10 +25,10 @@ type AnnounceLog struct {
 	Time       int64
 }
 
-// Save AnnounceLog to storage
-func (a AnnounceLog) Save() bool {
+// Save announceLog to storage
+func (a announceLog) Save() bool {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
 		log.Println(err.Error())
 		return false
@@ -47,29 +47,29 @@ func (a AnnounceLog) Save() bool {
 	return true
 }
 
-// Load AnnounceLog from storage
-func (a AnnounceLog) Load(ID interface{}, col string) AnnounceLog {
+// Load announceLog from storage
+func (a announceLog) Load(ID interface{}, col string) announceLog {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
 		log.Println(err.Error())
-		return AnnounceLog{}
+		return announceLog{}
 	}
 
 	// Fetch announce log into struct
-	a = AnnounceLog{}
+	a = announceLog{}
 	err = db.Get(&a, "SELECT * FROM announce_log WHERE `"+col+"`=?", ID)
 	if err != nil && err != sql.ErrNoRows {
 		log.Println(err.Error())
-		return AnnounceLog{}
+		return announceLog{}
 	}
 
 	return a
 }
 
-// FromMap generates an AnnounceLog struct from a query map
-func (a AnnounceLog) FromMap(query map[string]string) AnnounceLog {
-	a = AnnounceLog{}
+// FromMap generates an announceLog struct from a query map
+func (a announceLog) FromMap(query map[string]string) announceLog {
+	a = announceLog{}
 
 	// Required parameters
 
@@ -96,7 +96,7 @@ func (a AnnounceLog) FromMap(query map[string]string) AnnounceLog {
 	port, err := strconv.Atoi(query["port"])
 	if err != nil {
 		log.Println(err.Error())
-		return AnnounceLog{}
+		return announceLog{}
 	}
 	a.Port = port
 
@@ -104,7 +104,7 @@ func (a AnnounceLog) FromMap(query map[string]string) AnnounceLog {
 	uploaded, err := strconv.ParseInt(query["uploaded"], 10, 64)
 	if err != nil {
 		log.Println(err.Error())
-		return AnnounceLog{}
+		return announceLog{}
 	}
 	a.Uploaded = uploaded
 
@@ -112,7 +112,7 @@ func (a AnnounceLog) FromMap(query map[string]string) AnnounceLog {
 	downloaded, err := strconv.ParseInt(query["downloaded"], 10, 64)
 	if err != nil {
 		log.Println(err.Error())
-		return AnnounceLog{}
+		return announceLog{}
 	}
 	a.Downloaded = downloaded
 
@@ -120,7 +120,7 @@ func (a AnnounceLog) FromMap(query map[string]string) AnnounceLog {
 	left, err := strconv.ParseInt(query["left"], 10, 64)
 	if err != nil {
 		log.Println(err.Error())
-		return AnnounceLog{}
+		return announceLog{}
 	}
 	a.Left = left
 

@@ -1,16 +1,16 @@
 package goat
 
-// "Static" struct containing values which should be shared globally
-var Static struct {
+// static is a struct containing values which should be shared globally
+var static struct {
 	// Trigger a graceful shutdown
 	ShutdownChan chan bool
 
 	// Configuration object
-	Config Conf
+	Config conf
 
 	// Stats about HTTP server
-	HTTP HTTPStats
+	HTTP httpStats
 
 	// Stats about UDP server
-	UDP UDPStats
+	UDP udpStats
 }

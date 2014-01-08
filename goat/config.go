@@ -9,14 +9,14 @@ import (
 )
 
 // DBConf represents database configuration
-type DBConf struct {
+type dbConf struct {
 	Database string
 	Username string
 	Password string
 }
 
 // Conf represents server configuration
-type Conf struct {
+type conf struct {
 	Port      int
 	Passkey   bool
 	Whitelist bool
@@ -24,11 +24,11 @@ type Conf struct {
 	HTTP      bool
 	API       bool
 	UDP       bool
-	DB        DBConf
+	DB        dbConf
 }
 
 // LoadConfig loads configuration
-func LoadConfig() Conf {
+func loadConfig() conf {
 	// Configuration path
 	var path string
 	config := "config.json"
@@ -81,19 +81,19 @@ func LoadConfig() Conf {
 	}
 
 	// Load configuration file
-	conf := Conf{}
+	c := conf{}
 	configFile, err := os.Open(path + config)
 	if err != nil {
 		log.Println("Failed to open config.json")
-		return Conf{}
+		return conf{}
 	}
 
 	// Decode JSON
-	err = json.NewDecoder(configFile).Decode(&conf)
+	err = json.NewDecoder(configFile).Decode(&c)
 	if err != nil {
 		log.Println("Could not parse config.json")
-		return Conf{}
+		return conf{}
 	}
 
-	return conf
+	return c
 }

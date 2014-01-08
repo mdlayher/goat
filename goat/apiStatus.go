@@ -8,8 +8,8 @@ import (
 	"sync/atomic"
 )
 
-// ServerStatus represents a struct to be serialized, containing information about the system running goat
-type ServerStatus struct {
+// serverStatus represents a struct to be serialized, containing information about the system running goat
+type serverStatus struct {
 	PID          int       `json:"pid"`
 	Hostname     string    `json:"hostname"`
 	Platform     string    `json:"platform"`
@@ -17,30 +17,30 @@ type ServerStatus struct {
 	NumCPU       int       `json:"numCpu"`
 	NumGoroutine int       `json:"numGoroutine"`
 	MemoryMB     float64   `json:"memoryMb"`
-	HTTP         HTTPStats `json:"http"`
-	UDP          UDPStats  `json:"udp"`
+	HTTP         httpStats `json:"http"`
+	UDP          udpStats  `json:"udp"`
 }
 
-// HTTPStats represents statistics regarding HTTP server
-type HTTPStats struct {
+// httpStats represents statistics regarding HTTP server
+type httpStats struct {
 	Current int64 `json:"current"`
 	Total   int64 `json:"total"`
 }
 
-// UDPStats represents statistics regarding UDP server
-type UDPStats struct {
+// udpStats represents statistics regarding UDP server
+type udpStats struct {
 	Current int64 `json:"current"`
 	Total   int64 `json:"total"`
 }
 
-// GetServerStatus represents a tracker status request
-func GetServerStatus() ServerStatus {
+// getServerStatus represents a tracker status request
+func getServerStatus() serverStatus {
 	// Get system hostname
 	var hostname string
 	hostname, err := os.Hostname()
 	if err != nil {
 		log.Println(err.Error())
-		return ServerStatus{}
+		return serverStatus{}
 	}
 
 	// Get current memory profile
@@ -51,19 +51,19 @@ func GetServerStatus() ServerStatus {
 	memMb := float64((float64(mem.Alloc) / 1000) / 1000)
 
 	// HTTP status
-	httpStatus := HTTPStats{
-		atomic.LoadInt64(&Static.HTTP.Current),
-		atomic.LoadInt64(&Static.HTTP.Total),
+	httpStatus := httpStats{
+		atomic.LoadInt64(&static.HTTP.Current),
+		atomic.LoadInt64(&static.HTTP.Total),
 	}
 
 	// UDP status
-	udpStatus := UDPStats{
-		atomic.LoadInt64(&Static.UDP.Current),
-		atomic.LoadInt64(&Static.UDP.Total),
+	udpStatus := udpStats{
+		atomic.LoadInt64(&static.UDP.Current),
+		atomic.LoadInt64(&static.UDP.Total),
 	}
 
 	// Build status struct
-	status := ServerStatus{
+	status := serverStatus{
 		os.Getpid(),
 		hostname,
 		runtime.GOOS,
@@ -80,9 +80,9 @@ func GetServerStatus() ServerStatus {
 }
 
 // GetStatusJSON returns a JSON representation of server status
-func GetStatusJSON(resChan chan []byte) {
+func getStatusJSON(resChan chan []byte) {
 	// Marshal into JSON from request
-	res, err := json.Marshal(GetServerStatus())
+	res, err := json.Marshal(getServerStatus())
 	if err != nil {
 		log.Println(err.Error())
 		resChan <- nil
@@ -93,10 +93,10 @@ func GetStatusJSON(resChan chan []byte) {
 }
 
 // PrintStatusBanner logs the startup status banner
-func PrintStatusBanner() {
+func printStatusBanner() {
 	// Grab initial server status
-	stat := GetServerStatus()
-	if stat == (ServerStatus{}) {
+	stat := getServerStatus()
+	if stat == (serverStatus{}) {
 		log.Println("Could not print startup status banner")
 		return
 	}
@@ -106,10 +106,10 @@ func PrintStatusBanner() {
 }
 
 // PrintCurrentStatus logs the regular status check banner
-func PrintCurrentStatus() {
+func printCurrentStatus() {
 	// Grab server status
-	stat := GetServerStatus()
-	if stat == (ServerStatus{}) {
+	stat := getServerStatus()
+	if stat == (serverStatus{}) {
 		log.Println("Could not print current status")
 		return
 	}
@@ -118,18 +118,18 @@ func PrintCurrentStatus() {
 	log.Printf("status - [goroutines: %d] [memory: %02.3f MB]", stat.NumGoroutine, stat.MemoryMB)
 
 	// HTTP stats
-	if Static.Config.HTTP {
+	if static.Config.HTTP {
 		log.Printf("  http - [current: %d] [total: %d]", stat.HTTP.Current, stat.HTTP.Total)
 
 		// Reset current HTTP counter
-		atomic.StoreInt64(&Static.HTTP.Current, 0)
+		atomic.StoreInt64(&static.HTTP.Current, 0)
 	}
 
 	// UDP stats
-	if Static.Config.UDP {
+	if static.Config.UDP {
 		log.Printf("   udp - [current: %d] [total: %d]", stat.UDP.Current, stat.UDP.Total)
 
 		// Reset current UDP counter
-		atomic.StoreInt64(&Static.UDP.Current, 0)
+		atomic.StoreInt64(&static.UDP.Current, 0)
 	}
 }

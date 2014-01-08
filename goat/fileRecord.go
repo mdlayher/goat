@@ -8,8 +8,8 @@ import (
 	"net"
 )
 
-// FileRecord represents a file tracked by tracker
-type FileRecord struct {
+// fileRecord represents a file tracked by tracker
+type fileRecord struct {
 	ID         int    `json:"id"`
 	InfoHash   string `db:"info_hash" json:"infoHash"`
 	Verified   bool   `json:"verified"`
@@ -17,27 +17,27 @@ type FileRecord struct {
 	UpdateTime int64  `db:"update_time" json:"updateTime"`
 }
 
-// JSONFileRecord represents output FileRecord JSON for API
-type JSONFileRecord struct {
+// jsonFileRecord represents output fileRecord JSON for API
+type jsonFileRecord struct {
 	ID         int              `json:"id"`
 	InfoHash   string           `json:"infoHash"`
 	Verified   bool             `json:"verified"`
 	CreateTime int64            `json:"createTime"`
 	UpdateTime int64            `json:"updateTime"`
-	FileUsers  []FileUserRecord `json:"fileUsers"`
+	FileUsers  []fileUserRecord `json:"fileUsers"`
 }
 
-// ToJSON converts a FileRecord to a JSONFileRecord struct
-func (f FileRecord) ToJSON() []byte {
+// ToJSON converts a fileRecord to a jsonFileRecord struct
+func (f fileRecord) ToJSON() []byte {
 	// Convert all standard fields to the JSON equivalent struct
-	j := JSONFileRecord{}
+	j := jsonFileRecord{}
 	j.ID = f.ID
 	j.InfoHash = f.InfoHash
 	j.Verified = f.Verified
 	j.CreateTime = f.CreateTime
 	j.UpdateTime = f.UpdateTime
 
-	// Load in FileUserRecords associated with this file
+	// Load in fileUserRecords associated with this file
 	j.FileUsers = f.Users()
 
 	// Marshal into JSON
@@ -50,14 +50,14 @@ func (f FileRecord) ToJSON() []byte {
 	return out
 }
 
-// FileRecordRepository is used to contain methods to load multiple FileRecord structs
-type FileRecordRepository struct {
+// fileRecordRepository is used to contain methods to load multiple fileRecord structs
+type fileRecordRepository struct {
 }
 
-// Save FileRecord to storage
-func (f FileRecord) Save() bool {
+// Save fileRecord to storage
+func (f fileRecord) Save() bool {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
 		log.Println(err.Error())
 		return false
@@ -78,30 +78,30 @@ func (f FileRecord) Save() bool {
 	return true
 }
 
-// Load FileRecord from storage
-func (f FileRecord) Load(id interface{}, col string) FileRecord {
+// Load fileRecord from storage
+func (f fileRecord) Load(id interface{}, col string) fileRecord {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
 		log.Println(err.Error())
 		return f
 	}
 
 	// Fetch announce log into struct
-	f = FileRecord{}
+	f = fileRecord{}
 	err = db.Get(&f, "SELECT * FROM files WHERE `"+col+"`=?", id)
 	if err != nil && err != sql.ErrNoRows {
 		log.Println(err.Error())
-		return FileRecord{}
+		return fileRecord{}
 	}
 
 	return f
 }
 
 // Completed returns the number of completions, active or not, on this file
-func (f FileRecord) Completed() int {
+func (f fileRecord) Completed() int {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
 		log.Println(err.Error())
 		return 0
@@ -125,9 +125,9 @@ func (f FileRecord) Completed() int {
 }
 
 // Seeders returns the number of seeders on this file
-func (f FileRecord) Seeders() int {
+func (f fileRecord) Seeders() int {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
 		log.Println(err.Error())
 		return 0
@@ -151,9 +151,9 @@ func (f FileRecord) Seeders() int {
 }
 
 // Leechers returns the number of leechers on this file
-func (f FileRecord) Leechers() int {
+func (f fileRecord) Leechers() int {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
 		log.Println(err.Error())
 		return 0
@@ -177,9 +177,9 @@ func (f FileRecord) Leechers() int {
 }
 
 // PeerList returns the compact peer buffer for tracker announce, excluding self
-func (f FileRecord) PeerList(exclude string, numwant int) []byte {
+func (f fileRecord) PeerList(exclude string, numwant int) []byte {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
 		log.Println(err.Error())
 		return nil
@@ -234,9 +234,9 @@ func (f FileRecord) PeerList(exclude string, numwant int) []byte {
 }
 
 // PeerReaper reaps peers who have not recently announced on this torrent, and mark them inactive
-func (f FileRecord) PeerReaper() bool {
+func (f fileRecord) PeerReaper() bool {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
 		log.Println(err.Error())
 		return false
@@ -257,7 +257,7 @@ func (f FileRecord) PeerReaper() bool {
 		"AND active = 1 " +
 		"AND file_id = ?;"
 
-	rows, err := db.Queryx(query, Static.Config.Interval+60, f.ID)
+	rows, err := db.Queryx(query, static.Config.Interval+60, f.ID)
 	if err != nil {
 		log.Println(err.Error())
 		return false
@@ -289,17 +289,17 @@ func (f FileRecord) PeerReaper() bool {
 	return true
 }
 
-// Users loads all FileUserRecord structs associated with this FileRecord struct
-func (f FileRecord) Users() []FileUserRecord {
-	return new(FileUserRecordRepository).Select(f.ID, "file_id")
+// Users loads all fileUserRecord structs associated with this fileRecord struct
+func (f fileRecord) Users() []fileUserRecord {
+	return new(fileUserRecordRepository).Select(f.ID, "file_id")
 }
 
-// All loads all FileRecord structs from storage
-func (f FileRecordRepository) All() []FileRecord {
-	files := make([]FileRecord, 0)
+// All loads all fileRecord structs from storage
+func (f fileRecordRepository) All() []fileRecord {
+	files := make([]fileRecord, 0)
 
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
 		log.Println(err.Error())
 		return files
@@ -313,7 +313,7 @@ func (f FileRecordRepository) All() []FileRecord {
 	}
 
 	// Iterate all rows and build array
-	file := FileRecord{}
+	file := fileRecord{}
 	for rows.Next() {
 		// Scan row results
 		rows.StructScan(&file)

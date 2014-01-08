@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-// ScrapeLog represents a scrapelog, to be logged to storage
-type ScrapeLog struct {
+// scrapeLog represents a scrapelog, to be logged to storage
+type scrapeLog struct {
 	ID       int
 	InfoHash string `db:"info_hash"`
 	Passkey  string
@@ -16,10 +16,10 @@ type ScrapeLog struct {
 	Time     int64
 }
 
-// Save ScrapeLog to storage
-func (s ScrapeLog) Save() bool {
+// Save scrapeLog to storage
+func (s scrapeLog) Save() bool {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
 		log.Println(err.Error())
 		return false
@@ -38,29 +38,29 @@ func (s ScrapeLog) Save() bool {
 	return true
 }
 
-// Load ScrapeLog from storage
-func (s ScrapeLog) Load(id interface{}, col string) ScrapeLog {
+// Load scrapeLog from storage
+func (s scrapeLog) Load(id interface{}, col string) scrapeLog {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
 		log.Println(err.Error())
 		return s
 	}
 
 	// Fetch announce log into struct
-	s = ScrapeLog{}
+	s = scrapeLog{}
 	err = db.Get(&s, "SELECT * FROM announce_log WHERE `"+col+"`=?", id)
 	if err != nil && err != sql.ErrNoRows {
 		log.Println(err.Error())
-		return ScrapeLog{}
+		return scrapeLog{}
 	}
 
 	return s
 }
 
-// FromMap generates a ScrapeLog struct from a query map
-func (s ScrapeLog) FromMap(query map[string]string) ScrapeLog {
-	s = ScrapeLog{}
+// FromMap generates a scrapeLog struct from a query map
+func (s scrapeLog) FromMap(query map[string]string) scrapeLog {
+	s = scrapeLog{}
 
 	// Required parameters
 

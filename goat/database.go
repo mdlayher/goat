@@ -9,18 +9,18 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// DBConnect connects to MySQL database
-func DBConnect() (*sqlx.DB, error) {
+// dbConnect connects to MySQL database
+func dbConnect() (*sqlx.DB, error) {
 	// Generate connection string using configuration
-	conn := fmt.Sprintf("%s:%s@/%s", Static.Config.DB.Database, Static.Config.DB.Username, Static.Config.DB.Password)
+	conn := fmt.Sprintf("%s:%s@/%s", static.Config.DB.Database, static.Config.DB.Username, static.Config.DB.Password)
 
 	// Return connection and associated errors
 	return sqlx.Connect("mysql", conn)
 }
 
 // Attempt to "ping" the database to verify connectivity
-func DBPing() bool {
-	db, err := DBConnect()
+func dbPing() bool {
+	db, err := dbConnect()
 	if err != nil {
 		log.Println(err.Error())
 		return false

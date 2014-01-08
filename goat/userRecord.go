@@ -5,18 +5,18 @@ import (
 	"log"
 )
 
-// UserRecord represents a user on the tracker
-type UserRecord struct {
+// userRecord represents a user on the tracker
+type userRecord struct {
 	ID           int
 	Username     string
 	Passkey      string
 	TorrentLimit int `db:"torrent_limit"`
 }
 
-// Save UserRecord to storage
-func (u UserRecord) Save() bool {
+// Save userRecord to storage
+func (u userRecord) Save() bool {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
 		log.Println(err.Error())
 		return false
@@ -37,30 +37,30 @@ func (u UserRecord) Save() bool {
 	return true
 }
 
-// Load UserRecord from storage
-func (u UserRecord) Load(id interface{}, col string) UserRecord {
+// Load userRecord from storage
+func (u userRecord) Load(id interface{}, col string) userRecord {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
 		log.Println(err.Error())
 		return u
 	}
 
 	// Fetch announce log into struct
-	u = UserRecord{}
+	u = userRecord{}
 	err = db.Get(&u, "SELECT * FROM users WHERE `"+col+"`=?", id)
 	if err != nil && err != sql.ErrNoRows {
 		log.Println(err.Error())
-		return UserRecord{}
+		return userRecord{}
 	}
 
 	return u
 }
 
 // Uploaded loads this user's total upload
-func (u UserRecord) Uploaded() int64 {
+func (u userRecord) Uploaded() int64 {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
 		log.Println(err.Error())
 		return -1
@@ -84,9 +84,9 @@ func (u UserRecord) Uploaded() int64 {
 }
 
 // Downloaded loads this user's total download
-func (u UserRecord) Downloaded() int64 {
+func (u userRecord) Downloaded() int64 {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
 		log.Println(err.Error())
 		return 0
@@ -110,9 +110,9 @@ func (u UserRecord) Downloaded() int64 {
 }
 
 // Seeding counts the number of torrents this user is seeding
-func (u UserRecord) Seeding() int {
+func (u userRecord) Seeding() int {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
 		log.Println(err.Error())
 		return 0
@@ -136,9 +136,9 @@ func (u UserRecord) Seeding() int {
 }
 
 // Leeching counts the number of torrents this user is leeching
-func (u UserRecord) Leeching() int {
+func (u userRecord) Leeching() int {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
 		log.Println(err.Error())
 		return 0

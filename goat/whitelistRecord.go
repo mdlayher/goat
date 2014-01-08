@@ -5,17 +5,17 @@ import (
 	"log"
 )
 
-// WhitelistRecord represents a whitelist entry
-type WhitelistRecord struct {
+// whitelistRecord represents a whitelist entry
+type whitelistRecord struct {
 	ID       int
 	Client   string
 	Approved bool
 }
 
-// Save WhitelistRecord to storage
-func (w WhitelistRecord) Save() bool {
+// Save whitelistRecord to storage
+func (w whitelistRecord) Save() bool {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
 		log.Println(err.Error())
 		return false
@@ -37,21 +37,21 @@ func (w WhitelistRecord) Save() bool {
 	return true
 }
 
-// Load WhitelistRecord from storage
-func (w WhitelistRecord) Load(id interface{}, col string) WhitelistRecord {
+// Load whitelistRecord from storage
+func (w whitelistRecord) Load(id interface{}, col string) whitelistRecord {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
 		log.Println(err.Error())
 		return w
 	}
 
 	// Fetch record into struct
-	w = WhitelistRecord{}
+	w = whitelistRecord{}
 	err = db.Get(&w, "SELECT * FROM whitelist WHERE `"+col+"`=?", id)
 	if err != nil && err != sql.ErrNoRows {
 		log.Println(err.Error())
-		return WhitelistRecord{}
+		return whitelistRecord{}
 	}
 
 	return w

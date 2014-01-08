@@ -12,18 +12,14 @@ import (
 )
 
 // Handshake for UDP tracker protocol
-const InitID = 4497486125440
-
-// UDPConnHandler handles incoming UDP network connections
-type UDPConnHandler struct {
-}
+const udpInitID = 4497486125440
 
 // Handle incoming UDP connections and return response
-func (u UDPConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
+func handleUDP(l *net.UDPConn, udpDoneChan chan bool) {
 	// Create shutdown function
 	go func(l *net.UDPConn, udpDoneChan chan bool) {
 		// Wait for done signal
-		Static.ShutdownChan <- <-Static.ShutdownChan
+		static.ShutdownChan <- <-static.ShutdownChan
 
 		// Close listener
 		l.Close()
@@ -31,8 +27,8 @@ func (u UDPConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 	}(l, udpDoneChan)
 
 	// Count incoming connections
-	atomic.AddInt64(&Static.UDP.Current, 1)
-	atomic.AddInt64(&Static.UDP.Total, 1)
+	atomic.AddInt64(&static.UDP.Current, 1)
+	atomic.AddInt64(&static.UDP.Total, 1)
 
 	first := true
 	for {
@@ -59,9 +55,9 @@ func (u UDPConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 
 		// On first run, verify valid connection ID
 		if first {
-			if connID != InitID {
+			if connID != udpInitID {
 				log.Println("Invalid connection handshake")
-				_, err = l.WriteToUDP(UDPTrackerError("Invalid connection handshake", transID), addr)
+				_, err = l.WriteToUDP(udpTrackerError("Invalid connection handshake", transID), addr)
 				if err != nil {
 					log.Println(err.Error())
 					return
@@ -92,7 +88,7 @@ func (u UDPConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 			}
 
 			// Connection ID, generated for this session
-			err = binary.Write(res, binary.BigEndian, uint64(RandRange(0, 1000000000)))
+			err = binary.Write(res, binary.BigEndian, uint64(randRange(0, 1000000000)))
 			if err != nil {
 				log.Println(err.Error())
 				return
@@ -202,7 +198,7 @@ func (u UDPConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 
 			// Trigger an anonymous announce
 			resChan := make(chan []byte)
-			go TrackerAnnounce(UserRecord{}, query, transID, resChan)
+			go trackerAnnounce(userRecord{}, query, transID, resChan)
 
 			_, err = l.WriteToUDP(<-resChan, addr)
 			close(resChan)
