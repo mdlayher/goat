@@ -108,3 +108,55 @@ func (u UserRecord) Downloaded() int64 {
 
 	return downloaded.Downloaded
 }
+
+// Seeding counts the number of torrents this user is seeding
+func (u UserRecord) Seeding() int {
+	// Open database connection
+	db, err := DBConnect()
+	if err != nil {
+		log.Println(err.Error())
+		return 0
+	}
+
+	// Anonymous Seeding struct
+	seeding := struct {
+		Seeding int
+	}{
+		0,
+	}
+
+	// Calculate sum of this user's seeding torrents via their file/user relationship records
+	err = db.Get(&seeding, "SELECT COUNT(user_id) AS seeding FROM files_users WHERE user_id = ? AND active = 1 AND completed = 1 AND `left` = 0", u.ID)
+	if err != nil {
+		log.Println(err.Error())
+		return -1
+	}
+
+	return seeding.Seeding
+}
+
+// Leeching counts the number of torrents this user is leeching
+func (u UserRecord) Leeching() int {
+	// Open database connection
+	db, err := DBConnect()
+	if err != nil {
+		log.Println(err.Error())
+		return 0
+	}
+
+	// Anonymous Leeching struct
+	leeching := struct {
+		Leeching int
+	}{
+		0,
+	}
+
+	// Calculate sum of this user's leeching torrents via their file/user relationship records
+	err = db.Get(&leeching, "SELECT COUNT(user_id) AS leeching FROM files_users WHERE user_id = ? AND active = 1 AND completed = 0 AND `left` > 0", u.ID)
+	if err != nil {
+		log.Println(err.Error())
+		return -1
+	}
+
+	return leeching.Leeching
+}

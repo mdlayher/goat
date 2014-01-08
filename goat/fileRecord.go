@@ -166,7 +166,7 @@ func (f FileRecord) Leechers() int {
 		0,
 	}
 
-	// Calculate number of leechers on this file, defined as users who are active, completed, and 0 left
+	// Calculate number of leechers on this file, defined as users who are active, completed, and positive bytes left
 	db.Get(&leechers, "SELECT COUNT(user_id) AS leechers FROM files_users WHERE file_id = ? AND active = 1 AND completed = 0 AND `left` > 0;", f.ID)
 	if err != nil {
 		log.Println(err.Error())

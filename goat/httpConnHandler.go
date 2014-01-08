@@ -147,6 +147,21 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 	// Mark client as HTTP
 	query["udp"] = "0"
 
+	// Get user's total number of active torrents
+	seeding := user.Seeding()
+	leeching := user.Leeching()
+	if seeding == -1 || leeching == -1 {
+		w.Write(HTTPTrackerError("Failed to calculate active torrents"))
+		return
+	}
+
+	// Verify that client has not exceeded this user's torrent limit
+	activeSum := seeding + leeching
+	if user.TorrentLimit < activeSum {
+		w.Write(HTTPTrackerError(fmt.Sprintf("Exceeded active torrent limit: %d > %d", activeSum, user.TorrentLimit)))
+		return
+	}
+
 	// Create channel to return response to client
 	resChan := make(chan []byte)
 
