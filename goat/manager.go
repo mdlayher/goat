@@ -34,6 +34,12 @@ func Manager(killChan chan bool, exitChan chan int) {
 	}
 	Static.Config = config
 
+	// Attempt database connection
+	if !DBPing() {
+		log.Println("Cannot connect to MySQL database, exiting now.")
+		os.Exit(1)
+	}
+
 	// Set up graceful shutdown channels
 	httpDoneChan := make(chan bool)
 	udpDoneChan := make(chan bool)
