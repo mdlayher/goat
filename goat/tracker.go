@@ -6,13 +6,14 @@ import (
 	"encoding/hex"
 	"github.com/mdlayher/bencode"
 	"log"
+	"net/url"
 	"strconv"
 )
 
 // trackerScrape scrapes a tracker request
-func trackerScrape(user userRecord, query map[string]string, resChan chan []byte) {
+func trackerScrape(user userRecord, query url.Values, resChan chan []byte) {
 	// Store scrape information in struct
-	scrape := new(scrapeLog).FromMap(query)
+	scrape := new(scrapeLog).FromValues(query)
 	if scrape == (scrapeLog{}) {
 		resChan <- httpTrackerError("Malformed scrape")
 		return
@@ -41,13 +42,13 @@ func trackerScrape(user userRecord, query map[string]string, resChan chan []byte
 	go file.PeerReaper()
 
 	// Create scrape
-	resChan <- httpTrackerScrape(query, file)
+	resChan <- httpTrackerScrape(file)
 }
 
 // trackerAnnounce nnounces a tracker request
-func trackerAnnounce(user userRecord, query map[string]string, transID []byte, resChan chan []byte) {
+func trackerAnnounce(user userRecord, query url.Values, transID []byte, resChan chan []byte) {
 	// Store announce information in struct
-	announce := new(announceLog).FromMap(query)
+	announce := new(announceLog).FromValues(query)
 	if announce == (announceLog{}) {
 		resChan <- httpTrackerError("Malformed announce")
 		return
@@ -113,14 +114,14 @@ func trackerAnnounce(user userRecord, query map[string]string, transID []byte, r
 	}
 
 	// Check existing record for this user with this file and this IP
-	fileUser := new(fileUserRecord).Load(file.ID, user.ID, query["ip"])
+	fileUser := new(fileUserRecord).Load(file.ID, user.ID, query.Get("ip"))
 
 	// New user, starting torrent
 	if fileUser == (fileUserRecord{}) {
 		// Create new relationship
 		fileUser.FileID = file.ID
 		fileUser.UserID = user.ID
-		fileUser.IP = query["ip"]
+		fileUser.IP = query.Get("ip")
 		fileUser.Active = true
 		fileUser.Announced = 1
 
@@ -184,7 +185,7 @@ func trackerAnnounce(user userRecord, query map[string]string, transID []byte, r
 }
 
 // httpTrackerAnnounce announces using HTTP format
-func httpTrackerAnnounce(query map[string]string, file fileRecord, fileUser fileUserRecord) []byte {
+func httpTrackerAnnounce(query url.Values, file fileRecord, fileUser fileUserRecord) []byte {
 	// Begin generating response map, with current number of known seeders/leechers
 	res := map[string][]byte{
 		"complete":   bencode.EncInt(file.Seeders()),
@@ -205,27 +206,27 @@ func httpTrackerAnnounce(query map[string]string, file fileRecord, fileUser file
 	// Check for numwant parameter, return up to that number of peers
 	// Default is 50 per protocol
 	numwant := 50
-	if _, ok := query["numwant"]; ok {
+	if query.Get("numwant") != "" {
 		// Verify numwant is an integer
-		num, err := strconv.Atoi(query["numwant"])
+		num, err := strconv.Atoi(query.Get("numwant"))
 		if err == nil {
 			numwant = num
 		}
 	}
 
 	// Generaate compact peer list of length numwant, exclude this user
-	res["peers"] = bencode.EncBytes(file.PeerList(query["ip"], numwant))
+	res["peers"] = bencode.EncBytes(file.PeerList(query.Get("ip"), numwant))
 
 	// Bencode entire map and return
 	return bencode.EncDictMap(res)
 }
 
 // httpTrackerScrape reports scrape using HTTP format
-func httpTrackerScrape(query map[string]string, file fileRecord) []byte {
+func httpTrackerScrape(file fileRecord) []byte {
 	// Decode hex string to byte format
 	hash, err := hex.DecodeString(file.InfoHash)
 	if err != nil {
-		hash = []byte("")
+		hash = make([]byte, 0)
 	}
 
 	return bencode.EncDictMap(map[string][]byte{
@@ -247,7 +248,7 @@ func httpTrackerError(err string) []byte {
 }
 
 // udpTrackerAnnounce announces using UDP format
-func udpTrackerAnnounce(query map[string]string, file fileRecord, transID []byte) []byte {
+func udpTrackerAnnounce(query url.Values, file fileRecord, transID []byte) []byte {
 	// Response buffer
 	res := bytes.NewBuffer(make([]byte, 0))
 
@@ -287,13 +288,13 @@ func udpTrackerAnnounce(query map[string]string, file fileRecord, transID []byte
 	}
 
 	// Peer list
-	numwant, err := strconv.Atoi(query["numwant"])
+	numwant, err := strconv.Atoi(query.Get("numwant"))
 	if err != nil {
 		log.Println(err.Error())
 		return udpTrackerError("Could not create UDP announce response", transID)
 	}
 
-	err = binary.Write(res, binary.BigEndian, file.PeerList(query["ip"], numwant))
+	err = binary.Write(res, binary.BigEndian, file.PeerList(query.Get("ip"), numwant))
 	if err != nil {
 		log.Println(err.Error())
 		return udpTrackerError("Could not create UDP announce response", transID)

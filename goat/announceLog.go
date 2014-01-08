@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"log"
+	"net/url"
 	"strconv"
 	"time"
 )
@@ -67,33 +68,33 @@ func (a announceLog) Load(ID interface{}, col string) announceLog {
 	return a
 }
 
-// FromMap generates an announceLog struct from a query map
-func (a announceLog) FromMap(query map[string]string) announceLog {
+// FromValues generates an announceLog struct from a url.Values map
+func (a announceLog) FromValues(query url.Values) announceLog {
 	a = announceLog{}
 
 	// Required parameters
 
 	// info_hash
-	a.InfoHash = hex.EncodeToString([]byte(query["info_hash"]))
+	a.InfoHash = hex.EncodeToString([]byte(query.Get("info_hash")))
 
 	// passkey
-	a.Passkey = query["passkey"]
+	a.Passkey = query.Get("passkey")
 
 	// key
-	a.Key = query["key"]
+	a.Key = query.Get("key")
 
 	// ip
-	a.IP = query["ip"]
+	a.IP = query.Get("ip")
 
 	// udp
-	if query["udp"] == "1" {
+	if query.Get("udp") == "1" {
 		a.UDP = true
 	} else {
 		a.UDP = false
 	}
 
 	// port
-	port, err := strconv.Atoi(query["port"])
+	port, err := strconv.Atoi(query.Get("port"))
 	if err != nil {
 		log.Println(err.Error())
 		return announceLog{}
@@ -101,7 +102,7 @@ func (a announceLog) FromMap(query map[string]string) announceLog {
 	a.Port = port
 
 	// uploaded
-	uploaded, err := strconv.ParseInt(query["uploaded"], 10, 64)
+	uploaded, err := strconv.ParseInt(query.Get("uploaded"), 10, 64)
 	if err != nil {
 		log.Println(err.Error())
 		return announceLog{}
@@ -109,7 +110,7 @@ func (a announceLog) FromMap(query map[string]string) announceLog {
 	a.Uploaded = uploaded
 
 	// downloaded
-	downloaded, err := strconv.ParseInt(query["downloaded"], 10, 64)
+	downloaded, err := strconv.ParseInt(query.Get("downloaded"), 10, 64)
 	if err != nil {
 		log.Println(err.Error())
 		return announceLog{}
@@ -117,7 +118,7 @@ func (a announceLog) FromMap(query map[string]string) announceLog {
 	a.Downloaded = downloaded
 
 	// left
-	left, err := strconv.ParseInt(query["left"], 10, 64)
+	left, err := strconv.ParseInt(query.Get("left"), 10, 64)
 	if err != nil {
 		log.Println(err.Error())
 		return announceLog{}
@@ -127,12 +128,12 @@ func (a announceLog) FromMap(query map[string]string) announceLog {
 	// Optional parameters
 
 	// event
-	if event, ok := query["event"]; ok {
-		a.Event = event
+	if query.Get("event") != "" {
+		a.Event = query.Get("event")
 	}
 
 	// BitTorrent client, User-Agent header
-	a.Client = query["client"]
+	a.Client = query.Get("client")
 
 	// Current UNIX timestamp
 	a.Time = time.Now().Unix()

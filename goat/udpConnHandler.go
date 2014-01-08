@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"log"
 	"net"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -103,20 +104,20 @@ func handleUDP(l *net.UDPConn, udpDoneChan chan bool) {
 			continue
 		// Announce
 		case 1:
-			query := map[string]string{}
+			query := url.Values{}
 
 			// Ignoring these for now, because clients function sanely without them
 			// Connection ID: buf[0:8]
 			// Action: buf[8:12]
 
 			// Mark client as UDP
-			query["udp"] = "1"
+			query.Set("udp", "1")
 
 			// Transaction ID
 			transID := buf[12:16]
 
 			// Info hash
-			query["info_hash"] = string(buf[16:36])
+			query.Set("info_hash", string(buf[16:36]))
 
 			// Skipped: peer_id: buf[36:56]
 
@@ -126,7 +127,7 @@ func handleUDP(l *net.UDPConn, udpDoneChan chan bool) {
 				log.Println(err.Error())
 				return
 			}
-			query["downloaded"] = strconv.FormatInt(t, 10)
+			query.Set("downloaded", strconv.FormatInt(t, 10))
 
 			// Left
 			t, err = strconv.ParseInt(hex.EncodeToString(buf[64:72]), 16, 64)
@@ -134,7 +135,7 @@ func handleUDP(l *net.UDPConn, udpDoneChan chan bool) {
 				log.Println(err.Error())
 				return
 			}
-			query["left"] = strconv.FormatInt(t, 10)
+			query.Set("left", strconv.FormatInt(t, 10))
 
 			// Uploaded
 			t, err = strconv.ParseInt(hex.EncodeToString(buf[72:80]), 16, 64)
@@ -142,7 +143,7 @@ func handleUDP(l *net.UDPConn, udpDoneChan chan bool) {
 				log.Println(err.Error())
 				return
 			}
-			query["uploaded"] = strconv.FormatInt(t, 10)
+			query.Set("uploaded", strconv.FormatInt(t, 10))
 
 			// Event
 			t, err = strconv.ParseInt(hex.EncodeToString(buf[80:84]), 16, 32)
@@ -150,18 +151,18 @@ func handleUDP(l *net.UDPConn, udpDoneChan chan bool) {
 				log.Println(err.Error())
 				return
 			}
-			query["event"] = strconv.FormatInt(t, 10)
+			event := strconv.FormatInt(t, 10)
 
 			// Convert event to actual string
-			switch query["event"] {
+			switch event {
 			case "0":
-				query["event"] = ""
+				query.Set("event", "")
 			case "1":
-				query["event"] = "completed"
+				query.Set("event", "completed")
 			case "2":
-				query["event"] = "started"
+				query.Set("event", "started")
 			case "3":
-				query["event"] = "stopped"
+				query.Set("event", "stopped")
 			}
 
 			// IP address
@@ -170,22 +171,22 @@ func handleUDP(l *net.UDPConn, udpDoneChan chan bool) {
 				log.Println(err.Error())
 				return
 			}
-			query["ip"] = strconv.FormatInt(t, 10)
+			query.Set("ip", strconv.FormatInt(t, 10))
 
 			// If no IP address set, use the UDP source
-			if query["ip"] == "0" {
-				query["ip"] = strings.Split(addr.String(), ":")[0]
+			if query.Get("ip") == "0" {
+				query.Set("ip", strings.Split(addr.String(), ":")[0])
 			}
 
 			// Key
-			query["key"] = hex.EncodeToString(buf[88:92])
+			query.Set("key", hex.EncodeToString(buf[88:92]))
 
 			// Numwant
-			query["numwant"] = hex.EncodeToString(buf[92:96])
+			query.Set("numwant", hex.EncodeToString(buf[92:96]))
 
 			// If numwant is hex max value, default to 50
-			if query["numwant"] == "ffffffff" {
-				query["numwant"] = "50"
+			if query.Get("numwant") == "ffffffff" {
+				query.Set("numwant", "50")
 			}
 
 			// Port
@@ -194,7 +195,7 @@ func handleUDP(l *net.UDPConn, udpDoneChan chan bool) {
 				log.Println(err.Error())
 				return
 			}
-			query["port"] = strconv.FormatInt(t, 10)
+			query.Set("port", strconv.FormatInt(t, 10))
 
 			// Trigger an anonymous announce
 			resChan := make(chan []byte)

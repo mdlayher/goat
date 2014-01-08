@@ -40,19 +40,13 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 	atomic.AddInt64(&static.HTTP.Current, 1)
 	atomic.AddInt64(&static.HTTP.Total, 1)
 
-	// Parse querystring
-	querystring := r.URL.Query()
-
-	// Flatten arrays into single values
-	query := map[string]string{}
-	for k, v := range querystring {
-		query[k] = v[0]
-	}
+	// Parse querystring into a Values map
+	query := r.URL.Query()
 
 	// Check if IP was previously set
-	if _, ok := query["ip"]; !ok {
+	if query.Get("ip") == "" {
 		// If no IP set, detect and store it in query map
-		query["ip"] = strings.Split(r.RemoteAddr, ":")[0]
+		query.Set("ip", strings.Split(r.RemoteAddr, ":")[0])
 	}
 
 	// Add header to identify goat
@@ -122,7 +116,7 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Put client in query map
-	query["client"] = client
+	query.Set("client", client)
 
 	// Check if server is configured for passkey announce
 	if static.Config.Passkey && passkey == "" {
@@ -138,10 +132,10 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Put passkey in query map
-	query["passkey"] = user.Passkey
+	query.Set("passkey", user.Passkey)
 
 	// Mark client as HTTP
-	query["udp"] = "0"
+	query.Set("udp", "0")
 
 	// Get user's total number of active torrents
 	seeding := user.Seeding()
@@ -172,7 +166,7 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// Check for required parameters
 		for _, r := range required {
-			if _, ok := query[r]; !ok {
+			if query.Get(r) == "" {
 				w.Write(httpTrackerError("Missing required parameter: " + r))
 				close(resChan)
 				return
@@ -181,8 +175,8 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// Check for all valid integers
 		for _, r := range reqInt {
-			if _, ok := query[r]; ok {
-				_, err := strconv.Atoi(query[r])
+			if query.Get(r) != "" {
+				_, err := strconv.Atoi(query.Get(r))
 				if err != nil {
 					w.Write(httpTrackerError("Invalid integer parameter: " + r))
 					close(resChan)
@@ -192,7 +186,7 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Only allow compact announce
-		if _, ok := query["compact"]; !ok || query["compact"] != "1" {
+		if query.Get("compact") == "" || query.Get("compact") != "1" {
 			w.Write(httpTrackerError("Your client does not support compact announce"))
 			close(resChan)
 			return

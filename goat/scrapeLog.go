@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"log"
+	"net/url"
 	"time"
 )
 
@@ -58,20 +59,20 @@ func (s scrapeLog) Load(id interface{}, col string) scrapeLog {
 	return s
 }
 
-// FromMap generates a scrapeLog struct from a query map
-func (s scrapeLog) FromMap(query map[string]string) scrapeLog {
+// FromValues generates a scrapeLog struct from a url.Values map
+func (s scrapeLog) FromValues(query url.Values) scrapeLog {
 	s = scrapeLog{}
 
 	// Required parameters
 
 	// info_hash
-	s.InfoHash = hex.EncodeToString([]byte(query["info_hash"]))
+	s.InfoHash = hex.EncodeToString([]byte(query.Get("info_hash")))
 
 	// passkey
-	s.Passkey = query["passkey"]
+	s.Passkey = query.Get("passkey")
 
 	// ip
-	s.IP = query["ip"]
+	s.IP = query.Get("ip")
 
 	// Current UNIX timestamp
 	s.Time = time.Now().Unix()
