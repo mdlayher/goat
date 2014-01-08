@@ -28,11 +28,11 @@ func APIRouter(w http.ResponseWriter, r *http.Request) {
 	ID := -1
 	if len(urlArr) == 4 {
 		i, err := strconv.Atoi(urlArr[3])
-		if err == nil {
-			ID = i
+		if err != nil || i < 1 {
+			http.Error(w, string(APIErrorResponse("Invalid integer ID")), 400)
+			return
 		} else {
-			log.Println(err.Error())
-			ID = -1
+			ID = i
 		}
 	}
 
