@@ -7,16 +7,16 @@ import (
 
 // FileUserRecord represents a file tracked by tracker
 type FileUserRecord struct {
-	FileID     int `db:"file_id"`
-	UserID     int `db:"user_id"`
-	IP         string
-	Active     bool
-	Completed  bool
-	Announced  int
-	Uploaded   int64
-	Downloaded int64
-	Left       int64
-	Time       int64
+	FileID     int    `db:"file_id" json:"fileId"`
+	UserID     int    `db:"user_id" json:"userId"`
+	IP         string `json:"ip"`
+	Active     bool   `json:"active"`
+	Completed  bool   `json:"completed"`
+	Announced  int    `json:"announced"`
+	Uploaded   int64  `json:"uploaded"`
+	Downloaded int64  `json:"downloaded"`
+	Left       int64  `json:"left"`
+	Time       int64  `json:"time"`
 }
 
 // FileUserRecordRepository is used to contain methods to load multiple FileRecord structs
