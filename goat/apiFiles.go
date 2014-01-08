@@ -17,11 +17,14 @@ func GetFilesJSON(ID int, resChan chan []byte) {
 		if err != nil {
 			log.Println(err.Error())
 			resChan <- nil
+			return
 		}
 
 		// Return status
 		resChan <- res
+		return
 	}
 
 	resChan <- nil
+	return
 }
