@@ -11,4 +11,4 @@ database and user for goat, its database schema may be imported from the SQL
 files located in 'res/'.  goat will not run unless MySQL is installed, and a
 database and user are properly configured for its use.
 */
-package goat
+package main
