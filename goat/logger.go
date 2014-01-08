@@ -8,7 +8,7 @@ import (
 // LogManager is responsible for creating the main loggers
 func LogManager() {
 	// Set up logging flags
-	log.SetFlags(log.Ldate|log.Ltime|log.Lshortfile)
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
 	// Start the system status logger
 	go StatusLogger()

@@ -1,8 +1,8 @@
 package goat
 
 import (
-	"log"
 	"database/sql"
+	"log"
 )
 
 // WhitelistRecord represents a whitelist entry

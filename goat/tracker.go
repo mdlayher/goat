@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/hex"
-	"log"
 	"github.com/mdlayher/bencode"
+	"log"
 	"strconv"
 )
 

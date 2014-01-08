@@ -9,16 +9,15 @@ import (
 
 // FileRecord represents a file tracked by tracker
 type FileRecord struct {
-	ID         int `json:"id"`
+	ID         int    `json:"id"`
 	InfoHash   string `db:"info_hash" json:"infoHash"`
-	Verified   bool `json:"verified"`
-	CreateTime int64 `db:"create_time" json:"createTime"`
-	UpdateTime int64 `db:"update_time" json:"updateTime"`
+	Verified   bool   `json:"verified"`
+	CreateTime int64  `db:"create_time" json:"createTime"`
+	UpdateTime int64  `db:"update_time" json:"updateTime"`
 }
 
 // FileRecordRepository is used to contain methods to load multiple FileRecord structs
 type FileRecordRepository struct {
-
 }
 
 // Save FileRecord to storage
