@@ -12,9 +12,9 @@ import (
 type FileRecord struct {
 	ID         int    `json:"id"`
 	InfoHash   string `db:"info_hash" json:"infoHash"`
-	Verified   bool
-	CreateTime int64 `db:"create_time" json:"createTime"`
-	UpdateTime int64 `db:"update_time" json:"updateTime"`
+	Verified   bool   `json:"verified"`
+	CreateTime int64  `db:"create_time" json:"createTime"`
+	UpdateTime int64  `db:"update_time" json:"updateTime"`
 }
 
 // JSONFileRecord represents output FileRecord JSON for API
