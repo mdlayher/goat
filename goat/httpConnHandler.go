@@ -38,16 +38,6 @@ func (h HTTPConnHandler) Handle(l net.Listener, httpDoneChan chan bool) {
 	http.Serve(l, nil)
 }
 
-// Parse incoming HTTP connections to API, before making API calls
-func parseAPI(w http.ResponseWriter, r *http.Request) {
-	// Count incoming connections
-	atomic.AddInt64(&Static.HTTP.Current, 1)
-	atomic.AddInt64(&Static.HTTP.Total, 1)
-
-	// Add header to identify goat and JSON response
-	w.Header().Add("Server", fmt.Sprintf("%s/%s", App, Version))
-}
-
 // Parse incoming HTTP connections before making tracker calls
 func parseHTTP(w http.ResponseWriter, r *http.Request) {
 	// Count incoming connections
@@ -72,9 +62,6 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 	// Add header to identify goat
 	w.Header().Add("Server", fmt.Sprintf("%s/%s", App, Version))
 
-	// Create channel to return response to client
-	resChan := make(chan []byte)
-
 	// Store current URL path
 	url := r.URL.Path
 
@@ -87,12 +74,9 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 		// Log API calls
 		log.Printf("API: %s\n", r.URL.Path)
 
-		// Handle API calls
-		go APIRouter(r, resChan)
-
-		// Wait for response, and send it when ready
-		w.Write(<-resChan)
-		close(resChan)
+		// Handle API calls, output JSON
+		w.Header().Add("Content-Type", "application/json")
+		APIRouter(w, r)
 		return
 	}
 
@@ -157,6 +141,9 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Mark client as HTTP
 	query["udp"] = "0"
+
+	// Create channel to return response to client
+	resChan := make(chan []byte)
 
 	// Handle tracker functions via different URLs
 	switch url {
