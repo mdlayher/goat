@@ -30,6 +30,10 @@ configuration, describing the settings available to the user.
 	// HTTP: enable listening for client connections via HTTP
 	"HTTP": true,
 
+	// API: enable a HTTP RESTful API, used to pull statistics from goat
+	// note: only enabled when HTTP is enabled
+	"API": true,
+
 	// UDP: enable listening for client connections via UDP
 	// note: it is not possible to use a passkey with this listener, so this listener should
 	// only be used for public trackers
