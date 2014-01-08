@@ -218,8 +218,6 @@ func (f FileRecord) PeerList(exclude string, numwant int) []byte {
 		// Scan row results
 		rows.StructScan(&peer)
 
-		log.Printf("peer: %s:%d\n", peer.IP, peer.Port)
-
 		// Parse IP into byte buffer
 		ip := [4]byte{}
 		binary.BigEndian.PutUint32(ip[:], binary.BigEndian.Uint32(net.ParseIP(peer.IP).To4()))
