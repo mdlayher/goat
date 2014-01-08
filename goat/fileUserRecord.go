@@ -19,6 +19,10 @@ type FileUserRecord struct {
 	Time       int64
 }
 
+// FileUserRecordRepository is used to contain methods to load multiple FileRecord structs
+type FileUserRecordRepository struct {
+}
+
 // Save FileUserRecord to storage
 func (f FileUserRecord) Save() bool {
 	// Open database connection
@@ -63,4 +67,33 @@ func (f FileUserRecord) Load(fileID int, userID int, ip string) FileUserRecord {
 	}
 
 	return f
+}
+
+// Select loads selected FileUserRecord structs from storage
+func (f FileUserRecordRepository) Select(id interface{}, col string) []FileUserRecord {
+	fileUsers := make([]FileUserRecord, 0)
+
+	// Open database connection
+	db, err := DBConnect()
+	if err != nil {
+		log.Println(err.Error())
+		return fileUsers
+	}
+
+	// Load all files
+	rows, err := db.Queryx("SELECT * FROM files_users WHERE `"+col+"`=?", id)
+	if err != nil && err != sql.ErrNoRows {
+		log.Println(err.Error())
+		return fileUsers
+	}
+
+	// Iterate all rows and build array
+	fileUser := FileUserRecord{}
+	for rows.Next() {
+		// Scan row results
+		rows.StructScan(&fileUser)
+		fileUsers = append(fileUsers[:], fileUser)
+	}
+
+	return fileUsers
 }

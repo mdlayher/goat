@@ -48,7 +48,7 @@ func (a AnnounceLog) Save() bool {
 }
 
 // Load AnnounceLog from storage
-func (a AnnounceLog) Load(id interface{}, col string) AnnounceLog {
+func (a AnnounceLog) Load(ID interface{}, col string) AnnounceLog {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
@@ -58,7 +58,7 @@ func (a AnnounceLog) Load(id interface{}, col string) AnnounceLog {
 
 	// Fetch announce log into struct
 	a = AnnounceLog{}
-	err = db.Get(&a, "SELECT * FROM announce_log WHERE `"+col+"`=?", id)
+	err = db.Get(&a, "SELECT * FROM announce_log WHERE `"+col+"`=?", ID)
 	if err != nil && err != sql.ErrNoRows {
 		log.Println(err.Error())
 		return AnnounceLog{}

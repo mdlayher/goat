@@ -10,7 +10,7 @@ func GetFilesJSON(ID int, resChan chan []byte) {
 	// Check for a valid integer ID
 	if ID > 0 {
 		// Load file
-		file := new(FileRecord).Load(ID, "id")
+		file := new(FileRecord).Load(ID, "id").ToJSON()
 
 		// Marshal into JSON
 		res, err := json.Marshal(file)

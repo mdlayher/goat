@@ -9,11 +9,34 @@ import (
 
 // FileRecord represents a file tracked by tracker
 type FileRecord struct {
-	ID         int    `json:"id"`
-	InfoHash   string `db:"info_hash" json:"infoHash"`
-	Verified   bool   `json:"verified"`
-	CreateTime int64  `db:"create_time" json:"createTime"`
-	UpdateTime int64  `db:"update_time" json:"updateTime"`
+	ID         int
+	InfoHash   string `db:"info_hash"`
+	Verified   bool
+	CreateTime int64 `db:"create_time"`
+	UpdateTime int64 `db:"update_time"`
+}
+
+// JSONFileRecord represents output FileRecord JSON for API
+type JSONFileRecord struct {
+	ID         int              `json:"id"`
+	InfoHash   string           `json:"infoHash"`
+	Verified   bool             `json:"verified"`
+	CreateTime int64            `json:"createTime"`
+	UpdateTime int64            `json:"updateTime"`
+	FileUsers  []FileUserRecord `json:"fileUsers"`
+}
+
+// ToJSON converts a FileRecord to a JSONFileRecord struct
+func (f FileRecord) ToJSON() JSONFileRecord {
+	j := JSONFileRecord{}
+	j.ID = f.ID
+	j.InfoHash = f.InfoHash
+	j.Verified = f.Verified
+	j.CreateTime = f.CreateTime
+	j.UpdateTime = f.UpdateTime
+	j.FileUsers = f.Users()
+
+	return j
 }
 
 // FileRecordRepository is used to contain methods to load multiple FileRecord structs
@@ -257,7 +280,12 @@ func (f FileRecord) PeerReaper() bool {
 	return true
 }
 
-// LoadAllFileRecords loads all FileRecord structs from storage
+// Users loads all FileUserRecord structs associated with this FileRecord struct
+func (f FileRecord) Users() []FileUserRecord {
+	return new(FileUserRecordRepository).Select(f.ID, "file_id")
+}
+
+// All loads all FileRecord structs from storage
 func (f FileRecordRepository) All() []FileRecord {
 	files := make([]FileRecord, 0)
 
