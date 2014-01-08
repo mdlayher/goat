@@ -25,6 +25,14 @@ func GetFilesJSON(ID int, resChan chan []byte) {
 		return
 	}
 
-	resChan <- nil
+	// Marshal into JSON
+	res, err := json.Marshal(LoadAllFileRecords())
+	if err != nil {
+		log.Println(err.Error())
+		resChan <- nil
+		return
+	}
+
+	resChan <- res
 	return
 }

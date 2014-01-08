@@ -252,3 +252,32 @@ func (f FileRecord) PeerReaper() bool {
 
 	return true
 }
+
+// LoadAllFileRecords loads all FileRecord structs from storage
+func LoadAllFileRecords() []FileRecord {
+	files := make([]FileRecord, 0)
+
+	// Open database connection
+	db, err := DBConnect()
+	if err != nil {
+		log.Println(err.Error())
+		return files
+	}
+
+	// Load all files
+	rows, err := db.Queryx("SELECT * FROM files")
+	if err != nil && err != sql.ErrNoRows {
+		log.Println(err.Error())
+		return files
+	}
+
+	// Iterate all rows and build array
+	file := FileRecord{}
+	for rows.Next() {
+		// Scan row results
+		rows.StructScan(&file)
+		files = append(files[:], file)
+	}
+
+	return files
+}
