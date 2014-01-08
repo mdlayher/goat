@@ -26,7 +26,7 @@ func GetFilesJSON(ID int, resChan chan []byte) {
 	}
 
 	// Marshal into JSON
-	res, err := json.Marshal(LoadAllFileRecords())
+	res, err := json.Marshal(new(FileRecordRepository).All())
 	if err != nil {
 		log.Println(err.Error())
 		resChan <- nil

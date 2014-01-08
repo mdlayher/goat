@@ -16,6 +16,11 @@ type FileRecord struct {
 	UpdateTime int64 `db:"update_time" json:"updateTime"`
 }
 
+// FileRecordRepository is used to contain methods to load multiple FileRecord structs
+type FileRecordRepository struct {
+
+}
+
 // Save FileRecord to storage
 func (f FileRecord) Save() bool {
 	// Open database connection
@@ -254,7 +259,7 @@ func (f FileRecord) PeerReaper() bool {
 }
 
 // LoadAllFileRecords loads all FileRecord structs from storage
-func LoadAllFileRecords() []FileRecord {
+func (f FileRecordRepository) All() []FileRecord {
 	files := make([]FileRecord, 0)
 
 	// Open database connection
