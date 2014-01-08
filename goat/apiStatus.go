@@ -10,15 +10,27 @@ import (
 
 // ServerStatus represents a struct to be serialized, containing information about the system running goat
 type ServerStatus struct {
-	PID          int     `json:"pid"`
-	Hostname     string  `json:"hostname"`
-	Platform     string  `json:"platform"`
-	Architecture string  `json:"architecture"`
-	NumCPU       int     `json:"numCpu"`
-	NumGoroutine int     `json:"numGoroutine"`
-	MemoryMB     float64 `json:"memoryMb"`
-	HTTPTotal    int64   `json:"httpTotal"`
-	HTTPCurrent  int64   `json:"httpCurrent"`
+	PID          int       `json:"pid"`
+	Hostname     string    `json:"hostname"`
+	Platform     string    `json:"platform"`
+	Architecture string    `json:"architecture"`
+	NumCPU       int       `json:"numCpu"`
+	NumGoroutine int       `json:"numGoroutine"`
+	MemoryMB     float64   `json:"memoryMb"`
+	HTTP         HTTPStats `json:"http"`
+	UDP          UDPStats  `json:"udp"`
+}
+
+// HTTPStats represents statistics regarding HTTP server
+type HTTPStats struct {
+	Current int64
+	Total   int64
+}
+
+// UDPStats represents statistics regarding UDP server
+type UDPStats struct {
+	Current int64
+	Total   int64
 }
 
 // GetServerStatus represents a tracker status request
@@ -38,6 +50,18 @@ func GetServerStatus() ServerStatus {
 	// Report memory usage in MB
 	memMb := float64((float64(mem.Alloc) / 1000) / 1000)
 
+	// HTTP status
+	httpStatus := HTTPStats{
+		atomic.LoadInt64(&Static.HTTP.Current),
+		atomic.LoadInt64(&Static.HTTP.Total),
+	}
+
+	// UDP status
+	udpStatus := UDPStats{
+		atomic.LoadInt64(&Static.UDP.Current),
+		atomic.LoadInt64(&Static.UDP.Total),
+	}
+
 	// Build status struct
 	status := ServerStatus{
 		os.Getpid(),
@@ -47,8 +71,8 @@ func GetServerStatus() ServerStatus {
 		runtime.NumCPU(),
 		runtime.NumGoroutine(),
 		memMb,
-		atomic.LoadInt64(&Static.HTTP.Total),
-		atomic.LoadInt64(&Static.HTTP.Current),
+		httpStatus,
+		udpStatus,
 	}
 
 	// Return status struct
@@ -95,9 +119,17 @@ func PrintCurrentStatus() {
 
 	// HTTP stats
 	if Static.Config.HTTP {
-		log.Printf("  http - [current: %d] [total: %d]", stat.HTTPCurrent, stat.HTTPTotal)
+		log.Printf("  http - [current: %d] [total: %d]", stat.HTTP.Current, stat.HTTP.Total)
 
 		// Reset current HTTP counter
 		atomic.StoreInt64(&Static.HTTP.Current, 0)
+	}
+
+	// UDP stats
+	if Static.Config.UDP {
+		log.Printf("   udp - [current: %d] [total: %d]", stat.UDP.Current, stat.UDP.Total)
+
+		// Reset current UDP counter
+		atomic.StoreInt64(&Static.UDP.Current, 0)
 	}
 }

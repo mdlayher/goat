@@ -29,6 +29,10 @@ func (u UDPConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 		udpDoneChan <- true
 	}(l, udpDoneChan)
 
+	// Count incoming connections
+	atomic.AddInt64(&Static.UDP.Current, 1)
+	atomic.AddInt64(&Static.UDP.Total, 1)
+
 	first := true
 	for {
 		buf := make([]byte, 2048)

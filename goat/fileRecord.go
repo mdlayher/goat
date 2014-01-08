@@ -10,7 +10,7 @@ import (
 
 // FileRecord represents a file tracked by tracker
 type FileRecord struct {
-	ID         int `json:"id"`
+	ID         int    `json:"id"`
 	InfoHash   string `db:"info_hash" json:"infoHash"`
 	Verified   bool
 	CreateTime int64 `db:"create_time" json:"createTime"`
