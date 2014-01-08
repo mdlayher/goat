@@ -60,6 +60,7 @@ func GetStatusJSON(resChan chan []byte) {
 	// Marshal into JSON from request
 	res, err := json.Marshal(GetServerStatus())
 	if err != nil {
+		log.Println(err.Error())
 		resChan <- nil
 	}
 
