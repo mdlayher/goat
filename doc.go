@@ -18,20 +18,20 @@ goat is configured using a JSON file, which will be created under
 describing the settings available to the user.
 
 	{
-		// Port: the port number on which goat will listen using both HTTP and UDP interfaces
+		// Port: the port number on which goat will listen using both HTTP and UDP
 		"Port": 8080,
 
-		// Passkey: require that a valid passkey is present in announce/scrape URLs (HTTP only)
+		// Passkey: require that a valid passkey is present in HTTP tracker requests
 		// note: this setting is typically used only for private trackers
 		// ex: http://localhost:8080/0123456789ABCDEF/announce
 		"Passkey": true,
 
-		// Whitelist: require clients to be whitelisted manually for use with the tracker
+		// Whitelist: require clients to be whitelisted for use with the tracker
 		// note: this setting is typically used only for private trackers
 		"Whitelist": true,
 
-		// Interval: approximately how often, in seconds, clients should announce to the tracker
-		// note: this entropy is introduced to stagger time between many client announces
+		// Interval: approximately how often, in seconds, clients should announce
+		// note: this entropy is introduced to stagger time between client announces
 		"Interval": 3600,
 
 		// HTTP: enable listening for client connections via HTTP
@@ -42,8 +42,8 @@ describing the settings available to the user.
 		"API": true,
 
 		// UDP: enable listening for client connections via UDP
-		// note: it is not possible to use a passkey with this listener, so this listener should
-		// only be used for public trackers
+		// note: it is not possible to use a passkey with this listener, so this
+		// listener should only be used for public trackers
 		"UDP": false,
 
 		// Db: MySQL database configuration
