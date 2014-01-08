@@ -26,10 +26,9 @@ func (h HTTPConnHandler) Handle(l net.Listener, httpDoneChan chan bool) {
 		httpDoneChan <- true
 	}(l, httpDoneChan)
 
-	// Add API route if configured
+	// Log API configuration
 	if Static.Config.API {
 		log.Println("API functionality enabled")
-		http.HandleFunc("/api", parseAPI)
 	}
 
 	// Set up HTTP routes for handling functions
@@ -47,28 +46,6 @@ func parseAPI(w http.ResponseWriter, r *http.Request) {
 
 	// Add header to identify goat and JSON response
 	w.Header().Add("Server", fmt.Sprintf("%s/%s", App, Version))
-	w.Header().Add("Content-Type", "application/json")
-
-	// Store current URL path
-	url := r.URL.Path
-
-	// Split URL into segments
-	urlArr := strings.Split(url, "/")
-
-	// If configured, Detect if client is making an API call
-	fmt.Println(urlArr)
-	url = urlArr[1]
-
-	// Create channel to return response to client
-	resChan := make(chan []byte)
-
-	// Handle API calls
-	go APIRouter(r, resChan)
-
-	// Wait for response, and send it when ready
-	w.Write(<-resChan)
-	close(resChan)
-	return
 }
 
 // Parse incoming HTTP connections before making tracker calls
@@ -95,14 +72,31 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 	// Add header to identify goat
 	w.Header().Add("Server", fmt.Sprintf("%s/%s", App, Version))
 
+	// Create channel to return response to client
+	resChan := make(chan []byte)
+
 	// Store current URL path
 	url := r.URL.Path
 
 	// Split URL into segments
 	urlArr := strings.Split(url, "/")
 
-	// Detect if passkey present in URL
+	// If configured, Detect if client is making an API call
 	url = urlArr[1]
+	if Static.Config.API && url == "api" {
+		// Log API calls
+		log.Printf("API: %s\n", r.URL.Path)
+
+		// Handle API calls
+		go APIRouter(r, resChan)
+
+		// Wait for response, and send it when ready
+		w.Write(<-resChan)
+		close(resChan)
+		return
+	}
+
+	// Detect if passkey present in URL
 	var passkey string
 	if len(urlArr) == 3 {
 		passkey = urlArr[1]
@@ -163,9 +157,6 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Mark client as HTTP
 	query["udp"] = "0"
-
-	// Create channel to return response to client
-	resChan := make(chan []byte)
 
 	// Handle tracker functions via different URLs
 	switch url {
