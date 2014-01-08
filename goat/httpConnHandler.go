@@ -76,9 +76,6 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// API enabled
 		if Static.Config.API {
-			// Log API calls
-			log.Printf("API: [http %s] %s\n", r.RemoteAddr, r.URL.Path)
-
 			// Handle API calls, output JSON
 			APIRouter(w, r)
 			return

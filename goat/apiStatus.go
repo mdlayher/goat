@@ -23,14 +23,14 @@ type ServerStatus struct {
 
 // HTTPStats represents statistics regarding HTTP server
 type HTTPStats struct {
-	Current int64
-	Total   int64
+	Current int64 `json:"current"`
+	Total   int64 `json:"total"`
 }
 
 // UDPStats represents statistics regarding UDP server
 type UDPStats struct {
-	Current int64
-	Total   int64
+	Current int64 `json:"current"`
+	Total   int64 `json:"total"`
 }
 
 // GetServerStatus represents a tracker status request
