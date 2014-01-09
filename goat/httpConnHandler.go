@@ -40,6 +40,9 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 	atomic.AddInt64(&static.HTTP.Current, 1)
 	atomic.AddInt64(&static.HTTP.Total, 1)
 
+	// Add header to identify goat
+	w.Header().Add("Server", fmt.Sprintf("%s/%s", App, Version))
+
 	// Parse querystring into a Values map
 	query := r.URL.Query()
 
@@ -48,9 +51,6 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 		// If no IP set, detect and store it in query map
 		query.Set("ip", strings.Split(r.RemoteAddr, ":")[0])
 	}
-
-	// Add header to identify goat
-	w.Header().Add("Server", fmt.Sprintf("%s/%s", App, Version))
 
 	// Store current URL path
 	url := r.URL.Path
