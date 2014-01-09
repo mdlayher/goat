@@ -1,3 +1,10 @@
 language: go
 go: 1.1
-script: go build -o bin/goat && ./bin/goat -test
+before_script:
+  - mysql -e "CREATE DATABASE goat"
+  - mysql -e "CREATE USER 'goat'@'localhost' IDENTIFIED BY 'goat'"
+  - mysql -e "GRANT ALL PRIVILEGES ON goat.* TO 'goat'@'localhost'"
+  - mysql -e "FLUSH PRIVILEGES"
+script:
+  - go build -o bin/goat
+  - ./bin/goat -test
