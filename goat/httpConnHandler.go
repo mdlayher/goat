@@ -82,6 +82,12 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 		url = urlArr[2]
 	}
 
+	// Make sure URL is valid torrent function
+	if url != "announce" || url != "scrape" {
+		w.Write(httpTrackerError("Malformed announce"))
+		return
+	}
+
 	// Verify that torrent client is advertising its User-Agent, so we can use a whitelist
 	if r.Header.Get("User-Agent") == "" {
 		w.Write(httpTrackerError("Your client is not identifying itself"))
@@ -155,10 +161,8 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 	// Create channel to return response to client
 	resChan := make(chan []byte)
 
-	// Handle tracker functions via different URLs
-	switch url {
 	// Tracker announce
-	case "announce":
+	if url == "announce" {
 		// Validate required parameter input
 		required := []string{"info_hash", "ip", "port", "uploaded", "downloaded", "left"}
 		// Validate required integer input
@@ -195,13 +199,8 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 		// Perform tracker announce
 		go trackerAnnounce(user, query, nil, resChan)
 	// Tracker scrape
-	case "scrape":
+	} else if url == "scrape" {
 		go trackerScrape(user, query, resChan)
-	// Any undefined handlers
-	default:
-		w.Write(httpTrackerError("Malformed announce"))
-		close(resChan)
-		return
 	}
 
 	// Wait for response, and send it when ready
