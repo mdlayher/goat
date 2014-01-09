@@ -37,7 +37,7 @@ func loadConfig() conf {
 	user, err := user.Current()
 	if err != nil {
 		log.Println(err.Error())
-		path = "."
+		path = "./"
 	} else {
 		// Store config in standard location
 		path = user.HomeDir + "/.config/goat/"
