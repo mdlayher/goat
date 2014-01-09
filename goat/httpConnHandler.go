@@ -83,7 +83,7 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Make sure URL is valid torrent function
-	if url != "announce" || url != "scrape" {
+	if url != "announce" && url != "scrape" {
 		w.Write(httpTrackerError("Malformed announce"))
 		return
 	}
