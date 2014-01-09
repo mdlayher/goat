@@ -1,19 +1,38 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/mdlayher/goat/goat"
 )
 
 func main() {
+	// Set up command line options
+	test := flag.Bool("test", false, "Make goat start, and exit shortly after. Used for testing.")
+	flag.Parse()
+
 	// Launch manager via goroutine
 	killChan := make(chan bool)
 	exitChan := make(chan int)
 	go goat.Manager(killChan, exitChan)
+
+	// If test mode, trigger quit shortly after startup
+	// Used for CI tests, so that we ensure goat starts up and is able to stop gracefully
+	if *test {
+		go func() {
+			fmt.Println(goat.App, ": launched in test mode")
+			ticker := time.NewTicker(2 * time.Second)
+			<-ticker.C
+
+			fmt.Println(goat.App, ": exiting test mode")
+			os.Exit(0)
+		}()
+	}
 
 	// Gracefully handle termination via UNIX signal
 	sigChan := make(chan os.Signal, 1)
