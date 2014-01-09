@@ -20,10 +20,11 @@ func handleUDP(l *net.UDPConn, udpDoneChan chan bool) {
 	// Create shutdown function
 	go func(l *net.UDPConn, udpDoneChan chan bool) {
 		// Wait for done signal
-		static.ShutdownChan <- <-static.ShutdownChan
+		<-static.ShutdownChan
 
 		// Close listener
 		l.Close()
+		log.Println("UDP listener stopped")
 		udpDoneChan <- true
 	}(l, udpDoneChan)
 
