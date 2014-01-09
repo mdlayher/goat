@@ -15,6 +15,12 @@ type apiError struct {
 
 // APIRouter handles the routing of HTTP API requests
 func apiRouter(w http.ResponseWriter, r *http.Request) {
+	// API is read-only, at least for the time being
+	if r.Method != "GET" {
+		http.Error(w, string(apiErrorResponse("Method not allowed")), 405)
+		return
+	}
+
 	// Log API calls
 	log.Printf("API: [http %s] %s %s\n", r.RemoteAddr, r.Method, r.URL.Path)
 
@@ -46,24 +52,10 @@ func apiRouter(w http.ResponseWriter, r *http.Request) {
 	switch urlArr[2] {
 	// Files on tracker
 	case "files":
-		// GET
-		if r.Method == "GET" {
-			go getFilesJSON(ID, apiChan)
-		} else {
-			http.Error(w, string(apiErrorResponse("Method not allowed")), 405)
-			close(apiChan)
-			return
-		}
+		go getFilesJSON(ID, apiChan)
 	// Server status
 	case "status":
-		// GET
-		if r.Method == "GET" {
-			go getStatusJSON(apiChan)
-		} else {
-			http.Error(w, string(apiErrorResponse("Method not allowed")), 405)
-			close(apiChan)
-			return
-		}
+		go getStatusJSON(apiChan)
 	// Return error response
 	default:
 		http.Error(w, string(apiErrorResponse("Undefined API call")), 404)
