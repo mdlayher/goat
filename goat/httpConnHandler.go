@@ -83,12 +83,12 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Verify that torrent client is advertising its User-Agent, so we can use a whitelist
-	if _, ok := r.Header["User-Agent"]; !ok {
+	if r.Header.Get("User-Agent") == "" {
 		w.Write(httpTrackerError("Your client is not identifying itself"))
 		return
 	}
 
-	client := r.Header["User-Agent"][0]
+	client := r.Header.Get("User-Agent")
 
 	// If configured, verify that torrent client is on whitelist
 	if static.Config.Whitelist {

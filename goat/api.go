@@ -16,7 +16,7 @@ type apiError struct {
 // APIRouter handles the routing of HTTP API requests
 func apiRouter(w http.ResponseWriter, r *http.Request) {
 	// Log API calls
-	log.Printf("API: [http %s] %s\n", r.RemoteAddr, r.URL.Path)
+	log.Printf("API: [http %s] %s %s\n", r.RemoteAddr, r.Method, r.URL.Path)
 
 	// Split request path
 	urlArr := strings.Split(r.URL.Path, "/")
