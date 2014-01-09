@@ -3,6 +3,7 @@ package goat
 import (
 	"fmt"
 	"log"
+	"os"
 
 	// Bring in the MySQL driver
 	_ "github.com/go-sql-driver/mysql"
@@ -12,7 +13,14 @@ import (
 // dbConnect connects to MySQL database
 func dbConnect() (*sqlx.DB, error) {
 	// Generate connection string using configuration
-	conn := fmt.Sprintf("%s:%s@/%s", static.Config.DB.Database, static.Config.DB.Username, static.Config.DB.Password)
+	var conn string
+
+	// In test mode, use Travis credentials
+	if os.Getenv("GOAT_TEST") == "1" {
+		conn = "travis:travis@/goat"
+	} else {
+		conn = fmt.Sprintf("%s:%s@/%s", static.Config.DB.Username, static.Config.DB.Password, static.Config.DB.Database)
+	}
 
 	// Return connection and associated errors
 	return sqlx.Connect("mysql", conn)
