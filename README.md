@@ -1,4 +1,4 @@
-goat
+goat [![Build Status](https://travis-ci.org/mdlayher/goat.png?branch=master)](https://travis-ci.org/mdlayher/goat)
 ====
 
 goat: __Go__ __A__wesome __T__racker.  BitTorrent tracker implementation, written in Go.  MIT Licensed.
