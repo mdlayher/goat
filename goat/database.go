@@ -15,8 +15,8 @@ func dbConnect() (*sqlx.DB, error) {
 	// Generate connection string using configuration
 	var conn string
 
-	// In test mode, use Travis credentials
-	if os.Getenv("GOAT_TEST") == "1" {
+	// When running on Travis CI, use Travis credentials
+	if os.Getenv("TRAVIS") == "true" {
 		conn = "travis:travis@/goat"
 	} else {
 		conn = fmt.Sprintf("%s:%s@/%s", static.Config.DB.Username, static.Config.DB.Password, static.Config.DB.Database)
