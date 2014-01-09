@@ -46,10 +46,24 @@ func apiRouter(w http.ResponseWriter, r *http.Request) {
 	switch urlArr[2] {
 	// Files on tracker
 	case "files":
-		go getFilesJSON(ID, apiChan)
+		// GET
+		if r.Method == "GET" {
+			go getFilesJSON(ID, apiChan)
+		} else {
+			http.Error(w, string(apiErrorResponse("Method not allowed")), 405)
+			close(apiChan)
+			return
+		}
 	// Server status
 	case "status":
-		go getStatusJSON(apiChan)
+		// GET
+		if r.Method == "GET" {
+			go getStatusJSON(apiChan)
+		} else {
+			http.Error(w, string(apiErrorResponse("Method not allowed")), 405)
+			close(apiChan)
+			return
+		}
 	// Return error response
 	default:
 		http.Error(w, string(apiErrorResponse("Undefined API call")), 404)
