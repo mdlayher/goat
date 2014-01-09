@@ -1,7 +1,7 @@
 language: go
 go: 1.1
 before_script:
-  - mysql -e "UPDATE mysql.user SET password=PASSWORD('travis') WHERE username='travis'; FLUSH PRIVILEGES"
+  - mysql -e "UPDATE mysql.user SET password=PASSWORD('travis') WHERE user='travis'; FLUSH PRIVILEGES"
   - mysql -e "CREATE DATABASE goat"
 script:
   - go build -o bin/goat
