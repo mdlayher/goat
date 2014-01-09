@@ -20,6 +20,7 @@ func main() {
 	// Used for CI tests, so that we ensure goat starts up and is able to stop gracefully
 	if *test {
 		go func() {
+			// Set environment variable to indicate test mode
 			os.Setenv("GOAT_TEST", "1")
 			fmt.Println(goat.App, ": launched in test mode")
 			time.Sleep(2 * time.Second)
