@@ -15,10 +15,11 @@ func handleHTTP(l net.Listener, httpDoneChan chan bool) {
 	// Create shutdown function
 	go func(l net.Listener, httpDoneChan chan bool) {
 		// Wait for done signal
-		static.ShutdownChan <- <-static.ShutdownChan
+		<-static.ShutdownChan
 
 		// Close listener
 		l.Close()
+		log.Println("HTTP listener stopped")
 		httpDoneChan <- true
 	}(l, httpDoneChan)
 
@@ -90,7 +91,7 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Make sure URL is valid torrent function
-	if url != "announce" || url != "scrape" {
+	if url != "announce" && url != "scrape" {
 		w.Write(httpTrackerError("Malformed announce"))
 		return
 	}

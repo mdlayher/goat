@@ -23,8 +23,8 @@ func main() {
 			fmt.Println(goat.App, ": launched in test mode")
 			time.Sleep(2 * time.Second)
 
-			fmt.Println(goat.App, ": exiting test mode")
-			os.Exit(0)
+			fmt.Println(goat.App, ": test mode triggering graceful shutdown")
+			syscall.Kill(os.Getpid(), syscall.SIGTERM)
 		}()
 	}
 

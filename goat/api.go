@@ -15,6 +15,12 @@ type apiError struct {
 
 // APIRouter handles the routing of HTTP API requests
 func apiRouter(w http.ResponseWriter, r *http.Request) {
+	// API is read-only, at least for the time being
+	if r.Method != "GET" {
+		http.Error(w, string(apiErrorResponse("Method not allowed")), 405)
+		return
+	}
+
 	// Log API calls
 	log.Printf("API: [http %s] %s %s\n", r.RemoteAddr, r.Method, r.URL.Path)
 

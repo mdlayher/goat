@@ -60,16 +60,17 @@ func Manager(killChan chan bool, exitChan chan int) {
 		case <-killChan:
 			// Trigger a graceful shutdown
 			log.Println("triggering graceful shutdown, press Ctrl+C again to force halt")
-			static.ShutdownChan <- true
 
 			// Stop listeners
 			if static.Config.HTTP {
 				log.Println("stopping HTTP listener")
-				//<-httpDoneChan
+				static.ShutdownChan <- true
+				<-httpDoneChan
 			}
 			if static.Config.UDP {
 				log.Println("stopping UDP listener")
-				//<-udpDoneChan
+				static.ShutdownChan <- true
+				<-udpDoneChan
 			}
 
 			// Report that program should exit gracefully
