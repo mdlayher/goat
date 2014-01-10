@@ -1,7 +1,9 @@
 package goat
 
 import (
+	"crypto/sha1"
 	"encoding/base64"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -42,8 +44,21 @@ func (a basicAPIAuthenticator) Auth(r *http.Request) bool {
 	// Split into username/password
 	credentials := strings.Split(string(buf), ":")
 
-	// TODO: remove these, use credentials from database
-	if credentials[0] != "goat" || credentials[1] != "goat" {
+	// Load user by username, verify user exists
+	user := new(userRecord).Load(credentials[0], "username")
+	if user == (userRecord{}) {
+		return false
+	}
+
+	// Hash input password
+	// TODO: use something better than SHA1, but still fast
+	sha := sha1.New()
+	sha.Write([]byte(credentials[1]))
+	hash := fmt.Sprintf("%x", sha.Sum(nil))
+
+	// Attempt to load user's API key from hash
+	key := new(apiKey).Load(hash, "key")
+	if key == (apiKey{}) {
 		return false
 	}
 
