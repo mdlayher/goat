@@ -66,6 +66,13 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// API enabled
 		if static.Config.API {
+			// API authentication
+			auth := new(basicAPIAuthenticator).Auth(r)
+			if !auth {
+				http.Error(w, string(apiErrorResponse("Authentication failed")), 401)
+				return
+			}
+
 			// Handle API calls, output JSON
 			apiRouter(w, r)
 			return
