@@ -1,7 +1,10 @@
 package goat
 
 import (
+	"encoding/base64"
+	"log"
 	"net/http"
+	"strings"
 )
 
 // apiAuthenticator interface which defines methods required to implement an authentication method
@@ -15,6 +18,36 @@ type basicAPIAuthenticator struct {
 
 // Auth handles validation of HTTP Basic authentication
 func (a basicAPIAuthenticator) Auth(r *http.Request) bool {
+	// Retrieve Authorization header
+	auth := r.Header.Get("Authorization")
+
+	// No header provided
+	if auth == "" {
+		return false
+	}
+
+	// Ensure format is valid
+	basic := strings.Split(auth, " ")
+	if basic[0] != "Basic" {
+		return false
+	}
+
+	// Decode base64'd user:password pair
+	buf, err := base64.URLEncoding.DecodeString(basic[1])
+	if err != nil {
+		log.Println(err.Error())
+		return false
+	}
+
+	// Split into username/password
+	credentials := strings.Split(string(buf), ":")
+
+	// TODO: remove these, use credentials from database
+	if credentials[0] != "goat" || credentials[1] != "goat" {
+		return false
+	}
+
+	// Authentication succeeded
 	return true
 }
 
