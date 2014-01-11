@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"path/filepath"
 
 	"github.com/cznic/ql"
@@ -33,7 +34,11 @@ func main() {
 	}
 	defer db.Close()
 
-	files, err := filepath.Glob("*.ql")
+	basedir := ""
+	if basedir = os.Getenv("GOPATH"); basedir != "" {
+		basedir += "/src/github.com/mdlayher/goat/ql/"
+	}
+	files, err := filepath.Glob(basedir + "*.ql")
 	if nil != err {
 		log.Fatalln(err.Error())
 	}
