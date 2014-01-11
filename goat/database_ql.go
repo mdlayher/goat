@@ -36,6 +36,12 @@ var (
 		"announcelog_load_time":       "SELECT id(),info_hash,passkey,key,ip,port,udp,uploaded,downloaded,left,event,client,ts FROM announce_log WHERE time==$1 ORDER BY id()",
 		"announcelog_save":            "INSERT INTO announce_log VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,now());",
 
+		"apikey_load_id":      "SELECT id(),user_id,key FROM api_keys WHERE id()==$1",
+		"apikey_load_user_id": "SELECT id(),user_id,key FROM api_keys WHERE user_id==$1",
+		"apikey_load_key":     "SELECT id(),user_id,key FROM api_keys WHERE key==$1",
+		"apikey_insert":       "INSERT INTO api_keys VALUES ($1, $2)",
+		"apikey_update":       "UPDATE api_keys key=$1 WHERE id()==$1",
+
 		"filerecord_load_info_hash":   "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE info_hash==$1 ORDER BY id()",
 		"filerecord_load_verified":    "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE verified==$1 ORDER BY id()",
 		"filerecord_load_create_time": "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE create_time==$1 ORDER BY id()",
@@ -127,8 +133,35 @@ func (db *qlw) SaveAnnounceLog(a announceLog) (err error) {
 
 // --- apiKey.go ---
 
-func (db *qlw) LoadApiKey(interface{}, string) (apiKey, error) { return apiKey{}, nil }
-func (db *qlw) SaveApiKey(apiKey) error                        { return nil }
+func (db *qlw) LoadApiKey(id interface{}, col string) (apiKey, error) {
+	rs, _, err := qlQuery(db, "apikey_load_"+col, true, id)
+	result := apiKey{}
+	if err != nil {
+		return result, err
+	}
+	err = rs[len(rs)-1].Do(false, func(data []interface{}) (bool, error) {
+		result = apiKey{
+			ID:     int(data[0].(int64)),
+			UserID: data[1].(int),
+			Key:    data[2].(string),
+		}
+		return false, nil
+	})
+	return result, err
+}
+
+func (db *qlw) SaveApiKey(key apiKey) (err error) {
+	if k, e := db.LoadApiKey(key.ID, "id"); (k == apiKey{}) {
+		if nil == e {
+			_, _, err = qlQuery(db, "apikey_insert", true, key.UserID, key.Key)
+		} else {
+			err = e
+		}
+	} else {
+		_, _, err = qlQuery(db, "apikey_update", true, key.ID, k.Key)
+	}
+	return
+}
 
 // --- fileRecord.go ---
 
