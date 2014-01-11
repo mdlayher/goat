@@ -4,29 +4,33 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/hex"
+	"log"
 	"net"
+	"net/url"
 	"strconv"
 	"strings"
+	"sync/atomic"
 )
 
 // Handshake for UDP tracker protocol
-const InitID = 4497486125440
-
-// UDPConnHandler handles incoming UDP network connections
-type UDPConnHandler struct {
-}
+const udpInitID = 4497486125440
 
 // Handle incoming UDP connections and return response
-func (u UDPConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
+func handleUDP(l *net.UDPConn, udpDoneChan chan bool) {
 	// Create shutdown function
 	go func(l *net.UDPConn, udpDoneChan chan bool) {
 		// Wait for done signal
-		Static.ShutdownChan <- <-Static.ShutdownChan
+		<-static.ShutdownChan
 
 		// Close listener
 		l.Close()
+		log.Println("UDP listener stopped")
 		udpDoneChan <- true
 	}(l, udpDoneChan)
+
+	// Count incoming connections
+	atomic.AddInt64(&static.UDP.Current, 1)
+	atomic.AddInt64(&static.UDP.Total, 1)
 
 	first := true
 	for {
@@ -40,7 +44,7 @@ func (u UDPConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 
 		// Verify length is at least 16 bytes
 		if rlen < 16 {
-			Static.LogChan <- "Invalid length"
+			log.Println("Invalid length")
 			continue
 		}
 
@@ -53,11 +57,11 @@ func (u UDPConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 
 		// On first run, verify valid connection ID
 		if first {
-			if connID != InitID {
-				Static.LogChan <- "Invalid connection handshake"
-				_, err = l.WriteToUDP(UDPTrackerError("Invalid connection handshake", transID), addr)
+			if connID != udpInitID {
+				log.Println("Invalid connection handshake")
+				_, err = l.WriteToUDP(udpTrackerError("Invalid connection handshake", transID), addr)
 				if err != nil {
-					Static.LogChan <- err.Error()
+					log.Println(err.Error())
 					return
 				}
 				continue
@@ -74,138 +78,138 @@ func (u UDPConnHandler) Handle(l *net.UDPConn, udpDoneChan chan bool) {
 			// Action
 			err = binary.Write(res, binary.BigEndian, uint32(0))
 			if err != nil {
-				Static.LogChan <- err.Error()
+				log.Println(err.Error())
 				return
 			}
 
 			// Transaction ID
 			err = binary.Write(res, binary.BigEndian, transID)
 			if err != nil {
-				Static.LogChan <- err.Error()
+				log.Println(err.Error())
 				return
 			}
 
 			// Connection ID, generated for this session
-			err = binary.Write(res, binary.BigEndian, uint64(RandRange(0, 1000000000)))
+			err = binary.Write(res, binary.BigEndian, uint64(randRange(0, 1000000000)))
 			if err != nil {
-				Static.LogChan <- err.Error()
+				log.Println(err.Error())
 				return
 			}
 
 			_, err := l.WriteToUDP(res.Bytes(), addr)
 			if err != nil {
-				Static.LogChan <- err.Error()
+				log.Println(err.Error())
 				return
 			}
 
 			continue
 		// Announce
 		case 1:
-			query := map[string]string{}
+			query := url.Values{}
 
 			// Ignoring these for now, because clients function sanely without them
 			// Connection ID: buf[0:8]
 			// Action: buf[8:12]
 
 			// Mark client as UDP
-			query["udp"] = "1"
+			query.Set("udp", "1")
 
 			// Transaction ID
 			transID := buf[12:16]
 
 			// Info hash
-			query["info_hash"] = string(buf[16:36])
+			query.Set("info_hash", string(buf[16:36]))
 
 			// Skipped: peer_id: buf[36:56]
 
 			// Downloaded
 			t, err := strconv.ParseInt(hex.EncodeToString(buf[56:64]), 16, 64)
 			if err != nil {
-				Static.LogChan <- err.Error()
+				log.Println(err.Error())
 				return
 			}
-			query["downloaded"] = strconv.FormatInt(t, 10)
+			query.Set("downloaded", strconv.FormatInt(t, 10))
 
 			// Left
 			t, err = strconv.ParseInt(hex.EncodeToString(buf[64:72]), 16, 64)
 			if err != nil {
-				Static.LogChan <- err.Error()
+				log.Println(err.Error())
 				return
 			}
-			query["left"] = strconv.FormatInt(t, 10)
+			query.Set("left", strconv.FormatInt(t, 10))
 
 			// Uploaded
 			t, err = strconv.ParseInt(hex.EncodeToString(buf[72:80]), 16, 64)
 			if err != nil {
-				Static.LogChan <- err.Error()
+				log.Println(err.Error())
 				return
 			}
-			query["uploaded"] = strconv.FormatInt(t, 10)
+			query.Set("uploaded", strconv.FormatInt(t, 10))
 
 			// Event
 			t, err = strconv.ParseInt(hex.EncodeToString(buf[80:84]), 16, 32)
 			if err != nil {
-				Static.LogChan <- err.Error()
+				log.Println(err.Error())
 				return
 			}
-			query["event"] = strconv.FormatInt(t, 10)
+			event := strconv.FormatInt(t, 10)
 
 			// Convert event to actual string
-			switch query["event"] {
+			switch event {
 			case "0":
-				query["event"] = ""
+				query.Set("event", "")
 			case "1":
-				query["event"] = "completed"
+				query.Set("event", "completed")
 			case "2":
-				query["event"] = "started"
+				query.Set("event", "started")
 			case "3":
-				query["event"] = "stopped"
+				query.Set("event", "stopped")
 			}
 
 			// IP address
 			t, err = strconv.ParseInt(hex.EncodeToString(buf[84:88]), 16, 32)
 			if err != nil {
-				Static.LogChan <- err.Error()
+				log.Println(err.Error())
 				return
 			}
-			query["ip"] = strconv.FormatInt(t, 10)
+			query.Set("ip", strconv.FormatInt(t, 10))
 
 			// If no IP address set, use the UDP source
-			if query["ip"] == "0" {
-				query["ip"] = strings.Split(addr.String(), ":")[0]
+			if query.Get("ip") == "0" {
+				query.Set("ip", strings.Split(addr.String(), ":")[0])
 			}
 
 			// Key
-			query["key"] = hex.EncodeToString(buf[88:92])
+			query.Set("key", hex.EncodeToString(buf[88:92]))
 
 			// Numwant
-			query["numwant"] = hex.EncodeToString(buf[92:96])
+			query.Set("numwant", hex.EncodeToString(buf[92:96]))
 
 			// If numwant is hex max value, default to 50
-			if query["numwant"] == "ffffffff" {
-				query["numwant"] = "50"
+			if query.Get("numwant") == "ffffffff" {
+				query.Set("numwant", "50")
 			}
 
 			// Port
 			t, err = strconv.ParseInt(hex.EncodeToString(buf[96:98]), 16, 32)
 			if err != nil {
-				Static.LogChan <- err.Error()
+				log.Println(err.Error())
 				return
 			}
-			query["port"] = strconv.FormatInt(t, 10)
+			query.Set("port", strconv.FormatInt(t, 10))
 
 			// Trigger an anonymous announce
 			resChan := make(chan []byte)
-			go TrackerAnnounce(UserRecord{}, query, transID, resChan)
+			go trackerAnnounce(userRecord{}, query, transID, resChan)
 
 			_, err = l.WriteToUDP(<-resChan, addr)
 			close(resChan)
 			if err != nil {
-				Static.LogChan <- err.Error()
+				log.Println(err.Error())
 				return
 			}
 		default:
-			Static.LogChan <- "Invalid action"
+			log.Println("Invalid action")
 			continue
 		}
 	}

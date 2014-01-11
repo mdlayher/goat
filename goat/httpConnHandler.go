@@ -2,6 +2,7 @@ package goat
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"strconv"
@@ -9,21 +10,23 @@ import (
 	"sync/atomic"
 )
 
-// HTTPConnHandler handles incoming HTTP (TCP) network connections
-type HTTPConnHandler struct {
-}
-
 // Handle incoming HTTP connections and serve
-func (h HTTPConnHandler) Handle(l net.Listener, httpDoneChan chan bool) {
+func handleHTTP(l net.Listener, httpDoneChan chan bool) {
 	// Create shutdown function
 	go func(l net.Listener, httpDoneChan chan bool) {
 		// Wait for done signal
-		Static.ShutdownChan <- <-Static.ShutdownChan
+		<-static.ShutdownChan
 
 		// Close listener
 		l.Close()
+		log.Println("HTTP listener stopped")
 		httpDoneChan <- true
 	}(l, httpDoneChan)
+
+	// Log API configuration
+	if static.Config.API {
+		log.Println("API functionality enabled")
+	}
 
 	// Set up HTTP routes for handling functions
 	http.HandleFunc("/", parseHTTP)
@@ -35,52 +38,85 @@ func (h HTTPConnHandler) Handle(l net.Listener, httpDoneChan chan bool) {
 // Parse incoming HTTP connections before making tracker calls
 func parseHTTP(w http.ResponseWriter, r *http.Request) {
 	// Count incoming connections
-	atomic.AddInt64(&Static.HTTP.Current, 1)
-	atomic.AddInt64(&Static.HTTP.Total, 1)
+	atomic.AddInt64(&static.HTTP.Current, 1)
+	atomic.AddInt64(&static.HTTP.Total, 1)
 
-	// Parse querystring
-	querystring := r.URL.Query()
+	// Add header to identify goat
+	w.Header().Add("Server", fmt.Sprintf("%s/%s", App, Version))
 
-	// Flatten arrays into single values
-	query := map[string]string{}
-	for k, v := range querystring {
-		query[k] = v[0]
-	}
+	// Parse querystring into a Values map
+	query := r.URL.Query()
 
 	// Check if IP was previously set
-	if _, ok := query["ip"]; !ok {
+	if query.Get("ip") == "" {
 		// If no IP set, detect and store it in query map
-		query["ip"] = strings.Split(r.RemoteAddr, ":")[0]
+		query.Set("ip", strings.Split(r.RemoteAddr, ":")[0])
 	}
 
-	// Store current passkey URL
-	var passkey string
+	// Store current URL path
 	url := r.URL.Path
 
-	// Check for passkey present in URL, form: /ABDEF/announce
+	// Split URL into segments
 	urlArr := strings.Split(url, "/")
+
+	// If configured, Detect if client is making an API call
 	url = urlArr[1]
+	if url == "api" {
+		// Output JSON
+		w.Header().Add("Content-Type", "application/json")
+
+		// API enabled
+		if static.Config.API {
+			/*
+			// RATE LIMITER
+			if !apiRateLimit(strings.Split(r.RemoteAddr, ":")[0]) {
+				http.Error(w, string(apiErrorResponse("Rate limit exceeded")), 429)
+				return
+			}
+			*/
+
+			// API authentication
+			auth := new(basicAPIAuthenticator).Auth(r)
+			if !auth {
+				http.Error(w, string(apiErrorResponse("Authentication failed")), 401)
+				return
+			}
+
+			// Handle API calls, output JSON
+			apiRouter(w, r)
+			return
+		} else {
+			http.Error(w, string(apiErrorResponse("API is currently disabled")), 503)
+			return
+		}
+	}
+
+	// Detect if passkey present in URL
+	var passkey string
 	if len(urlArr) == 3 {
 		passkey = urlArr[1]
 		url = urlArr[2]
 	}
 
-	// Add header to identify goat
-	w.Header().Add("Server", fmt.Sprintf("%s/%s", App, Version))
-
-	// Verify that torrent client is advertising its User-Agent, so we can use a whitelist
-	if _, ok := r.Header["User-Agent"]; !ok {
-		w.Write(HTTPTrackerError("Your client is not identifying itself"))
+	// Make sure URL is valid torrent function
+	if url != "announce" && url != "scrape" {
+		w.Write(httpTrackerError("Malformed announce"))
 		return
 	}
 
-	client := r.Header["User-Agent"][0]
+	// Verify that torrent client is advertising its User-Agent, so we can use a whitelist
+	if r.Header.Get("User-Agent") == "" {
+		w.Write(httpTrackerError("Your client is not identifying itself"))
+		return
+	}
+
+	client := r.Header.Get("User-Agent")
 
 	// If configured, verify that torrent client is on whitelist
-	if Static.Config.Whitelist {
-		whitelist := new(WhitelistRecord).Load(client, "client")
-		if whitelist == (WhitelistRecord{}) || !whitelist.Approved {
-			w.Write(HTTPTrackerError("Your client is not whitelisted"))
+	if static.Config.Whitelist {
+		whitelist := new(whitelistRecord).Load(client, "client")
+		if whitelist == (whitelistRecord{}) || !whitelist.Approved {
+			w.Write(httpTrackerError("Your client is not whitelisted"))
 
 			// Block things like browsers and web crawlers, because they will just clutter up the table
 			if strings.Contains(client, "Mozilla") || strings.Contains(client, "Opera") {
@@ -88,11 +124,11 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 
 			// Insert unknown clients into list for later approval
-			if whitelist == (WhitelistRecord{}) {
+			if whitelist == (whitelistRecord{}) {
 				whitelist.Client = client
 				whitelist.Approved = false
 
-				Static.LogChan <- fmt.Sprintf("whitelist: detected new client '%s', awaiting manual approval", client)
+				log.Printf("whitelist: detected new client '%s', awaiting manual approval", client)
 
 				go whitelist.Save()
 			}
@@ -102,34 +138,47 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Put client in query map
-	query["client"] = client
+	query.Set("client", client)
 
 	// Check if server is configured for passkey announce
-	if Static.Config.Passkey && passkey == "" {
-		w.Write(HTTPTrackerError("No passkey found in announce URL"))
+	if static.Config.Passkey && passkey == "" {
+		w.Write(httpTrackerError("No passkey found in announce URL"))
 		return
 	}
 
 	// Validate passkey if needed
-	user := new(UserRecord).Load(passkey, "passkey")
-	if Static.Config.Passkey && user == (UserRecord{}) {
-		w.Write(HTTPTrackerError("Invalid passkey"))
+	user := new(userRecord).Load(passkey, "passkey")
+	if static.Config.Passkey && user == (userRecord{}) {
+		w.Write(httpTrackerError("Invalid passkey"))
 		return
 	}
 
 	// Put passkey in query map
-	query["passkey"] = user.Passkey
+	query.Set("passkey", user.Passkey)
 
 	// Mark client as HTTP
-	query["udp"] = "0"
+	query.Set("udp", "0")
 
-	// Create channel to return bencoded response to client on
+	// Get user's total number of active torrents
+	seeding := user.Seeding()
+	leeching := user.Leeching()
+	if seeding == -1 || leeching == -1 {
+		w.Write(httpTrackerError("Failed to calculate active torrents"))
+		return
+	}
+
+	// Verify that client has not exceeded this user's torrent limit
+	activeSum := seeding + leeching
+	if user.TorrentLimit < activeSum {
+		w.Write(httpTrackerError(fmt.Sprintf("Exceeded active torrent limit: %d > %d", activeSum, user.TorrentLimit)))
+		return
+	}
+
+	// Create channel to return response to client
 	resChan := make(chan []byte)
 
-	// Handle tracker functions via different URLs
-	switch url {
 	// Tracker announce
-	case "announce":
+	if url == "announce" {
 		// Validate required parameter input
 		required := []string{"info_hash", "ip", "port", "uploaded", "downloaded", "left"}
 		// Validate required integer input
@@ -137,8 +186,8 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// Check for required parameters
 		for _, r := range required {
-			if _, ok := query[r]; !ok {
-				w.Write(HTTPTrackerError("Missing required parameter: " + r))
+			if query.Get(r) == "" {
+				w.Write(httpTrackerError("Missing required parameter: " + r))
 				close(resChan)
 				return
 			}
@@ -146,10 +195,10 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// Check for all valid integers
 		for _, r := range reqInt {
-			if _, ok := query[r]; ok {
-				_, err := strconv.Atoi(query[r])
+			if query.Get(r) != "" {
+				_, err := strconv.Atoi(query.Get(r))
 				if err != nil {
-					w.Write(HTTPTrackerError("Invalid integer parameter: " + r))
+					w.Write(httpTrackerError("Invalid integer parameter: " + r))
 					close(resChan)
 					return
 				}
@@ -157,26 +206,17 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Only allow compact announce
-		if _, ok := query["compact"]; !ok || query["compact"] != "1" {
-			w.Write(HTTPTrackerError("Your client does not support compact announce"))
+		if query.Get("compact") == "" || query.Get("compact") != "1" {
+			w.Write(httpTrackerError("Your client does not support compact announce"))
 			close(resChan)
 			return
 		}
 
 		// Perform tracker announce
-		go TrackerAnnounce(user, query, nil, resChan)
+		go trackerAnnounce(user, query, nil, resChan)
 	// Tracker scrape
-	case "scrape":
-		go TrackerScrape(user, query, resChan)
-	// Tracker status
-	case "status":
-		w.Header().Add("Content-Type", "application/json")
-		go GetStatusJSON(resChan)
-	// Any undefined handlers
-	default:
-		w.Write(HTTPTrackerError("Malformed announce"))
-		close(resChan)
-		return
+	} else if url == "scrape" {
+		go trackerScrape(user, query, resChan)
 	}
 
 	// Wait for response, and send it when ready

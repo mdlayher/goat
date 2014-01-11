@@ -1,12 +1,15 @@
 package goat
 
 import (
+	"database/sql"
 	"encoding/hex"
+	"log"
+	"net/url"
 	"time"
 )
 
-// ScrapeLog represents a scrapelog, to be logged to storage
-type ScrapeLog struct {
+// scrapeLog represents a scrapelog, to be logged to storage
+type scrapeLog struct {
 	ID       int
 	InfoHash string `db:"info_hash"`
 	Passkey  string
@@ -14,51 +17,51 @@ type ScrapeLog struct {
 	Time     int64
 }
 
-// Save ScrapeLog to storage
-func (s ScrapeLog) Save() bool {
+// Save scrapeLog to storage
+func (s scrapeLog) Save() bool {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return false
 	}
 	if err := db.SaveScrapeLog(s); nil != err {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return false
 	}
 	return true
 }
 
-// Load ScrapeLog from storage
-func (s ScrapeLog) Load(id interface{}, col string) ScrapeLog {
+// Load scrapeLog from storage
+func (s scrapeLog) Load(id interface{}, col string) scrapeLog {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return s
 	}
 	s, err = db.LoadScrapeLog(id, col)
-	if err != nil {
-		Static.LogChan <- err.Error()
-		return ScrapeLog{}
+	if err != nil && err != sql.ErrNoRows {
+		log.Println(err.Error())
+		return scrapeLog{}
 	}
 	return s
 }
 
-// FromMap generates a ScrapeLog struct from a query map
-func (s ScrapeLog) FromMap(query map[string]string) ScrapeLog {
-	s = ScrapeLog{}
+// FromValues generates a scrapeLog struct from a url.Values map
+func (s scrapeLog) FromValues(query url.Values) scrapeLog {
+	s = scrapeLog{}
 
 	// Required parameters
 
 	// info_hash
-	s.InfoHash = hex.EncodeToString([]byte(query["info_hash"]))
+	s.InfoHash = hex.EncodeToString([]byte(query.Get("info_hash")))
 
 	// passkey
-	s.Passkey = query["passkey"]
+	s.Passkey = query.Get("passkey")
 
 	// ip
-	s.IP = query["ip"]
+	s.IP = query.Get("ip")
 
 	// Current UNIX timestamp
 	s.Time = time.Now().Unix()

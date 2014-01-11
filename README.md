@@ -1,50 +1,13 @@
-goat
+goat [![Build Status](https://travis-ci.org/mdlayher/goat.png?branch=master)](https://travis-ci.org/mdlayher/goat)
 ====
 
 goat: __Go__ __A__wesome __T__racker.  BitTorrent tracker implementation, written in Go.  MIT Licensed.
 
-Configuration
--------------
+Full documentation for goat may be found on [GoDoc](http://godoc.org/github.com/mdlayher/goat).
 
-goat is configured using a JSON file, which will be created under `~/.config/goat/config.json`.  Here is an example
-configuration, describing the settings available to the user.
+Installation
+============
 
-```
-{
-	// Port: the port number on which goat will listen using both HTTP and UDP interfaces
-	"Port": 8080,
+To download, build, and install goat, simply run:
 
-	// Passkey: require that a valid passkey is present in announce/scrape URLs (HTTP only)
-	// note: this setting is typically used only for private trackers
-	// ex: http://localhost:8080/0123456789ABCDEF/announce
-	"Passkey": true,
-
-	// Whitelist: require clients to be whitelisted manually for use with the tracker
-	// note: this setting is typically used only for private trackers
-	"Whitelist": true,
-
-	// Interval: approximately how often, in seconds, clients should announce to the tracker
-	// note: this entropy is introduced to stagger time between many client announces
-	"Interval": 3600,
-
-	// HTTP: enable listening for client connections via HTTP
-	"HTTP": true,
-
-	// UDP: enable listening for client connections via UDP
-	// note: it is not possible to use a passkey with this listener, so this listener should
-	// only be used for public trackers
-	"UDP": false,
-
-	// Db: MySQL database configuration
-	"DB": {
-		// Database: the database goat will use to store its tracker data
-		"Database": "goat",
-
-		// Username: the username used to access goat's database
-		"Username": "goat",
-
-		// Password: the password used to access goat's database
-		"Password": "goat"
-	}
-}
-```
+`go get github.com/mdlayher/goat`

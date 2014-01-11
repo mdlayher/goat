@@ -4,6 +4,7 @@ package goat
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -55,21 +56,21 @@ var (
 )
 
 func init() {
-	dbConnectFunc = func() (DbModel, error) {
+	dbConnectFunc = func() (dbmodel, error) {
 		if nil == qlwdb {
-			name := Static.Config.DB.Database + ".db"
+			name := static.Config.DB.Database + ".db"
 			db, err := ql.OpenFile(name, &qlOptions)
 			if nil != err {
 				return nil, err
 			}
-			Static.LogChan <- "Opened ql database '" + name + "'"
+			log.Println("Opened ql database '" + name + "'")
 			qlwdb = &qlw{db}
 		}
 		return qlwdb, nil
 	}
 	dbCloseFunc = func() {
 		if nil != qlwdb {
-			Static.LogChan <- "closing ql database"
+			log.Println("closing ql database")
 			qlwdb.Close()
 		}
 	}
@@ -87,14 +88,14 @@ func (db *qlw) NewTransaction() qltx {
 
 // --- announceLog.go ---
 
-func (db *qlw) LoadAnnounceLog(id interface{}, col string) (AnnounceLog, error) {
+func (db *qlw) LoadAnnounceLog(id interface{}, col string) (announceLog, error) {
 	rs, _, err := qlQuery(db, "announcelog_load_"+col, true, id)
-	result := AnnounceLog{}
+	result := announceLog{}
 	if err != nil {
 		return result, err
 	}
 	err = rs[len(rs)-1].Do(false, func(data []interface{}) (bool, error) {
-		result = AnnounceLog{
+		result = announceLog{
 			ID:         data[0].(int),
 			InfoHash:   data[1].(string),
 			Passkey:    data[2].(string),
@@ -114,7 +115,7 @@ func (db *qlw) LoadAnnounceLog(id interface{}, col string) (AnnounceLog, error) 
 	return result, err
 }
 
-func (db *qlw) SaveAnnounceLog(a AnnounceLog) (err error) {
+func (db *qlw) SaveAnnounceLog(a announceLog) (err error) {
 	_, _, err = qlQuery(db, "announcelog_save", true,
 		a.InfoHash, a.Passkey, a.Key,
 		a.IP, int32(a.Port), a.UDP,
@@ -124,16 +125,21 @@ func (db *qlw) SaveAnnounceLog(a AnnounceLog) (err error) {
 	return
 }
 
+// --- apiKey.go ---
+
+func (db *qlw) LoadApiKey(interface{}, string) (apiKey, error) { return apiKey{}, nil }
+func (db *qlw) SaveApiKey(apiKey) error                        { return nil }
+
 // --- fileRecord.go ---
 
-func (db *qlw) LoadFileRecord(id interface{}, col string) (FileRecord, error) {
+func (db *qlw) LoadFileRecord(id interface{}, col string) (fileRecord, error) {
 	rs, _, err := qlQuery(db, "filerecord_load_"+col, true, id)
-	result := FileRecord{}
+	result := fileRecord{}
 	if err != nil {
 		return result, err
 	}
 	err = rs[len(rs)-1].Do(false, func(data []interface{}) (bool, error) {
-		result = FileRecord{
+		result = fileRecord{
 			ID:         int(data[0].(int64)),
 			InfoHash:   data[1].(string),
 			Verified:   data[2].(bool),
@@ -145,8 +151,8 @@ func (db *qlw) LoadFileRecord(id interface{}, col string) (FileRecord, error) {
 	return result, err
 }
 
-func (db *qlw) SaveFileRecord(f FileRecord) (err error) {
-	if fr, e := db.LoadFileRecord(f.ID, "id"); (fr == FileRecord{}) {
+func (db *qlw) SaveFileRecord(f fileRecord) (err error) {
+	if fr, e := db.LoadFileRecord(f.ID, "id"); (fr == fileRecord{}) {
 		if nil == e {
 			_, _, err = qlQuery(db, "filerecord_insert", true, f.InfoHash, f.Verified)
 		} else {
@@ -238,16 +244,18 @@ func (db *qlw) MarkFileUsersInactive(fid int, users []userinfo) (err error) {
 	return
 }
 
+func (db *qlw) GetAllFileRecords() ([]fileRecord, error) { return []fileRecord{}, nil }
+
 // --- fileUserRecord.go ---
 
-func (db *qlw) LoadFileUserRecord(fid, uid int, ip string) (FileUserRecord, error) {
+func (db *qlw) LoadFileUserRecord(fid, uid int, ip string) (fileUserRecord, error) {
 	rs, _, err := qlQuery(db, "fileuser_load", true, int64(fid), int64(uid), ip)
-	result := FileUserRecord{}
+	result := fileUserRecord{}
 	if err != nil {
 		return result, err
 	}
 	err = rs[len(rs)-1].Do(false, func(data []interface{}) (bool, error) {
-		result = FileUserRecord{
+		result = fileUserRecord{
 			FileID:     data[0].(int),
 			UserID:     data[1].(int),
 			IP:         data[2].(string),
@@ -264,28 +272,33 @@ func (db *qlw) LoadFileUserRecord(fid, uid int, ip string) (FileUserRecord, erro
 	return result, err
 }
 
-func (db *qlw) SaveFileUserRecord(f FileUserRecord) error { return nil }
+func (db *qlw) SaveFileUserRecord(f fileUserRecord) error { return nil }
+func (db *qlw) LoadFileUserRepository(interface{}, string) ([]fileUserRecord, error) {
+	return []fileUserRecord{}, nil
+}
 
 // --- scrapeLog.go ---
 
-func (db *qlw) LoadScrapeLog(id interface{}, col string) (ScrapeLog, error) { return ScrapeLog{}, nil }
-func (db *qlw) SaveScrapeLog(s ScrapeLog) error                             { return nil }
+func (db *qlw) LoadScrapeLog(id interface{}, col string) (scrapeLog, error) { return scrapeLog{}, nil }
+func (db *qlw) SaveScrapeLog(s scrapeLog) error                             { return nil }
 
 // --- userRecord.go ---
 
-func (db *qlw) LoadUserRecord(id interface{}, col string) (UserRecord, error) {
-	return UserRecord{}, nil
+func (db *qlw) LoadUserRecord(id interface{}, col string) (userRecord, error) {
+	return userRecord{}, nil
 }
-func (db *qlw) SaveUserRecord(u UserRecord) error        { return nil }
+func (db *qlw) SaveUserRecord(u userRecord) error        { return nil }
 func (db *qlw) GetUserUploaded(uid int) (int64, error)   { return -1, nil }
 func (db *qlw) GetUserDownloaded(uid int) (int64, error) { return -1, nil }
+func (db *qlw) GetUserSeeding(uid int) (int, error)      { return -1, nil }
+func (db *qlw) GetUserLeeching(uid int) (int, error)     { return -1, nil }
 
 // --- whitelistRecord.go ---
 
-func (db *qlw) LoadWhitelistRecord(id interface{}, col string) (WhitelistRecord, error) {
-	return WhitelistRecord{}, nil
+func (db *qlw) LoadWhitelistRecord(id interface{}, col string) (whitelistRecord, error) {
+	return whitelistRecord{}, nil
 }
-func (db *qlw) SaveWhitelistRecord(w WhitelistRecord) error { return nil }
+func (db *qlw) SaveWhitelistRecord(w whitelistRecord) error { return nil }
 
 func qlQuery(db *qlw, key string, wraptx bool, arg ...interface{}) ([]ql.Recordset, int, error) {
 	if list, err := qlCompile(key, wraptx); nil == err {

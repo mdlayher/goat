@@ -2,12 +2,14 @@ package goat
 
 import (
 	"encoding/hex"
+	"log"
+	"net/url"
 	"strconv"
 	"time"
 )
 
-// AnnounceLog represents an announce, to be logged to storage
-type AnnounceLog struct {
+// announceLog represents an announce, to be logged to storage
+type announceLog struct {
 	ID         int
 	InfoHash   string `db:"info_hash"`
 	Passkey    string
@@ -23,105 +25,104 @@ type AnnounceLog struct {
 	Time       int64
 }
 
-// Save AnnounceLog to storage
-func (a AnnounceLog) Save() bool {
+// Save announceLog to storage
+func (a announceLog) Save() bool {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return false
 	}
 
 	if err := db.SaveAnnounceLog(a); nil != err {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return false
 	}
 
 	return true
 }
 
-// Load AnnounceLog from storage
-func (a AnnounceLog) Load(id interface{}, col string) AnnounceLog {
+// Load announceLog from storage
+func (a announceLog) Load(ID interface{}, col string) announceLog {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
-		Static.LogChan <- err.Error()
-		return AnnounceLog{}
+		log.Println(err.Error())
+		return announceLog{}
 	}
-
-	if a, err = db.LoadAnnounceLog(id, col); nil != err {
-		Static.LogChan <- err.Error()
+	if a, err = db.LoadAnnounceLog(ID, col); nil != err {
+		log.Println(err.Error())
+		return announceLog{}
 	}
-
 	return a
 }
 
-// FromMap generates an AnnounceLog struct from a query map
-func (a AnnounceLog) FromMap(query map[string]string) AnnounceLog {
-	a = AnnounceLog{}
+// FromValues generates an announceLog struct from a url.Values map
+func (a announceLog) FromValues(query url.Values) announceLog {
+	a = announceLog{}
 
 	// Required parameters
 
 	// info_hash
-	a.InfoHash = hex.EncodeToString([]byte(query["info_hash"]))
+	a.InfoHash = hex.EncodeToString([]byte(query.Get("info_hash")))
 
 	// passkey
-	a.Passkey = query["passkey"]
+	a.Passkey = query.Get("passkey")
 
 	// key
-	a.Key = query["key"]
+	a.Key = query.Get("key")
 
 	// ip
-	a.IP = query["ip"]
+	a.IP = query.Get("ip")
 
 	// udp
-	if query["udp"] == "1" {
+	if query.Get("udp") == "1" {
 		a.UDP = true
 	} else {
 		a.UDP = false
 	}
 
 	// port
-	port, err := strconv.Atoi(query["port"])
+	port, err := strconv.Atoi(query.Get("port"))
 	if err != nil {
-		Static.LogChan <- err.Error()
-		return AnnounceLog{}
+		log.Println(err.Error())
+		return announceLog{}
 	}
 	a.Port = port
 
 	// uploaded
-	uploaded, err := strconv.ParseInt(query["uploaded"], 10, 64)
+	uploaded, err := strconv.ParseInt(query.Get("uploaded"), 10, 64)
 	if err != nil {
-		Static.LogChan <- err.Error()
-		return AnnounceLog{}
+		log.Println(err.Error())
+		return announceLog{}
 	}
 	a.Uploaded = uploaded
 
 	// downloaded
-	downloaded, err := strconv.ParseInt(query["downloaded"], 10, 64)
+	downloaded, err := strconv.ParseInt(query.Get("downloaded"), 10, 64)
 	if err != nil {
-		Static.LogChan <- err.Error()
-		return AnnounceLog{}
+		log.Println(err.Error())
+		return announceLog{}
 	}
 	a.Downloaded = downloaded
 
 	// left
-	left, err := strconv.ParseInt(query["left"], 10, 64)
+	left, err := strconv.ParseInt(query.Get("left"), 10, 64)
 	if err != nil {
-		Static.LogChan <- err.Error()
-		return AnnounceLog{}
+		log.Println(err.Error())
+		return announceLog{}
 	}
 	a.Left = left
 
 	// Optional parameters
 
 	// event
-	if event, ok := query["event"]; ok {
-		a.Event = event
+	if query.Get("event") != "" {
+		a.Event = query.Get("event")
 	}
 
 	// BitTorrent client, User-Agent header
-	a.Client = query["client"]
+	a.Client = query.Get("client")
 
 	// Current UNIX timestamp
 	a.Time = time.Now().Unix()

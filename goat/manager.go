@@ -1,6 +1,7 @@
 package goat
 
 import (
+	"log"
 	"os"
 	"strconv"
 )
@@ -15,38 +16,50 @@ const Version = "git-master"
 func Manager(killChan chan bool, exitChan chan int) {
 	// Set up graceful shutdown channel
 	shutdownChan := make(chan bool)
-	Static.ShutdownChan = shutdownChan
+	static.ShutdownChan = shutdownChan
 
 	// Set up logger
-	logChan := make(chan string)
-	Static.LogChan = logChan
-	go LogManager()
+	go logManager()
 
-	Static.LogChan <- "Starting " + App + " " + Version
+	log.Println("Starting " + App + " " + Version)
 
 	// Print startup status banner
-	go PrintStatusBanner()
+	go printStatusBanner()
 
 	// Load configuration
-	config := LoadConfig()
-	if config == (Conf{}) {
-		Static.LogChan <- "Cannot load configuration, exiting now."
+	config := loadConfig()
+	if config == (conf{}) {
+		log.Println("Cannot load configuration, exiting now.")
 		os.Exit(1)
 	}
-	Static.Config = config
+	static.Config = config
+
+	// Attempt database connection
+	if !dbPing() {
+		log.Println("Cannot connect to MySQL database, exiting now.")
+		os.Exit(1)
+	}
+	log.Println("MySQL: OK")
+
+	// Attempt redis connection
+	if !redisPing() {
+		log.Println("Cannot connect to Redis, exiting now.")
+		os.Exit(1)
+	}
+	log.Println("Redis: OK")
 
 	// Set up graceful shutdown channels
 	httpDoneChan := make(chan bool)
 	udpDoneChan := make(chan bool)
 
 	// Launch listeners as configured
-	if Static.Config.HTTP {
-		go new(HTTPListener).Listen(httpDoneChan)
-		Static.LogChan <- "HTTP listener launched on port " + strconv.Itoa(Static.Config.Port)
+	if static.Config.HTTP {
+		go listenHTTP(httpDoneChan)
+		log.Println("HTTP listener launched on port " + strconv.Itoa(static.Config.Port))
 	}
-	if Static.Config.UDP {
-		go new(UDPListener).Listen(udpDoneChan)
-		Static.LogChan <- "UDP listener launched on port " + strconv.Itoa(Static.Config.Port)
+	if static.Config.UDP {
+		go listenUDP(udpDoneChan)
+		log.Println("UDP listener launched on port " + strconv.Itoa(static.Config.Port))
 	}
 
 	// Wait for shutdown signal
@@ -54,21 +67,22 @@ func Manager(killChan chan bool, exitChan chan int) {
 		select {
 		case <-killChan:
 			// Trigger a graceful shutdown
-			Static.LogChan <- "triggering graceful shutdown, press Ctrl+C again to force halt"
-			Static.ShutdownChan <- true
+			log.Println("triggering graceful shutdown, press Ctrl+C again to force halt")
 
 			// Stop listeners
-			if Static.Config.HTTP {
-				Static.LogChan <- "stopping HTTP listener"
-				//<-httpDoneChan
+			if static.Config.HTTP {
+				log.Println("stopping HTTP listener")
+				static.ShutdownChan <- true
+				<-httpDoneChan
 			}
-			if Static.Config.UDP {
-				Static.LogChan <- "stopping UDP listener"
-				//<-udpDoneChan
+			if static.Config.UDP {
+				log.Println("stopping UDP listener")
+				static.ShutdownChan <- true
+				<-udpDoneChan
 			}
 
 			// TODO Is this the right place?
-			Static.LogChan <- "calling dbCloseFunc"
+			log.Println("calling dbCloseFunc")
 			dbCloseFunc()
 
 			// Report that program should exit gracefully

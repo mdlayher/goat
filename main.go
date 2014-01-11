@@ -1,17 +1,33 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/mdlayher/goat/goat"
 )
 
-const app = "goat"
-
 func main() {
+	// Set up command line options
+	test := flag.Bool("test", false, "Make goat start, and exit shortly after. Used for testing.")
+	flag.Parse()
+
+	// If test mode, trigger quit shortly after startup
+	// Used for CI tests, so that we ensure goat starts up and is able to stop gracefully
+	if *test {
+		go func() {
+			fmt.Println(goat.App, ": launched in test mode")
+			time.Sleep(2 * time.Second)
+
+			fmt.Println(goat.App, ": test mode triggering graceful shutdown")
+			syscall.Kill(os.Getpid(), syscall.SIGTERM)
+		}()
+	}
+
 	// Launch manager via goroutine
 	killChan := make(chan bool)
 	exitChan := make(chan int)
@@ -23,7 +39,7 @@ func main() {
 	signal.Notify(sigChan, syscall.SIGTERM)
 	for sig := range sigChan {
 		// Trigger manager shutdown
-		fmt.Println(app, ": caught signal:", sig)
+		fmt.Println(goat.App, ": caught signal:", sig)
 		killChan <- true
 		break
 	}
@@ -32,13 +48,13 @@ func main() {
 	go func(sigChan chan os.Signal) {
 		for sig := range sigChan {
 			_ = sig
-			fmt.Println(app, ": force halting now!")
+			fmt.Println(goat.App, ": force halting now!")
 			os.Exit(1)
 		}
 	}(sigChan)
 
 	// Exit with specified code from manager
 	code := <-exitChan
-	fmt.Println(app, ": graceful shutdown complete")
+	fmt.Println(goat.App, ": graceful shutdown complete")
 	os.Exit(code)
 }

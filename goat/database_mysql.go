@@ -3,7 +3,10 @@
 package goat
 
 import (
+	"database/sql"
 	"fmt"
+	"log"
+	"os"
 	"time"
 
 	// Bring in the MySQL driver
@@ -13,12 +16,25 @@ import (
 
 func init() {
 	// dbConnectFunc connects to MySQL database
-	dbConnectFunc = func() (DbModel, error) {
+	dbConnectFunc = func() (dbmodel, error) {
 		// Generate connection string using configuration
-		conn := fmt.Sprintf("%s:%s@/%s", Static.Config.DB.Database, Static.Config.DB.Username, Static.Config.DB.Password)
+		conn := fmt.Sprintf("%s:%s@/%s", static.Config.DB.Username, static.Config.DB.Password, static.Config.DB.Database)
+		// When running on Travis CI, use Travis credentials
+		if os.Getenv("TRAVIS") == "true" {
+			conn = "travis:travis@/goat"
+		}
 		// Return connection and associated errors
 		db, err := sqlx.Connect("mysql", conn)
 		return &dbw{db}, err
+	}
+	dbPingFunc = func() bool {
+		db, err := dbConnect()
+		if err != nil {
+			log.Println(err.Error())
+			return false
+		}
+		db.(*dbw).Close()
+		return true
 	}
 }
 
@@ -28,15 +44,15 @@ type dbw struct {
 
 // --- announceLog.go ---
 
-func (db *dbw) LoadAnnounceLog(id interface{}, col string) (AnnounceLog, error) {
-	data := AnnounceLog{}
-	if err := db.Get(&data, "SELECT * FROM announce_log WHERE `"+col+"`=?", id); err != nil {
-		return AnnounceLog{}, err
+func (db *dbw) LoadAnnounceLog(id interface{}, col string) (announceLog, error) {
+	data := announceLog{}
+	if err := db.Get(&data, "SELECT * FROM announce_log WHERE `"+col+"`=?", id); err != nil && err != sql.ErrNoRows {
+		return announceLog{}, err
 	}
 	return data, nil
 }
 
-func (db *dbw) SaveAnnounceLog(a AnnounceLog) error {
+func (db *dbw) SaveAnnounceLog(a announceLog) error {
 	query := "INSERT INTO announce_log " +
 		"(`info_hash`, `passkey`, `key`, `ip`, `port`, `udp`, `uploaded`, `downloaded`, `left`, `event`, `client`, `time`) " +
 		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UNIX_TIMESTAMP());"
@@ -47,17 +63,37 @@ func (db *dbw) SaveAnnounceLog(a AnnounceLog) error {
 	return tx.Commit()
 }
 
+// --- apiKey.go ---
+
+func (db *dbw) LoadApiKey(id interface{}, col string) (apiKey, error) {
+	key := apiKey{}
+	err := db.Get(&key, "SELECT * FROM api_keys WHERE `"+col+"`=?", id)
+	if err != nil && err != sql.ErrNoRows {
+		return apiKey{}, err
+	}
+	return key, nil
+}
+
+func (db *dbw) SaveApiKey(key apiKey) error {
+	query := "INSERT INTO api_keys (`user_id`, `key`) " +
+		"VALUES (?, ?) ON DUPLICATE KEY UPDATE " +
+		"`key`=values(`key`);"
+	tx := db.MustBegin()
+	tx.Execl(query, key.UserID, key.Key)
+	return tx.Commit()
+}
+
 // --- fileRecord.go ---
 
-func (db *dbw) LoadFileRecord(id interface{}, col string) (FileRecord, error) {
-	data := FileRecord{}
-	if err := db.Get(&data, "SELECT * FROM files WHERE `"+col+"`=?", id); err != nil {
-		return FileRecord{}, err
+func (db *dbw) LoadFileRecord(id interface{}, col string) (fileRecord, error) {
+	data := fileRecord{}
+	if err := db.Get(&data, "SELECT * FROM files WHERE `"+col+"`=?", id); err != nil && err != sql.ErrNoRows {
+		return fileRecord{}, err
 	}
 	return data, nil
 }
 
-func (db *dbw) SaveFileRecord(f FileRecord) error {
+func (db *dbw) SaveFileRecord(f fileRecord) error {
 	query := "INSERT INTO files " +
 		"(`info_hash`, `verified`, `create_time`, `update_time`) " +
 		"VALUES (?, ?, UNIX_TIMESTAMP(), UNIX_TIMESTAMP()) " +
@@ -73,7 +109,7 @@ func (db *dbw) CountFileRecordCompleted(id int) (int, error) {
 	query := "SELECT COUNT(user_id) AS completed FROM files_users WHERE file_id = ? AND completed = 1 AND `left` = 0;"
 	result := struct{ Completed int }{0}
 
-	if err := db.Get(&result, query, id); err != nil {
+	if err := db.Get(&result, query, id); err != nil && err != sql.ErrNoRows {
 		return -1, err
 	}
 
@@ -85,7 +121,7 @@ func (db *dbw) CountFileRecordSeeders(id int) (int, error) {
 	query := "SELECT COUNT(user_id) AS seeders FROM files_users WHERE file_id = ? AND active = 1 AND completed = 1 AND `left` = 0;"
 	result := struct{ Seeders int }{0}
 
-	if err := db.Get(&result, query, id); err != nil {
+	if err := db.Get(&result, query, id); err != nil && err != sql.ErrNoRows {
 		return -1, err
 	}
 
@@ -97,7 +133,7 @@ func (db *dbw) CountFileRecordLeechers(id int) (int, error) {
 	query := "SELECT COUNT(user_id) AS leechers FROM files_users WHERE file_id = ? AND active = 1 AND completed = 0 AND `left` > 0;"
 	result := struct{ Leechers int }{0}
 
-	if err := db.Get(&result, query, id); err != nil {
+	if err := db.Get(&result, query, id); err != nil && err != sql.ErrNoRows {
 		return -1, err
 	}
 
@@ -120,7 +156,7 @@ func (db *dbw) GetFileRecordPeerList(infohash, exclude string, limit int) ([]byt
 	}{"", 0}
 
 	rows, err := db.Queryx(query, infohash, exclude, limit)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
 
@@ -129,7 +165,7 @@ func (db *dbw) GetFileRecordPeerList(infohash, exclude string, limit int) ([]byt
 
 	for rows.Next() {
 		rows.StructScan(&result)
-		Static.LogChan <- fmt.Sprintf("peer: %s:%d", result.IP, result.Port)
+		log.Printf("peer: %s:%d", result.IP, result.Port)
 		buf = append(buf, ip2b(result.IP, result.Port)...)
 	}
 
@@ -145,7 +181,7 @@ func (db *dbw) GetInactiveUserInfo(fid int, interval_ time.Duration) (users []us
 	interval := int(interval_ / time.Second)
 	var rows *sqlx.Rows
 
-	if rows, err = db.Queryx(query, interval, fid); err == nil {
+	if rows, err = db.Queryx(query, interval, fid); err == nil && err != sql.ErrNoRows {
 		for rows.Next() {
 			if err = rows.StructScan(&result); nil == err {
 				users = append(users, result)
@@ -164,18 +200,32 @@ func (db *dbw) MarkFileUsersInactive(fid int, users []userinfo) error {
 	return tx.Commit()
 }
 
+func (db *dbw) GetAllFileRecords() ([]fileRecord, error) {
+	rows, err := db.Queryx("SELECT * FROM files")
+	files, file := []fileRecord{}, fileRecord{}
+	if err != nil && err != sql.ErrNoRows {
+		log.Println(err.Error())
+		return files, err
+	}
+	for rows.Next() {
+		rows.StructScan(&file)
+		files = append(files[:], file)
+	}
+	return files, nil
+}
+
 // --- fileUserRecord.go ---
 
-func (db *dbw) LoadFileUserRecord(fid, uid int, ip string) (FileUserRecord, error) {
+func (db *dbw) LoadFileUserRecord(fid, uid int, ip string) (fileUserRecord, error) {
 	query := "SELECT * FROM files_users WHERE `file_id`=? AND `user_id`=? AND `ip`=?"
-	data := FileUserRecord{}
-	if err := db.Get(&data, query, fid, uid, ip); err != nil {
-		return FileUserRecord{}, err
+	data := fileUserRecord{}
+	if err := db.Get(&data, query, fid, uid, ip); err != nil && err != sql.ErrNoRows {
+		return fileUserRecord{}, err
 	}
 	return data, nil
 }
 
-func (db *dbw) SaveFileUserRecord(f FileUserRecord) error {
+func (db *dbw) SaveFileUserRecord(f fileUserRecord) error {
 	// Insert or update a file/user relationship record
 	query := "INSERT INTO files_users " +
 		"(`file_id`, `user_id`, `ip`, `active`, `completed`, `announced`, `uploaded`, `downloaded`, `left`, `time`) " +
@@ -189,18 +239,31 @@ func (db *dbw) SaveFileUserRecord(f FileUserRecord) error {
 	return tx.Commit()
 }
 
+func (db *dbw) LoadFileUserRepository(id interface{}, col string) ([]fileUserRecord, error) {
+	rows, err := db.Queryx("SELECT * FROM files_users WHERE `"+col+"`=?", id)
+	files, user := []fileUserRecord{}, fileUserRecord{}
+	if err == nil && err != sql.ErrNoRows {
+		return files, err
+	}
+	for rows.Next() {
+		rows.StructScan(&user)
+		files = append(files[:], user)
+	}
+	return files, nil
+}
+
 // --- scrapeLog.go ---
 
-func (db *dbw) LoadScrapeLog(id interface{}, col string) (ScrapeLog, error) {
+func (db *dbw) LoadScrapeLog(id interface{}, col string) (scrapeLog, error) {
 	query := "SELECT * FROM announce_log WHERE `" + col + "`=?"
-	data := ScrapeLog{}
-	if err := db.Get(&data, query, id); err != nil {
-		return ScrapeLog{}, err
+	data := scrapeLog{}
+	if err := db.Get(&data, query, id); err != nil && err != sql.ErrNoRows {
+		return scrapeLog{}, err
 	}
 	return data, nil
 }
 
-func (db *dbw) SaveScrapeLog(s ScrapeLog) error {
+func (db *dbw) SaveScrapeLog(s scrapeLog) error {
 	query := "INSERT INTO scrape_log " +
 		"(`info_hash`, `passkey`, `ip`, `time`) " +
 		"VALUES (?, ?, ?, UNIX_TIMESTAMP());"
@@ -211,16 +274,16 @@ func (db *dbw) SaveScrapeLog(s ScrapeLog) error {
 
 // --- userRecord.go ---
 
-func (db *dbw) LoadUserRecord(id interface{}, col string) (UserRecord, error) {
+func (db *dbw) LoadUserRecord(id interface{}, col string) (userRecord, error) {
 	query := "SELECT * FROM users WHERE `" + col + "`=?"
-	data := UserRecord{}
-	if err := db.Get(&data, query, id); err != nil {
-		return UserRecord{}, err
+	data := userRecord{}
+	if err := db.Get(&data, query, id); err != nil && err != sql.ErrNoRows {
+		return userRecord{}, err
 	}
 	return data, nil
 }
 
-func (db *dbw) SaveUserRecord(u UserRecord) error {
+func (db *dbw) SaveUserRecord(u userRecord) error {
 	query := "INSERT INTO users " +
 		"(`username`, `passkey`, `torrent_limit`) " +
 		"VALUES (?, ?, ?) " +
@@ -235,7 +298,7 @@ func (db *dbw) GetUserUploaded(uid int) (int64, error) {
 	// Calculate sum of this user's upload via their file/user relationship records
 	query := "SELECT SUM(uploaded) AS uploaded FROM files_users WHERE user_id=?"
 	result := struct{ Uploaded int64 }{0}
-	if err := db.Get(&result, query, uid); err != nil {
+	if err := db.Get(&result, query, uid); err != nil && err != sql.ErrNoRows {
 		return -1, err
 	}
 	return result.Uploaded, nil
@@ -245,24 +308,44 @@ func (db *dbw) GetUserDownloaded(uid int) (int64, error) {
 	// Calculate sum of this user's download via their file/user relationship records
 	query := "SELECT SUM(downloaded) AS downloaded FROM files_users WHERE user_id=?"
 	result := struct{ Downloaded int64 }{0}
-	if err := db.Get(&result, query, uid); err != nil {
+	if err := db.Get(&result, query, uid); err != nil && err != sql.ErrNoRows {
 		return -1, err
 	}
 	return result.Downloaded, nil
 }
 
+func (db *dbw) GetUserSeeding(uid int) (int, error) {
+	// Calculate sum of this user's seeding torrents via their file/user relationship records
+	query := "SELECT COUNT(user_id) AS seeding FROM files_users WHERE user_id = ? AND active = 1 AND completed = 1 AND `left` = 0"
+	result := struct{ Seeding int }{0}
+	if err := db.Get(&result, query, uid); err != nil {
+		return -1, err
+	}
+	return result.Seeding, nil
+}
+
+func (db *dbw) GetUserLeeching(uid int) (int, error) {
+	// Calculate sum of this user's leeching torrents via their file/user relationship records
+	query := "SELECT COUNT(user_id) AS leeching FROM files_users WHERE user_id = ? AND active = 1 AND completed = 0 AND `left` > 0"
+	result := struct{ Leeching int }{0}
+	if err := db.Get(&result, query, uid); err != nil {
+		return -1, err
+	}
+	return result.Leeching, nil
+}
+
 // --- whitelistRecord.go ---
 
-func (db *dbw) LoadWhitelistRecord(id interface{}, col string) (WhitelistRecord, error) {
+func (db *dbw) LoadWhitelistRecord(id interface{}, col string) (whitelistRecord, error) {
 	query := "SELECT * FROM whitelist WHERE `" + col + "`=?"
-	result := WhitelistRecord{}
-	if err := db.Get(&result, query, id); err != nil {
-		return WhitelistRecord{}, err
+	result := whitelistRecord{}
+	if err := db.Get(&result, query, id); err != nil && err != sql.ErrNoRows {
+		return whitelistRecord{}, err
 	}
 	return result, nil
 }
 
-func (db *dbw) SaveWhitelistRecord(w WhitelistRecord) error {
+func (db *dbw) SaveWhitelistRecord(w whitelistRecord) error {
 	// NOTE: Not using INSERT IGNORE because it ignores all errors
 	// Thanks: http://stackoverflow.com/questions/2366813/on-duplicate-key-ignore
 	query := "INSERT INTO whitelist " +

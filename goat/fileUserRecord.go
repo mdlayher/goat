@@ -1,48 +1,69 @@
 package goat
 
-// FileUserRecord represents a file tracked by tracker
-type FileUserRecord struct {
-	FileID     int `db:"file_id"`
-	UserID     int `db:"user_id"`
-	IP         string
-	Active     bool
-	Completed  bool
-	Announced  int
-	Uploaded   int64
-	Downloaded int64
-	Left       int64
-	Time       int64
+import (
+	"log"
+)
+
+// fileUserRecord represents a file tracked by tracker
+type fileUserRecord struct {
+	FileID     int    `db:"file_id" json:"fileId"`
+	UserID     int    `db:"user_id" json:"userId"`
+	IP         string `json:"ip"`
+	Active     bool   `json:"active"`
+	Completed  bool   `json:"completed"`
+	Announced  int    `json:"announced"`
+	Uploaded   int64  `json:"uploaded"`
+	Downloaded int64  `json:"downloaded"`
+	Left       int64  `json:"left"`
+	Time       int64  `json:"time"`
 }
 
-// Save FileUserRecord to storage
-func (f FileUserRecord) Save() bool {
+// fileUserRecordRepository is used to contain methods to load multiple fileRecord structs
+type fileUserRecordRepository struct {
+}
+
+// Save fileUserRecord to storage
+func (f fileUserRecord) Save() bool {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return false
 	}
 
 	if err := db.SaveFileUserRecord(f); nil != err {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return false
 	}
 
 	return true
 }
 
-// Load FileUserRecord from storage
-func (f FileUserRecord) Load(fileID int, userID int, ip string) FileUserRecord {
+// Load fileUserRecord from storage
+func (f fileUserRecord) Load(fileID int, userID int, ip string) fileUserRecord {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return f
 	}
-
-	f, err = db.LoadFileUserRecord(fileID, userID, ip)
-	if err != nil {
-		Static.LogChan <- err.Error()
+	if f, err = db.LoadFileUserRecord(fileID, userID, ip); err != nil {
+		log.Println(err.Error())
+		return fileUserRecord{}
 	}
 	return f
+}
+
+// Select loads selected fileUserRecord structs from storage
+func (f fileUserRecordRepository) Select(id interface{}, col string) (files []fileUserRecord) {
+	// Open database connection
+	db, err := dbConnect()
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
+	if files, err = db.LoadFileUserRepository(id, col); err != nil {
+		log.Println(err.Error())
+	}
+	return
 }

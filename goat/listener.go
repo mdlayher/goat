@@ -1,44 +1,35 @@
 package goat
 
 import (
+	"log"
 	"net"
+	"os"
 	"strconv"
 )
 
-// Listener interface method Listen defines a network listener which accepts connections
-type Listener interface {
-	Listen(chan bool)
-}
-
-// HTTPListener listens for HTTP (TCP) connections
-type HTTPListener struct {
-}
-
 // Listen and handle HTTP (TCP) connections
-func (h HTTPListener) Listen(httpDoneChan chan bool) {
+func listenHTTP(httpDoneChan chan bool) {
 	// Listen on specified TCP port
-	l, err := net.Listen("tcp", ":"+strconv.Itoa(Static.Config.Port))
+	l, err := net.Listen("tcp", ":"+strconv.Itoa(static.Config.Port))
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
+		log.Println("Cannot start HTTP server, exiting now.")
+		os.Exit(1)
 	}
 
-	// Send listener to HttpConnHandler
-	go new(HTTPConnHandler).Handle(l, httpDoneChan)
-}
-
-// UDPListener listens for UDP connections
-type UDPListener struct {
+	// Send listener to handler
+	go handleHTTP(l, httpDoneChan)
 }
 
 // Listen on specified UDP port, accept and handle connections
-func (u UDPListener) Listen(udpDoneChan chan bool) {
+func listenUDP(udpDoneChan chan bool) {
 	// Listen on specified UDP port
-	addr, err := net.ResolveUDPAddr("udp", ":"+strconv.Itoa(Static.Config.Port))
+	addr, err := net.ResolveUDPAddr("udp", ":"+strconv.Itoa(static.Config.Port))
 	l, err := net.ListenUDP("udp", addr)
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 	}
 
-	// Send listener to UdpConnHandler
-	go new(UDPConnHandler).Handle(l, udpDoneChan)
+	// Send listener to handler
+	go handleUDP(l, udpDoneChan)
 }

@@ -7,46 +7,61 @@ import (
 )
 
 var (
-	dbConnectFunc func() (DbModel, error)
-	dbCloseFunc   func() = func() {}
+	dbConnectFunc func() (dbmodel, error)
+	dbCloseFunc   func()      = func() {}
+	dbPingFunc    func() bool = func() bool { return true }
 )
 
-func DBConnect() (DbModel, error) {
+// dbConnect connects to a database
+func dbConnect() (dbmodel, error) {
 	return dbConnectFunc()
 }
 
-type DbModel interface {
+// Attempt to "ping" the database to verify connectivity
+func dbPing() bool {
+	return dbPingFunc()
+}
+
+type dbmodel interface {
 	// --- announceLog.go ---
-	LoadAnnounceLog(interface{}, string) (AnnounceLog, error)
-	SaveAnnounceLog(AnnounceLog) error
+	LoadAnnounceLog(interface{}, string) (announceLog, error)
+	SaveAnnounceLog(announceLog) error
+
+	// --- apiKey.go ---
+	LoadApiKey(interface{}, string) (apiKey, error)
+	SaveApiKey(apiKey) error
 
 	// --- fileRecord.go ---
-	LoadFileRecord(interface{}, string) (FileRecord, error)
-	SaveFileRecord(FileRecord) error
+	LoadFileRecord(interface{}, string) (fileRecord, error)
+	SaveFileRecord(fileRecord) error
 	CountFileRecordCompleted(int) (int, error)
 	CountFileRecordSeeders(int) (int, error)
 	CountFileRecordLeechers(int) (int, error)
 	GetFileRecordPeerList(string, string, int) ([]byte, error)
 	GetInactiveUserInfo(int, time.Duration) ([]userinfo, error)
 	MarkFileUsersInactive(int, []userinfo) error
+	GetAllFileRecords() ([]fileRecord, error)
 
 	// --- fileUserRecord.go ---
-	LoadFileUserRecord(int, int, string) (FileUserRecord, error)
-	SaveFileUserRecord(FileUserRecord) error
+	LoadFileUserRecord(int, int, string) (fileUserRecord, error)
+	SaveFileUserRecord(fileUserRecord) error
+	LoadFileUserRepository(interface{}, string) ([]fileUserRecord, error)
 
 	// --- scrapeLog.go ---
-	LoadScrapeLog(interface{}, string) (ScrapeLog, error)
-	SaveScrapeLog(ScrapeLog) error
+	LoadScrapeLog(interface{}, string) (scrapeLog, error)
+	SaveScrapeLog(scrapeLog) error
 
 	// --- userRecord.go ---
-	LoadUserRecord(interface{}, string) (UserRecord, error)
-	SaveUserRecord(UserRecord) error
+	LoadUserRecord(interface{}, string) (userRecord, error)
+	SaveUserRecord(userRecord) error
 	GetUserUploaded(int) (int64, error)
 	GetUserDownloaded(int) (int64, error)
+	GetUserSeeding(int) (int, error)
+	GetUserLeeching(int) (int, error)
 
 	// --- whitelistRecord.go ---
-	LoadWhitelistRecord(interface{}, string) (WhitelistRecord, error)
-	SaveWhitelistRecord(WhitelistRecord) error
+	LoadWhitelistRecord(interface{}, string) (whitelistRecord, error)
+	SaveWhitelistRecord(whitelistRecord) error
 }
 
 type userinfo struct {

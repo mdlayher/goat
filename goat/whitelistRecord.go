@@ -1,39 +1,42 @@
 package goat
 
-// WhitelistRecord represents a whitelist entry
-type WhitelistRecord struct {
+import (
+	"log"
+)
+
+// whitelistRecord represents a whitelist entry
+type whitelistRecord struct {
 	ID       int
 	Client   string
 	Approved bool
 }
 
-// Save WhitelistRecord to storage
-func (w WhitelistRecord) Save() bool {
+// Save whitelistRecord to storage
+func (w whitelistRecord) Save() bool {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return false
 	}
 	if err := db.SaveWhitelistRecord(w); nil != err {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return false
 	}
 	return true
 }
 
-// Load WhitelistRecord from storage
-func (w WhitelistRecord) Load(id interface{}, col string) WhitelistRecord {
+// Load whitelistRecord from storage
+func (w whitelistRecord) Load(id interface{}, col string) whitelistRecord {
 	// Open database connection
-	db, err := DBConnect()
+	db, err := dbConnect()
 	if err != nil {
-		Static.LogChan <- err.Error()
+		log.Println(err.Error())
 		return w
 	}
-	w, err = db.LoadWhitelistRecord(id, col)
-	if err != nil {
-		Static.LogChan <- err.Error()
-		return WhitelistRecord{}
+	if w, err = db.LoadWhitelistRecord(id, col); err != nil {
+		log.Println(err.Error())
+		return whitelistRecord{}
 	}
 	return w
 }
