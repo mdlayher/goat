@@ -41,12 +41,14 @@ func Manager(killChan chan bool, exitChan chan int) {
 	}
 	log.Println("MySQL: OK")
 
-	// Attempt redis connection
-	if !redisPing() {
-		log.Println("Cannot connect to Redis, exiting now.")
-		os.Exit(1)
+	// If configured, attempt redis connection
+	if static.Config.Redis {
+		if !redisPing() {
+			log.Println("Cannot connect to Redis, exiting now.")
+			os.Exit(1)
+		}
+		log.Println("Redis: OK")
 	}
-	log.Println("Redis: OK")
 
 	// Set up graceful shutdown channels
 	httpDoneChan := make(chan bool)

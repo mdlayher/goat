@@ -24,6 +24,7 @@ type conf struct {
 	HTTP      bool
 	API       bool
 	UDP       bool
+	Redis     bool
 	DB        dbConf
 }
 

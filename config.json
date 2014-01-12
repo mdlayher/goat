@@ -6,6 +6,7 @@
 	"HTTP": true,
 	"API": true,
 	"UDP": false,
+	"Redis": true,
 	"DB": {
 		"Database": "goat",
 		"Username": "goat",

@@ -67,13 +67,13 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// API enabled
 		if static.Config.API {
-			/*
-			// RATE LIMITER
-			if !apiRateLimit(strings.Split(r.RemoteAddr, ":")[0]) {
-				http.Error(w, string(apiErrorResponse("Rate limit exceeded")), 429)
-				return
+			// If configured, use redis for rate limiting
+			if static.Config.Redis {
+				if !apiRateLimit(strings.Split(r.RemoteAddr, ":")[0]) {
+					http.Error(w, string(apiErrorResponse("Rate limit exceeded")), 429)
+					return
+				}
 			}
-			*/
 
 			// API authentication
 			auth := new(basicAPIAuthenticator).Auth(r)
