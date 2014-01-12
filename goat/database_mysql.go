@@ -255,7 +255,7 @@ func (db *dbw) LoadFileUserRepository(id interface{}, col string) ([]fileUserRec
 // --- scrapeLog.go ---
 
 func (db *dbw) LoadScrapeLog(id interface{}, col string) (scrapeLog, error) {
-	query := "SELECT * FROM announce_log WHERE `" + col + "`=?"
+	query := "SELECT * FROM scrape_log WHERE `" + col + "`=?"
 	data := scrapeLog{}
 	if err := db.Get(&data, query, id); err != nil && err != sql.ErrNoRows {
 		return scrapeLog{}, err
