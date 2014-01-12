@@ -59,6 +59,12 @@ var (
 		"fileuser_mark_inactive":   "UPDATE files_users active=false WHERE file_id==$1 && user_id==$2 && ip==$3",
 		"fileuser_insert":          "INSERT INTO files_users VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,now())",
 		"fileuser_update":          "UPDATE files_users active=$4,completed=$5,announced=$6,uploaded=$7,downloaded=$8,left=$9,ts=now() WHERE file_id==$1 && user_id==$2 && ip==$3",
+
+		"scrapelog_load_id":        "SELECT id(),info_hash,passkey,ip,ts FROM scrape_log WHERE id()==$1",
+		"scrapelog_load_info_hash": "SELECT id(),info_hash,passkey,ip,ts FROM scrape_log WHERE info_hash==$1",
+		"scrapelog_load_passkey":   "SELECT id(),info_hash,passkey,ip,ts FROM scrape_log WHERE passkey==$1",
+		"scrapelog_load_ip":        "SELECT id(),info_hash,passkey,ip,ts FROM scrape_log WHERE ip==$1",
+		"scrapelog_insert":         "INSERT INTO scrape_log VALUES ($1, $2, $3, now())",
 	}
 )
 
@@ -348,8 +354,26 @@ func (db *qlw) LoadFileUserRepository(id interface{}, col string) (files []fileU
 
 // --- scrapeLog.go ---
 
-func (db *qlw) LoadScrapeLog(id interface{}, col string) (scrapeLog, error) { return scrapeLog{}, nil }
-func (db *qlw) SaveScrapeLog(s scrapeLog) error                             { return nil }
+func (db *qlw) LoadScrapeLog(id interface{}, col string) (scrape scrapeLog, err error) {
+	if rs, _, err := qlQuery(db, "scrapelog_load_"+col, true, id); nil == err {
+		err = rs[0].Do(false, func(data []interface{}) (bool, error) {
+			scrape = scrapeLog{
+				ID:       int(data[0].(int64)),
+				InfoHash: data[1].(string),
+				Passkey:  data[2].(string),
+				IP:       data[3].(string),
+				Time:     data[4].(time.Time).Unix(),
+			}
+			return false, nil
+		})
+	}
+	return
+}
+
+func (db *qlw) SaveScrapeLog(s scrapeLog) (err error) {
+	_, _, err = qlQuery(db, "scrapelog_insert", true, s.InfoHash, s.Passkey, s.IP)
+	return
+}
 
 // --- userRecord.go ---
 
