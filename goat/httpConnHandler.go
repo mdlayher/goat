@@ -214,7 +214,7 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// Perform tracker announce
 		go trackerAnnounce(user, query, nil, resChan)
-	// Tracker scrape
+		// Tracker scrape
 	} else if url == "scrape" {
 		go trackerScrape(user, query, resChan)
 	}

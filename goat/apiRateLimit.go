@@ -1,9 +1,9 @@
 package goat
 
 import (
-	// "log"
+// "log"
 
-	// "github.com/garyburd/redigo/redis"
+// "github.com/garyburd/redigo/redis"
 )
 
 // apiRateLimit handles rate limiting via Redis
