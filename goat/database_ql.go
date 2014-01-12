@@ -74,6 +74,12 @@ var (
 		"user_downloaded":         "SELECT sum(downloaded) AS downloaded FROM files_users WHERE user_id==$1",
 		"user_seeding":            "SELECT count(user_id) AS seeding FROM files_users WHERE user_id==$1 && active==true && completed==true && left==0",
 		"user_leeching":           "SELECT count(user_id) AS leeching FROM files_users WHERE user_id==$1 && active==true && completed==false && left>0",
+
+		"whitelist_load_id":       "SELECT id(),client,approved FROM whitelist WHERE id()==$1",
+		"whitelist_load_client":   "SELECT id(),client,approved FROM whitelist WHERE client==$1",
+		"whitelist_load_approved": "SELECT id(),client,approved FROM whitelist WHERE approved==$1",
+		"whitelist_insert":        "INSERT INTO whitelist VALUES ($1, $2)",
+		"whitelist_update":        "UPDATE whitelist client=$2, approved=$3 WHERE id()==$1",
 	}
 )
 
@@ -441,9 +447,36 @@ func (db *qlw) GetUserLeeching(uid int) (int, error) {
 // --- whitelistRecord.go ---
 
 func (db *qlw) LoadWhitelistRecord(id interface{}, col string) (whitelistRecord, error) {
-	return whitelistRecord{}, nil
+	rs, _, err := qlQuery(db, "whitelist_load_"+col, true, id)
+	result := whitelistRecord{}
+	if err != nil || len(rs) < 1 {
+		return result, err
+	}
+	err = rs[len(rs)-1].Do(false, func(data []interface{}) (bool, error) {
+		result = whitelistRecord{
+			ID:       int(data[0].(int64)),
+			Client:   data[1].(string),
+			Approved: data[2].(bool),
+		}
+		return false, nil
+	})
+	return result, err
 }
-func (db *qlw) SaveWhitelistRecord(w whitelistRecord) error { return nil }
+
+func (db *qlw) SaveWhitelistRecord(w whitelistRecord) (err error) {
+	if wl, e := db.LoadWhitelistRecord(w.ID, "id"); (wl == whitelistRecord{}) {
+		if nil == e {
+			_, _, err = qlQuery(db, "whitelist_insert", true,
+				w.Client, w.Approved)
+		} else {
+			err = e
+		}
+	} else {
+		_, _, err = qlQuery(db, "whitelist_update", true,
+			w.ID, w.Client, w.Approved)
+	}
+	return
+}
 
 func qlQuery(db *qlw, key string, wraptx bool, arg ...interface{}) ([]ql.Recordset, int, error) {
 	if list, err := qlCompile(key, wraptx); nil == err {
