@@ -210,7 +210,7 @@ func (db *qlw) CountFileRecordCompleted(id int) (int, error) {
 
 	if nil == err && len(rs) > 0 {
 		err = rs[0].Do(false, func(data []interface{}) (bool, error) {
-			completed = data[0].(int)
+			completed = int(data[0].(int64))
 			return false, err
 		})
 	}
@@ -296,15 +296,15 @@ func (db *qlw) LoadFileUserRecord(fid, uid int, ip string) (fileUserRecord, erro
 	}
 	err = rs[len(rs)-1].Do(false, func(data []interface{}) (bool, error) {
 		result = fileUserRecord{
-			FileID:     data[0].(int),
-			UserID:     data[1].(int),
+			FileID:     int(data[0].(int64)),
+			UserID:     int(data[1].(int64)),
 			IP:         data[2].(string),
 			Active:     data[3].(bool),
 			Completed:  data[4].(bool),
-			Announced:  data[5].(int),
-			Uploaded:   int64(data[6].(uint64)),
-			Downloaded: int64(data[7].(uint64)),
-			Left:       int64(data[8].(uint64)),
+			Announced:  int(data[5].(int64)),
+			Uploaded:   data[6].(int64),
+			Downloaded: data[7].(int64),
+			Left:       data[8].(int64),
 			Time:       data[9].(time.Time).Unix(),
 		}
 		return false, nil
@@ -316,16 +316,17 @@ func (db *qlw) SaveFileUserRecord(f fileUserRecord) (err error) {
 	if fr, e := db.LoadFileUserRecord(f.FileID, f.UserID, f.IP); (fr == fileUserRecord{}) {
 		if nil == e {
 			_, _, err = qlQuery(db, "fileuser_insert", true,
-				f.FileID, f.UserID, f.IP, f.Active, f.Completed,
-				f.Announced, f.Uploaded, f.Downloaded, f.Left,
+				int64(f.FileID), int64(f.UserID), f.IP,
+				f.Active, f.Completed, int64(f.Announced),
+				f.Uploaded, f.Downloaded, f.Left,
 				time.Unix(f.Time, 0))
 		} else {
 			err = e
 		}
 	} else {
 		_, _, err = qlQuery(db, "fileuser_update", true,
-			f.FileID, f.UserID, f.IP,
-			f.Active, f.Completed, f.Announced,
+			int64(f.FileID), int64(f.UserID), f.IP,
+			f.Active, f.Completed, int64(f.Announced),
 			f.Uploaded, f.Downloaded, f.Left)
 	}
 	return
@@ -335,8 +336,8 @@ func (db *qlw) LoadFileUserRepository(id interface{}, col string) (files []fileU
 	if rs, _, err := qlQuery(db, "fileuser_load_"+col, true, id); nil == err {
 		err = rs[0].Do(false, func(data []interface{}) (bool, error) {
 			files = append(files, fileUserRecord{
-				FileID:     data[0].(int),
-				UserID:     data[1].(int),
+				FileID:     int(data[0].(int64)),
+				UserID:     int(data[1].(int64)),
 				IP:         data[2].(string),
 				Active:     data[3].(bool),
 				Completed:  data[4].(bool),
