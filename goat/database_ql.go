@@ -51,9 +51,9 @@ var (
 
 		"fileuser_load":            "SELECT * FROM files_users WHERE file_id==$1 && user_id==$2 && ip==$3",
 		"fileuser_load_file_id":    "SELECT * FROM files_users WHERE file_id==$1",
-		"fileuser_count_completed": "SELECT COUNT(user_id) FROM files_users WHERE file_id==$1 && completed==true && left==0",
+		"fileuser_count_completed": "SELECT count(user_id) FROM files_users WHERE file_id==$1 && completed==true && left==0",
 		"fileuser_count_seeders":   "SELECT count(user_id) FROM files_users WHERE file_id==$1 && active==true && completed==true && left==0",
-		"fileuser_count_leechers":  "SELECT COUNT(user_id) FROM files_users WHERE file_id==$1 && active==true && completed==false && left>0",
+		"fileuser_count_leechers":  "SELECT count(user_id) FROM files_users WHERE file_id==$1 && active==true && completed==false && left>0",
 		"fileuser_find_peerlist":   "SELECT DISTINCT a.ip, a.port FROM announce_log AS a, (SELECT id() AS id, info_hash FROM files) AS f, (SELECT file_id, ip FROM files_users) AS u WHERE a.ip==u.ip && a.ip!=$2 && f.info_hash==$1",
 		"fileuser_find_inactive":   "SELECT user_id, ip FROM files_users WHERE (ts<(now()-$2)) && active==true && file_id==$1",
 		"fileuser_mark_inactive":   "UPDATE files_users active=false WHERE file_id==$1 && user_id==$2 && ip==$3",
