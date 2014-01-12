@@ -1,7 +1,7 @@
 BEGIN TRANSACTION;
 
 CREATE TABLE api_keys (
-	user_id int,
+	user_id int64,
 	key string,
 );
 

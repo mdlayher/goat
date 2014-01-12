@@ -149,7 +149,7 @@ func (db *qlw) LoadApiKey(id interface{}, col string) (apiKey, error) {
 	err = rs[len(rs)-1].Do(false, func(data []interface{}) (bool, error) {
 		result = apiKey{
 			ID:     int(data[0].(int64)),
-			UserID: data[1].(int),
+			UserID: int(data[1].(int64)),
 			Key:    data[2].(string),
 		}
 		return false, nil
@@ -160,12 +160,12 @@ func (db *qlw) LoadApiKey(id interface{}, col string) (apiKey, error) {
 func (db *qlw) SaveApiKey(key apiKey) (err error) {
 	if k, e := db.LoadApiKey(key.ID, "id"); (k == apiKey{}) {
 		if nil == e {
-			_, _, err = qlQuery(db, "apikey_insert", true, key.UserID, key.Key)
+			_, _, err = qlQuery(db, "apikey_insert", true, int64(key.UserID), key.Key)
 		} else {
 			err = e
 		}
 	} else {
-		_, _, err = qlQuery(db, "apikey_update", true, key.ID, k.Key)
+		_, _, err = qlQuery(db, "apikey_update", true, k.ID, key.Key)
 	}
 	return
 }
