@@ -50,6 +50,7 @@ var (
 		"filerecord_update":           "UPDATE files verified=$2,update_time=now() WHERE id()==$1",
 
 		"fileuser_load":            "SELECT * FROM files_users WHERE file_id==$1 && user_id==$2 && ip==$3",
+		"fileuser_load_file_id":    "SELECT * FROM files_users WHERE file_id==$1",
 		"fileuser_count_completed": "SELECT COUNT(user_id) FROM files_users WHERE file_id==$1 && completed==true && left==0",
 		"fileuser_count_seeders":   "SELECT count(user_id) FROM files_users WHERE file_id==$1 && active==true && completed==true && left==0",
 		"fileuser_count_leechers":  "SELECT COUNT(user_id) FROM files_users WHERE file_id==$1 && active==true && completed==false && left>0",
@@ -57,7 +58,7 @@ var (
 		"fileuser_find_inactive":   "SELECT user_id, ip FROM files_users WHERE (ts<(now()-$2)) && active==true && file_id==$1",
 		"fileuser_mark_inactive":   "UPDATE files_users active=false WHERE file_id==$1 && user_id==$2 && ip==$3",
 		"fileuser_insert":          "INSERT INTO files_users VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,now())",
-		"fileuser_update":          "UPDATE files_users active=$3,completed=$4,announced=$5,uploaded=$6,downloaded=$7,left=$8,ts=now() WHERE file_id==$1 && user_id==$2",
+		"fileuser_update":          "UPDATE files_users active=$4,completed=$5,announced=$6,uploaded=$7,downloaded=$8,left=$9,ts=now() WHERE file_id==$1 && user_id==$2 && ip==$3",
 	}
 )
 
@@ -305,9 +306,44 @@ func (db *qlw) LoadFileUserRecord(fid, uid int, ip string) (fileUserRecord, erro
 	return result, err
 }
 
-func (db *qlw) SaveFileUserRecord(f fileUserRecord) error { return nil }
-func (db *qlw) LoadFileUserRepository(interface{}, string) ([]fileUserRecord, error) {
-	return []fileUserRecord{}, nil
+func (db *qlw) SaveFileUserRecord(f fileUserRecord) (err error) {
+	if fr, e := db.LoadFileUserRecord(f.FileID, f.UserID, f.IP); (fr == fileUserRecord{}) {
+		if nil == e {
+			_, _, err = qlQuery(db, "fileuser_insert", true,
+				f.FileID, f.UserID, f.IP, f.Active, f.Completed,
+				f.Announced, f.Uploaded, f.Downloaded, f.Left,
+				time.Unix(f.Time, 0))
+		} else {
+			err = e
+		}
+	} else {
+		_, _, err = qlQuery(db, "fileuser_update", true,
+			f.FileID, f.UserID, f.IP,
+			f.Active, f.Completed, f.Announced,
+			f.Uploaded, f.Downloaded, f.Left)
+	}
+	return
+}
+
+func (db *qlw) LoadFileUserRepository(id interface{}, col string) (files []fileUserRecord, err error) {
+	if rs, _, err := qlQuery(db, "fileuser_load_"+col, true, id); nil == err {
+		err = rs[0].Do(false, func(data []interface{}) (bool, error) {
+			files = append(files, fileUserRecord{
+				FileID:     data[0].(int),
+				UserID:     data[1].(int),
+				IP:         data[2].(string),
+				Active:     data[3].(bool),
+				Completed:  data[4].(bool),
+				Announced:  data[5].(int),
+				Uploaded:   data[6].(int64),
+				Downloaded: data[7].(int64),
+				Left:       data[8].(int64),
+				Time:       data[9].(time.Time).Unix(),
+			})
+			return false, nil
+		})
+	}
+	return
 }
 
 // --- scrapeLog.go ---
