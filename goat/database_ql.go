@@ -40,6 +40,7 @@ var (
 		"apikey_insert":       "INSERT INTO api_keys VALUES ($1, $2)",
 		"apikey_update":       "UPDATE api_keys key=$1 WHERE id()==$1",
 
+		"filerecord_load_all":         "SELECT id(),info_hash,verified,create_time,update_time FROM files",
 		"filerecord_load_info_hash":   "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE info_hash==$1 ORDER BY id()",
 		"filerecord_load_verified":    "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE verified==$1 ORDER BY id()",
 		"filerecord_load_create_time": "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE create_time==$1 ORDER BY id()",
@@ -299,7 +300,21 @@ func (db *qlw) MarkFileUsersInactive(fid int, users []userinfo) (err error) {
 	return
 }
 
-func (db *qlw) GetAllFileRecords() ([]fileRecord, error) { return []fileRecord{}, nil }
+func (db *qlw) GetAllFileRecords() (files []fileRecord, err error) {
+	if rs, _, err := qlQuery(db, "fileuser_load_all", false); nil == err {
+		err = rs[0].Do(false, func(data []interface{}) (bool, error) {
+			files = append(files, fileRecord{
+				ID:         int(data[0].(int64)),
+				InfoHash:   data[1].(string),
+				Verified:   data[2].(bool),
+				CreateTime: data[3].(time.Time).Unix(),
+				UpdateTime: data[4].(time.Time).Unix(),
+			})
+			return true, nil
+		})
+	}
+	return
+}
 
 // --- fileUserRecord.go ---
 
