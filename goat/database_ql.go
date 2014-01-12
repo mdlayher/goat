@@ -120,7 +120,7 @@ func (db *qlw) NewTransaction() qltx {
 func (db *qlw) LoadAnnounceLog(id interface{}, col string) (announceLog, error) {
 	rs, _, err := qlQuery(db, "announcelog_load_"+col, true, id)
 	result := announceLog{}
-	if err != nil {
+	if err != nil || len(rs) < 1 {
 		return result, err
 	}
 	err = rs[len(rs)-1].Do(false, func(data []interface{}) (bool, error) {
@@ -159,7 +159,7 @@ func (db *qlw) SaveAnnounceLog(a announceLog) (err error) {
 func (db *qlw) LoadApiKey(id interface{}, col string) (apiKey, error) {
 	rs, _, err := qlQuery(db, "apikey_load_"+col, true, id)
 	result := apiKey{}
-	if err != nil {
+	if err != nil || len(rs) < 1 {
 		return result, err
 	}
 	err = rs[len(rs)-1].Do(false, func(data []interface{}) (bool, error) {
@@ -174,12 +174,8 @@ func (db *qlw) LoadApiKey(id interface{}, col string) (apiKey, error) {
 }
 
 func (db *qlw) SaveApiKey(key apiKey) (err error) {
-	if k, e := db.LoadApiKey(key.ID, "id"); (k == apiKey{}) {
-		if nil == e {
-			_, _, err = qlQuery(db, "apikey_insert", true, int64(key.UserID), key.Key)
-		} else {
-			err = e
-		}
+	if k, err := db.LoadApiKey(key.ID, "id"); (k == apiKey{}) && nil == err {
+		_, _, err = qlQuery(db, "apikey_insert", true, int64(key.UserID), key.Key)
 	} else {
 		_, _, err = qlQuery(db, "apikey_update", true, k.ID, key.Key)
 	}
@@ -191,7 +187,7 @@ func (db *qlw) SaveApiKey(key apiKey) (err error) {
 func (db *qlw) LoadFileRecord(id interface{}, col string) (fileRecord, error) {
 	rs, _, err := qlQuery(db, "filerecord_load_"+col, true, id)
 	result := fileRecord{}
-	if err != nil {
+	if err != nil || len(rs) < 1 {
 		return result, err
 	}
 	err = rs[len(rs)-1].Do(false, func(data []interface{}) (bool, error) {
@@ -208,12 +204,8 @@ func (db *qlw) LoadFileRecord(id interface{}, col string) (fileRecord, error) {
 }
 
 func (db *qlw) SaveFileRecord(f fileRecord) (err error) {
-	if fr, e := db.LoadFileRecord(f.ID, "id"); (fr == fileRecord{}) {
-		if nil == e {
-			_, _, err = qlQuery(db, "filerecord_insert", true, f.InfoHash, f.Verified)
-		} else {
-			err = e
-		}
+	if fr, err := db.LoadFileRecord(f.ID, "id"); (fr == fileRecord{}) && nil == err {
+		_, _, err = qlQuery(db, "filerecord_insert", true, f.InfoHash, f.Verified)
 	} else {
 		_, _, err = qlQuery(db, "filerecord_update", true, f.ID, f.Verified)
 	}
@@ -221,49 +213,25 @@ func (db *qlw) SaveFileRecord(f fileRecord) (err error) {
 }
 
 func (db *qlw) CountFileRecordCompleted(id int) (int, error) {
-	rs, _, err := qlQuery(db, "fileuser_count_completed", true, id)
-	completed := int(0)
-
-	if nil == err && len(rs) > 0 {
-		err = rs[0].Do(false, func(data []interface{}) (bool, error) {
-			completed = int(data[0].(int64))
-			return false, err
-		})
-	}
-	return completed, err
+	completed, err := qlQueryI64(db, "fileuser_count_completed", int64(id))
+	return int(completed), err
 }
 
 func (db *qlw) CountFileRecordSeeders(id int) (int, error) {
-	rs, _, err := qlQuery(db, "fileuser_count_seeders", true, int64(id))
-	seeders := int(0)
-
-	if nil == err && len(rs) > 0 {
-		err = rs[0].Do(false, func(data []interface{}) (bool, error) {
-			seeders = int(data[0].(int64))
-			return false, nil
-		})
-	}
-	return seeders, err
+	seeders, err := qlQueryI64(db, "fileuser_count_seeders", int64(id))
+	return int(seeders), err
 }
 
 func (db *qlw) CountFileRecordLeechers(id int) (int, error) {
-	rs, _, err := qlQuery(db, "fileuser_count_leechers", true, int64(id))
-	leechers := int(0)
-
-	if nil == err && len(rs) > 0 {
-		err = rs[0].Do(false, func(data []interface{}) (bool, error) {
-			leechers = int(data[0].(int64))
-			return false, nil
-		})
-	}
-	return leechers, err
+	leechers, err := qlQueryI64(db, "fileuser_count_leechers", int64(id))
+	return int(leechers), err
 }
 
 func (db *qlw) GetFileRecordPeerList(infohash, exclude string, limit int) ([]byte, error) {
 	rs, _, err := qlQuery(db, "fileuser_find_peerlist", true, infohash, exclude)
 	buf := []byte{}
 
-	if nil == err {
+	if nil == err && len(rs) > 0 {
 		err = rs[0].Do(false, func(data []interface{}) (bool, error) {
 			buf = append(buf, ip2b(data[0].(string), uint16(data[1].(int32)))...)
 			return len(buf)/6 < limit, nil
@@ -273,35 +241,31 @@ func (db *qlw) GetFileRecordPeerList(infohash, exclude string, limit int) ([]byt
 }
 
 func (db *qlw) GetInactiveUserInfo(fid int, interval time.Duration) (users []userinfo, err error) {
-	if rs, _, e := qlQuery(db, "fileuser_find_inactive", true, int64(fid), interval); nil == e {
+	if rs, _, err := qlQuery(db, "fileuser_find_inactive", true, int64(fid), interval); nil == err && len(rs) > 0 {
 		err = rs[0].Do(false, func(data []interface{}) (bool, error) {
 			users = append(users, userinfo{int(data[0].(int64)), data[1].(string)})
 			return true, nil
 		})
-	} else {
-		err = e
 	}
 	return
 }
 
 func (db *qlw) MarkFileUsersInactive(fid int, users []userinfo) (err error) {
-	if list, e := qlCompile("fileuser_mark_inactive", false); nil == err {
+	if list, err := qlCompile("fileuser_mark_inactive", false); nil == err {
 		tx := db.NewTransaction()
 		for _, user := range users {
 			if _, _, err = tx.Execute(list, int64(fid), int64(user.UserID), user.IP); nil != err {
 				tx.Rollback()
-				return
+				return err
 			}
 		}
 		err = tx.Commit()
-	} else {
-		err = e
 	}
 	return
 }
 
 func (db *qlw) GetAllFileRecords() (files []fileRecord, err error) {
-	if rs, _, err := qlQuery(db, "fileuser_load_all", false); nil == err {
+	if rs, _, err := qlQuery(db, "fileuser_load_all", false); nil == err && len(rs) > 0 {
 		err = rs[0].Do(false, func(data []interface{}) (bool, error) {
 			files = append(files, fileRecord{
 				ID:         int(data[0].(int64)),
@@ -321,7 +285,7 @@ func (db *qlw) GetAllFileRecords() (files []fileRecord, err error) {
 func (db *qlw) LoadFileUserRecord(fid, uid int, ip string) (fileUserRecord, error) {
 	rs, _, err := qlQuery(db, "fileuser_load", true, int64(fid), int64(uid), ip)
 	result := fileUserRecord{}
-	if err != nil {
+	if err != nil || len(rs) < 1 {
 		return result, err
 	}
 	err = rs[len(rs)-1].Do(false, func(data []interface{}) (bool, error) {
@@ -363,7 +327,7 @@ func (db *qlw) SaveFileUserRecord(f fileUserRecord) (err error) {
 }
 
 func (db *qlw) LoadFileUserRepository(id interface{}, col string) (files []fileUserRecord, err error) {
-	if rs, _, err := qlQuery(db, "fileuser_load_"+col, true, id); nil == err {
+	if rs, _, err := qlQuery(db, "fileuser_load_"+col, true, id); nil == err && len(rs) > 0 {
 		err = rs[0].Do(false, func(data []interface{}) (bool, error) {
 			files = append(files, fileUserRecord{
 				FileID:     int(data[0].(int64)),
@@ -386,7 +350,7 @@ func (db *qlw) LoadFileUserRepository(id interface{}, col string) (files []fileU
 // --- scrapeLog.go ---
 
 func (db *qlw) LoadScrapeLog(id interface{}, col string) (scrape scrapeLog, err error) {
-	if rs, _, err := qlQuery(db, "scrapelog_load_"+col, true, id); nil == err {
+	if rs, _, err := qlQuery(db, "scrapelog_load_"+col, true, id); nil == err && len(rs) > 0 {
 		err = rs[0].Do(false, func(data []interface{}) (bool, error) {
 			scrape = scrapeLog{
 				ID:       int(data[0].(int64)),
@@ -502,7 +466,7 @@ func qlQuery(db *qlw, key string, wraptx bool, arg ...interface{}) ([]ql.Records
 }
 
 func qlQueryI64(db *qlw, key string, arg ...interface{}) (i int64, err error) {
-	if rs, _, err := qlQuery(db, key, false, arg...); nil == err {
+	if rs, _, err := qlQuery(db, key, false, arg...); nil == err && len(rs) > 0 {
 		err = rs[len(rs)-1].Do(false, func(data []interface{}) (bool, error) {
 			i = data[0].(int64)
 			return false, nil
