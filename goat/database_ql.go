@@ -156,7 +156,7 @@ func init() {
 				}
 			}
 
-			db, err := ql.OpenFile(path + name, &qlOptions)
+			db, err := ql.OpenFile(path+name, &qlOptions)
 			if err != nil {
 				return nil, err
 			}

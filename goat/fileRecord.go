@@ -31,7 +31,6 @@ type peerInfo struct {
 	IP     string
 }
 
-
 // ToJSON converts a fileRecord to a jsonFileRecord struct
 func (f fileRecord) ToJSON() []byte {
 	// Convert all standard fields to the JSON equivalent struct
