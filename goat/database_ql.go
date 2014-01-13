@@ -2,7 +2,10 @@
 package goat
 
 import (
+	"io"
 	"log"
+	"os"
+	"os/user"
 	"time"
 
 	// Bring in the ql driver
@@ -96,21 +99,70 @@ var (
 	}
 )
 
-// init performs startup routines for database_mysql
+// init performs startup routines for database_ql
 func init() {
 	// dbConnectFunc connects to ql database file
 	dbConnectFunc = func() (dbModel, error) {
 		if nil == qlwdb {
-			name := static.Config.DB.Database + ".db"
+			// Database name
+			name := "goat.db"
 
-			db, err := ql.OpenFile(name, &qlOptions)
+			// Load current user from OS, to get home directory
+			var path string
+			user, err := user.Current()
+			if err != nil {
+				log.Println(err.Error())
+				path = "./"
+			} else {
+				// Store config in standard location
+				path = user.HomeDir + "/.config/goat/"
+			}
+
+			log.Println("Loading ql database: " + path + name)
+
+			// Check file existence
+			_, err = os.Stat(path + name)
+			if err != nil {
+				if os.IsNotExist(err) {
+					log.Println("Could not find ql database, attempting to create it...")
+
+					err = os.MkdirAll(path, 0775)
+					if err != nil {
+						log.Println("Failed to create directory: " + path)
+					}
+
+					// Attempt to copy database file to home directory
+					source, err := os.Open("./res/ql/" + name)
+					if err != nil {
+						log.Println("Failed to read source file: " + name)
+					}
+
+					// Open destination file
+					dest, err := os.Create(path + name)
+					if err != nil {
+						log.Println("Failed to create destination file: " + path + name)
+					}
+
+					// Copy contents
+					_, err = io.Copy(dest, source)
+					if err != nil {
+						log.Println("Failed to copy to database file: " + path + name)
+					}
+
+					// Close files
+					source.Close()
+					dest.Close()
+				}
+			}
+
+			db, err := ql.OpenFile(path + name, &qlOptions)
 			if err != nil {
 				return nil, err
 			}
 
-			log.Println("Opened ql database '" + name + "'")
 			qlwdb = &qlw{db}
 		}
+
 		return qlwdb, nil
 	}
 
