@@ -1,11 +1,15 @@
 // +build ql
 
+// ql backend functions, courtesy of Tim Jurcka (sdgoij)
+// https://github.com/mdlayher/goat/pull/16
+
 package goat
 
 import (
 	"log"
 	"time"
 
+	// Bring in the ql driver
 	"github.com/cznic/ql"
 )
 
@@ -18,7 +22,10 @@ var (
 	qlwdb     *qlw
 
 	qlc = map[string]ql.List{}
+
+	// Map of all queries available to ql
 	qlq = map[string]string{
+		// announceLog
 		"announcelog_load_id":         "SELECT id(),info_hash,passkey,key,ip,port,udp,uploaded,downloaded,left,event,client,ts FROM announce_log WHERE id()==$1 ORDER BY id()",
 		"announcelog_load_info_hash":  "SELECT id(),info_hash,passkey,key,ip,port,udp,uploaded,downloaded,left,event,client,ts FROM announce_log WHERE info_hash==$1 ORDER BY id()",
 		"announcelog_load_passkey":    "SELECT id(),info_hash,passkey,key,ip,port,udp,uploaded,downloaded,left,event,client,ts FROM announce_log WHERE passkey==$1 ORDER BY id()",
@@ -34,12 +41,14 @@ var (
 		"announcelog_load_time":       "SELECT id(),info_hash,passkey,key,ip,port,udp,uploaded,downloaded,left,event,client,ts FROM announce_log WHERE time==$1 ORDER BY id()",
 		"announcelog_save":            "INSERT INTO announce_log VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,now());",
 
+		// apiKey
 		"apikey_load_id":      "SELECT id(),user_id,key FROM api_keys WHERE id()==$1",
 		"apikey_load_user_id": "SELECT id(),user_id,key FROM api_keys WHERE user_id==$1",
 		"apikey_load_key":     "SELECT id(),user_id,key FROM api_keys WHERE key==$1",
 		"apikey_insert":       "INSERT INTO api_keys VALUES ($1, $2)",
 		"apikey_update":       "UPDATE api_keys key=$1 WHERE id()==$1",
 
+		// fileRecord
 		"filerecord_load_all":         "SELECT id(),info_hash,verified,create_time,update_time FROM files",
 		"filerecord_load_info_hash":   "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE info_hash==$1 ORDER BY id()",
 		"filerecord_load_verified":    "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE verified==$1 ORDER BY id()",
@@ -48,6 +57,7 @@ var (
 		"filerecord_insert":           "INSERT INTO files VALUES ($1,$2,now(),now())",
 		"filerecord_update":           "UPDATE files verified=$2,update_time=now() WHERE id()==$1",
 
+		// fileUser
 		"fileuser_load":            "SELECT * FROM files_users WHERE file_id==$1 && user_id==$2 && ip==$3",
 		"fileuser_load_file_id":    "SELECT * FROM files_users WHERE file_id==$1",
 		"fileuser_count_completed": "SELECT count(user_id) FROM files_users WHERE file_id==$1 && completed==true && left==0",
@@ -59,12 +69,14 @@ var (
 		"fileuser_insert":          "INSERT INTO files_users VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,now())",
 		"fileuser_update":          "UPDATE files_users active=$4,completed=$5,announced=$6,uploaded=$7,downloaded=$8,left=$9,ts=now() WHERE file_id==$1 && user_id==$2 && ip==$3",
 
+		// scrapeLog
 		"scrapelog_load_id":        "SELECT id(),info_hash,passkey,ip,ts FROM scrape_log WHERE id()==$1",
 		"scrapelog_load_info_hash": "SELECT id(),info_hash,passkey,ip,ts FROM scrape_log WHERE info_hash==$1",
 		"scrapelog_load_passkey":   "SELECT id(),info_hash,passkey,ip,ts FROM scrape_log WHERE passkey==$1",
 		"scrapelog_load_ip":        "SELECT id(),info_hash,passkey,ip,ts FROM scrape_log WHERE ip==$1",
 		"scrapelog_insert":         "INSERT INTO scrape_log VALUES ($1, $2, $3, now())",
 
+		// userRecord
 		"user_load_id":            "SELECT id(),username,passkey,torrent_limit FROM users WHERE id()==$1",
 		"user_load_username":      "SELECT id(),username,passkey,torrent_limit FROM users WHERE username==$1",
 		"user_load_passkey":       "SELECT id(),username,passkey,torrent_limit FROM users WHERE passkey==$1",
@@ -76,6 +88,7 @@ var (
 		"user_seeding":            "SELECT count(user_id) AS seeding FROM files_users WHERE user_id==$1 && active==true && completed==true && left==0",
 		"user_leeching":           "SELECT count(user_id) AS leeching FROM files_users WHERE user_id==$1 && active==true && completed==false && left>0",
 
+		// whitelistRecord
 		"whitelist_load_id":       "SELECT id(),client,approved FROM whitelist WHERE id()==$1",
 		"whitelist_load_client":   "SELECT id(),client,approved FROM whitelist WHERE client==$1",
 		"whitelist_load_approved": "SELECT id(),client,approved FROM whitelist WHERE approved==$1",
@@ -84,45 +97,57 @@ var (
 	}
 )
 
+// init performs startup routines for database_mysql
 func init() {
+	// dbConnectFunc connects to ql database file
 	dbConnectFunc = func() (dbModel, error) {
 		if nil == qlwdb {
 			name := static.Config.DB.Database + ".db"
+
 			db, err := ql.OpenFile(name, &qlOptions)
 			if err != nil {
 				return nil, err
 			}
+
 			log.Println("Opened ql database '" + name + "'")
 			qlwdb = &qlw{db}
 		}
 		return qlwdb, nil
 	}
+
+	// Generate connection string using configuration
 	dbCloseFunc = func() {
 		if nil != qlwdb {
-			log.Println("closing ql database")
+			log.Println("Closing ql database")
 			qlwdb.Close()
 		}
 	}
 }
 
+// qlw contains a pointer to the ql database
 type qlw struct {
 	*ql.DB
 }
 
+// NewTransaction starts a new ql transaction
 func (db *qlw) NewTransaction() qltx {
 	tx := qltx{ql.NewRWCtx(), db}
 	tx.Run("BEGIN TRANSACTION;")
+
 	return tx
 }
 
 // --- announceLog.go ---
 
+// LoadAnnounceLog loads an announceLog using a defined ID and column for query
 func (db *qlw) LoadAnnounceLog(id interface{}, col string) (announceLog, error) {
 	rs, _, err := qlQuery(db, "announcelog_load_"+col, true, id)
+
 	result := announceLog{}
 	if err != nil || len(rs) < 1 {
 		return result, err
 	}
+
 	err = rs[len(rs)-1].Do(false, func(data []interface{}) (bool, error) {
 		result = announceLog{
 			ID:         data[0].(int),
@@ -139,11 +164,14 @@ func (db *qlw) LoadAnnounceLog(id interface{}, col string) (announceLog, error) 
 			Client:     data[11].(string),
 			Time:       data[12].(time.Time).Unix(),
 		}
+
 		return false, nil
 	})
+
 	return result, err
 }
 
+// SaveAnnounceLog saves an announceLog to database
 func (db *qlw) SaveAnnounceLog(a announceLog) (err error) {
 	_, _, err = qlQuery(db, "announcelog_save", true,
 		a.InfoHash, a.Passkey, a.Key,
@@ -151,45 +179,56 @@ func (db *qlw) SaveAnnounceLog(a announceLog) (err error) {
 		a.Uploaded, a.Downloaded,
 		a.Left, a.Event, a.Client,
 		time.Unix(a.Time, 0))
+
 	return
 }
 
 // --- apiKey.go ---
 
+// LoadApiKey loads an apiKey using a defined ID and column for query
 func (db *qlw) LoadApiKey(id interface{}, col string) (apiKey, error) {
 	rs, _, err := qlQuery(db, "apikey_load_"+col, true, id)
+
 	result := apiKey{}
 	if err != nil || len(rs) < 1 {
 		return result, err
 	}
+
 	err = rs[len(rs)-1].Do(false, func(data []interface{}) (bool, error) {
 		result = apiKey{
 			ID:     int(data[0].(int64)),
 			UserID: int(data[1].(int64)),
 			Key:    data[2].(string),
 		}
+
 		return false, nil
 	})
+
 	return result, err
 }
 
+// SaveApiKey saves an apiKey to the database
 func (db *qlw) SaveApiKey(key apiKey) (err error) {
 	if k, err := db.LoadApiKey(key.ID, "id"); (k == apiKey{}) && err == nil {
 		_, _, err = qlQuery(db, "apikey_insert", true, int64(key.UserID), key.Key)
 	} else {
 		_, _, err = qlQuery(db, "apikey_update", true, k.ID, key.Key)
 	}
+
 	return
 }
 
 // --- fileRecord.go ---
 
+// LoadFileRecord loads a fileRecord using a defined ID and column for query
 func (db *qlw) LoadFileRecord(id interface{}, col string) (fileRecord, error) {
 	rs, _, err := qlQuery(db, "filerecord_load_"+col, true, id)
+
 	result := fileRecord{}
 	if err != nil || len(rs) < 1 {
 		return result, err
 	}
+
 	err = rs[len(rs)-1].Do(false, func(data []interface{}) (bool, error) {
 		result = fileRecord{
 			ID:         int(data[0].(int64)),
@@ -198,35 +237,43 @@ func (db *qlw) LoadFileRecord(id interface{}, col string) (fileRecord, error) {
 			CreateTime: data[3].(time.Time).Unix(),
 			UpdateTime: data[4].(time.Time).Unix(),
 		}
+
 		return false, nil
 	})
+
 	return result, err
 }
 
+// SaveFileRecord saves a fileRecord to the database
 func (db *qlw) SaveFileRecord(f fileRecord) (err error) {
 	if fr, err := db.LoadFileRecord(f.ID, "id"); (fr == fileRecord{}) && err == nil {
 		_, _, err = qlQuery(db, "filerecord_insert", true, f.InfoHash, f.Verified)
 	} else {
 		_, _, err = qlQuery(db, "filerecord_update", true, f.ID, f.Verified)
 	}
+
 	return
 }
 
+// CountFileRecordCompleted counts the number of peers who have completed this file
 func (db *qlw) CountFileRecordCompleted(id int) (int, error) {
 	completed, err := qlQueryI64(db, "fileuser_count_completed", int64(id))
 	return int(completed), err
 }
 
+// CountFileRecordSeeders counts the number of peers who are actively seeding this file
 func (db *qlw) CountFileRecordSeeders(id int) (int, error) {
 	seeders, err := qlQueryI64(db, "fileuser_count_seeders", int64(id))
 	return int(seeders), err
 }
 
+// CountFileRecordLeechers counts the number of peers who are actively leeching this file
 func (db *qlw) CountFileRecordLeechers(id int) (int, error) {
 	leechers, err := qlQueryI64(db, "fileuser_count_leechers", int64(id))
 	return int(leechers), err
 }
 
+// GetFileRecordPeerList returns a compact peer list containing IP/port pairs
 func (db *qlw) GetFileRecordPeerList(infohash, exclude string, limit int) ([]byte, error) {
 	rs, _, err := qlQuery(db, "fileuser_find_peerlist", true, infohash, exclude)
 	buf := []byte{}
@@ -234,36 +281,46 @@ func (db *qlw) GetFileRecordPeerList(infohash, exclude string, limit int) ([]byt
 	if err == nil && len(rs) > 0 {
 		err = rs[0].Do(false, func(data []interface{}) (bool, error) {
 			buf = append(buf, ip2b(data[0].(string), uint16(data[1].(int32)))...)
+
 			return len(buf)/6 < limit, nil
 		})
 	}
+
 	return buf, err
 }
 
+// GetInactiveUserInfo returns a list of users who have not been active for the specified time interval
 func (db *qlw) GetInactiveUserInfo(fid int, interval time.Duration) (users []peerInfo, err error) {
 	if rs, _, err := qlQuery(db, "fileuser_find_inactive", true, int64(fid), interval); err == nil && len(rs) > 0 {
 		err = rs[0].Do(false, func(data []interface{}) (bool, error) {
 			users = append(users, peerInfo{int(data[0].(int64)), data[1].(string)})
+
 			return true, nil
 		})
 	}
+
 	return
 }
 
+// MarkFileUsersInactive sets users to be inactive once they have been reaped
 func (db *qlw) MarkFileUsersInactive(fid int, users []peerInfo) (err error) {
 	if list, err := qlCompile("fileuser_mark_inactive", false); err == nil {
 		tx := db.NewTransaction()
+
 		for _, user := range users {
 			if _, _, err = tx.Execute(list, int64(fid), int64(user.UserID), user.IP); err != nil {
 				tx.Rollback()
+
 				return err
 			}
 		}
 		err = tx.Commit()
 	}
+
 	return
 }
 
+// GetAllFileRecords returns a list of all fileRecords known to the database
 func (db *qlw) GetAllFileRecords() (files []fileRecord, err error) {
 	if rs, _, err := qlQuery(db, "fileuser_load_all", false); err == nil && len(rs) > 0 {
 		err = rs[0].Do(false, func(data []interface{}) (bool, error) {
@@ -274,20 +331,25 @@ func (db *qlw) GetAllFileRecords() (files []fileRecord, err error) {
 				CreateTime: data[3].(time.Time).Unix(),
 				UpdateTime: data[4].(time.Time).Unix(),
 			})
+
 			return true, nil
 		})
 	}
+
 	return
 }
 
 // --- fileUserRecord.go ---
 
+// LoadFileUserRecord loads a fileUserRecord using a defined ID and column for query
 func (db *qlw) LoadFileUserRecord(fid, uid int, ip string) (fileUserRecord, error) {
 	rs, _, err := qlQuery(db, "fileuser_load", true, int64(fid), int64(uid), ip)
+
 	result := fileUserRecord{}
 	if err != nil || len(rs) < 1 {
 		return result, err
 	}
+
 	err = rs[len(rs)-1].Do(false, func(data []interface{}) (bool, error) {
 		result = fileUserRecord{
 			FileID:     int(data[0].(int64)),
@@ -301,11 +363,14 @@ func (db *qlw) LoadFileUserRecord(fid, uid int, ip string) (fileUserRecord, erro
 			Left:       data[8].(int64),
 			Time:       data[9].(time.Time).Unix(),
 		}
+
 		return false, nil
 	})
+
 	return result, err
 }
 
+// SaveFileUserRecord saves a fileUserRecord to the database
 func (db *qlw) SaveFileUserRecord(f fileUserRecord) (err error) {
 	if fr, e := db.LoadFileUserRecord(f.FileID, f.UserID, f.IP); (fr == fileUserRecord{}) {
 		if nil == e {
@@ -323,9 +388,11 @@ func (db *qlw) SaveFileUserRecord(f fileUserRecord) (err error) {
 			f.Active, f.Completed, int64(f.Announced),
 			f.Uploaded, f.Downloaded, f.Left)
 	}
+
 	return
 }
 
+// LoadFileUserRepository loads all fileUserRecords matching a defined ID and column for query
 func (db *qlw) LoadFileUserRepository(id interface{}, col string) (files []fileUserRecord, err error) {
 	if rs, _, err := qlQuery(db, "fileuser_load_"+col, true, id); err == nil && len(rs) > 0 {
 		err = rs[0].Do(false, func(data []interface{}) (bool, error) {
@@ -341,14 +408,17 @@ func (db *qlw) LoadFileUserRepository(id interface{}, col string) (files []fileU
 				Left:       data[8].(int64),
 				Time:       data[9].(time.Time).Unix(),
 			})
+
 			return false, nil
 		})
 	}
+
 	return
 }
 
 // --- scrapeLog.go ---
 
+// LoadScrapeLog loads a scrapeLog using a defined ID and column for query
 func (db *qlw) LoadScrapeLog(id interface{}, col string) (scrape scrapeLog, err error) {
 	if rs, _, err := qlQuery(db, "scrapelog_load_"+col, true, id); err == nil && len(rs) > 0 {
 		err = rs[0].Do(false, func(data []interface{}) (bool, error) {
@@ -359,12 +429,15 @@ func (db *qlw) LoadScrapeLog(id interface{}, col string) (scrape scrapeLog, err 
 				IP:       data[3].(string),
 				Time:     data[4].(time.Time).Unix(),
 			}
+
 			return false, nil
 		})
 	}
+
 	return
 }
 
+// SaveScrapeLog saves a scrapeLog to the database
 func (db *qlw) SaveScrapeLog(s scrapeLog) (err error) {
 	_, _, err = qlQuery(db, "scrapelog_insert", true, s.InfoHash, s.Passkey, s.IP)
 	return
@@ -372,12 +445,15 @@ func (db *qlw) SaveScrapeLog(s scrapeLog) (err error) {
 
 // --- userRecord.go ---
 
+// LoadUserRecord loads a userRecord using a defined ID and column for query
 func (db *qlw) LoadUserRecord(id interface{}, col string) (userRecord, error) {
 	rs, _, err := qlQuery(db, "user_load_"+col, true, id)
+
 	result := userRecord{}
 	if err != nil {
 		return result, err
 	}
+
 	err = rs[len(rs)-1].Do(false, func(data []interface{}) (bool, error) {
 		result = userRecord{
 			ID:           int(data[0].(int64)),
@@ -385,11 +461,14 @@ func (db *qlw) LoadUserRecord(id interface{}, col string) (userRecord, error) {
 			Passkey:      data[2].(string),
 			TorrentLimit: data[3].(int),
 		}
+
 		return false, nil
 	})
+
 	return result, err
 }
 
+// SaveUserRecord saves a userRecord to the database
 func (db *qlw) SaveUserRecord(u userRecord) (err error) {
 	if user, e := db.LoadUserRecord(u.ID, "id"); (user == userRecord{}) {
 		if nil == e {
@@ -402,22 +481,27 @@ func (db *qlw) SaveUserRecord(u userRecord) (err error) {
 		_, _, err = qlQuery(db, "user_update", true,
 			user.ID, u.Username, u.Passkey, u.TorrentLimit)
 	}
+
 	return
 }
 
+// GetUserUploaded calculates the total number of bytes this user has uploaded
 func (db *qlw) GetUserUploaded(uid int) (int64, error) {
 	return qlQueryI64(db, "user_uploaded", uid)
 }
 
+// GetUserDownloaded calculates the total number of bytes this user has downloaded
 func (db *qlw) GetUserDownloaded(uid int) (int64, error) {
 	return qlQueryI64(db, "user_downloaded", uid)
 }
 
+// GetUserSeeding calculates the total number of files this user is actively seeding
 func (db *qlw) GetUserSeeding(uid int) (int, error) {
 	i, err := qlQueryI64(db, "user_seeding", uid)
 	return int(i), err
 }
 
+// GetUserLeeching calculates the total number of files this user is actively leeching
 func (db *qlw) GetUserLeeching(uid int) (int, error) {
 	i, err := qlQueryI64(db, "user_leeching", uid)
 	return int(i), err
@@ -425,23 +509,29 @@ func (db *qlw) GetUserLeeching(uid int) (int, error) {
 
 // --- whitelistRecord.go ---
 
+// LoadWhitelistRecord loads a whitelistRecord using a defined ID and column for query
 func (db *qlw) LoadWhitelistRecord(id interface{}, col string) (whitelistRecord, error) {
 	rs, _, err := qlQuery(db, "whitelist_load_"+col, true, id)
+
 	result := whitelistRecord{}
 	if err != nil || len(rs) < 1 {
 		return result, err
 	}
+
 	err = rs[len(rs)-1].Do(false, func(data []interface{}) (bool, error) {
 		result = whitelistRecord{
 			ID:       int(data[0].(int64)),
 			Client:   data[1].(string),
 			Approved: data[2].(bool),
 		}
+
 		return false, nil
 	})
+
 	return result, err
 }
 
+// SaveWhitelistRecord saves a whitelistRecord to the database
 func (db *qlw) SaveWhitelistRecord(w whitelistRecord) (err error) {
 	if wl, e := db.LoadWhitelistRecord(w.ID, "id"); (wl == whitelistRecord{}) {
 		if nil == e {
@@ -454,9 +544,11 @@ func (db *qlw) SaveWhitelistRecord(w whitelistRecord) (err error) {
 		_, _, err = qlQuery(db, "whitelist_update", true,
 			w.ID, w.Client, w.Approved)
 	}
+
 	return
 }
 
+// qlQuery provides a wrapper to compile a ql query
 func qlQuery(db *qlw, key string, wraptx bool, arg ...interface{}) ([]ql.Recordset, int, error) {
 	if list, err := qlCompile(key, wraptx); err == nil {
 		return db.Execute(ql.NewRWCtx(), list, arg...)
@@ -465,16 +557,20 @@ func qlQuery(db *qlw, key string, wraptx bool, arg ...interface{}) ([]ql.Records
 	}
 }
 
+// qlQueryI64 provides a wrapper to return int64 values from ql
 func qlQueryI64(db *qlw, key string, arg ...interface{}) (i int64, err error) {
 	if rs, _, err := qlQuery(db, key, false, arg...); err == nil && len(rs) > 0 {
 		err = rs[len(rs)-1].Do(false, func(data []interface{}) (bool, error) {
 			i = data[0].(int64)
+
 			return false, nil
 		})
 	}
+
 	return
 }
 
+// qlCompile provides a wrapper to create safe, transaction-encased queries
 func qlCompile(key string, wraptx bool) (list ql.List, err error) {
 	var src string
 	if l, ok := qlc[key]; !ok {
@@ -492,27 +588,33 @@ func qlCompile(key string, wraptx bool) (list ql.List, err error) {
 	} else {
 		list = l
 	}
+
 	return
 }
 
+// qltx contains a ql context and database connection
 type qltx struct {
 	ctx *ql.TCtx
 	db  *qlw
 }
 
+// Execute allows for execution via ql context in a transaction
 func (t *qltx) Execute(list ql.List, arg ...interface{}) ([]ql.Recordset, int, error) {
 	return t.db.Execute(t.ctx, list, arg...)
 }
 
+// Run allows for execution without a transaction
 func (t *qltx) Run(src string, arg ...interface{}) ([]ql.Recordset, int, error) {
 	return t.db.Run(t.ctx, src, arg...)
 }
 
+// Commit performs a database commit at the end of a transaction
 func (t *qltx) Commit() (err error) {
 	_, _, err = t.Run("COMMIT;")
 	return
 }
 
+// Rollback performs a database rollback on failed end of transaction
 func (t *qltx) Rollback() (err error) {
 	_, _, err = t.Run("ROLLBACK;")
 	return
