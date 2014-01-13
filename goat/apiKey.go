@@ -19,10 +19,13 @@ func (a apiKey) Save() bool {
 		log.Println(err.Error())
 		return false
 	}
+
+	// Save apiKey
 	if err := db.SaveApiKey(a); err != nil {
 		log.Println(err.Error())
 		return false
 	}
+
 	return true
 }
 
@@ -34,8 +37,11 @@ func (a apiKey) Load(id interface{}, col string) (key apiKey) {
 		log.Println(err.Error())
 		return
 	}
+
+	// Load apiKey
 	if key, err = db.LoadApiKey(id, col); err != nil {
 		log.Println(err.Error())
 	}
+
 	return
 }

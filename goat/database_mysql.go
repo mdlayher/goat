@@ -172,12 +172,12 @@ func (db *dbw) GetFileRecordPeerList(infohash, exclude string, limit int) ([]byt
 	return buf, nil
 }
 
-func (db *dbw) GetInactiveUserInfo(fid int, interval_ time.Duration) (users []userinfo, err error) {
+func (db *dbw) GetInactiveUserInfo(fid int, interval_ time.Duration) (users []peerInfo, err error) {
 	query := `SELECT user_id, ip FROM files_users
 		WHERE time < (UNIX_TIMESTAMP() - ?)
 		AND active = 1
 		AND file_id = ?;`
-	result := userinfo{}
+	result := peerInfo{}
 	interval := int(interval_ / time.Second)
 	var rows *sqlx.Rows
 
@@ -191,7 +191,7 @@ func (db *dbw) GetInactiveUserInfo(fid int, interval_ time.Duration) (users []us
 	return
 }
 
-func (db *dbw) MarkFileUsersInactive(fid int, users []userinfo) error {
+func (db *dbw) MarkFileUsersInactive(fid int, users []peerInfo) error {
 	query := "UPDATE files_users SET active = 0 WHERE file_id = ? AND user_id = ? AND ip = ?;"
 	tx := db.MustBegin()
 	for _, u := range users {

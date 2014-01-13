@@ -240,17 +240,17 @@ func (db *qlw) GetFileRecordPeerList(infohash, exclude string, limit int) ([]byt
 	return buf, err
 }
 
-func (db *qlw) GetInactiveUserInfo(fid int, interval time.Duration) (users []userinfo, err error) {
+func (db *qlw) GetInactiveUserInfo(fid int, interval time.Duration) (users []peerInfo, err error) {
 	if rs, _, err := qlQuery(db, "fileuser_find_inactive", true, int64(fid), interval); err == nil && len(rs) > 0 {
 		err = rs[0].Do(false, func(data []interface{}) (bool, error) {
-			users = append(users, userinfo{int(data[0].(int64)), data[1].(string)})
+			users = append(users, peerInfo{int(data[0].(int64)), data[1].(string)})
 			return true, nil
 		})
 	}
 	return
 }
 
-func (db *qlw) MarkFileUsersInactive(fid int, users []userinfo) (err error) {
+func (db *qlw) MarkFileUsersInactive(fid int, users []peerInfo) (err error) {
 	if list, err := qlCompile("fileuser_mark_inactive", false); err == nil {
 		tx := db.NewTransaction()
 		for _, user := range users {

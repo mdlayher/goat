@@ -38,8 +38,8 @@ type dbmodel interface {
 	CountFileRecordSeeders(int) (int, error)
 	CountFileRecordLeechers(int) (int, error)
 	GetFileRecordPeerList(string, string, int) ([]byte, error)
-	GetInactiveUserInfo(int, time.Duration) ([]userinfo, error)
-	MarkFileUsersInactive(int, []userinfo) error
+	GetInactiveUserInfo(int, time.Duration) ([]peerInfo, error)
+	MarkFileUsersInactive(int, []peerInfo) error
 	GetAllFileRecords() ([]fileRecord, error)
 
 	// --- fileUserRecord.go ---
@@ -62,18 +62,4 @@ type dbmodel interface {
 	// --- whitelistRecord.go ---
 	LoadWhitelistRecord(interface{}, string) (whitelistRecord, error)
 	SaveWhitelistRecord(whitelistRecord) error
-}
-
-type userinfo struct {
-	UserID int `db:"user_id"`
-	IP     string
-}
-
-// Parse IP and port into byte buffer
-func ip2b(ip_ string, port_ uint16) []byte {
-	ip, port := [4]byte{}, [2]byte{}
-	binary.BigEndian.PutUint32(ip[:],
-		binary.BigEndian.Uint32(net.ParseIP(ip_).To4()))
-	binary.BigEndian.PutUint16(port[:], port_)
-	return append(ip[:], port[:]...)
 }

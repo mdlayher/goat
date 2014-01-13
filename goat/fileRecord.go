@@ -25,6 +25,13 @@ type jsonFileRecord struct {
 	FileUsers  []fileUserRecord `json:"fileUsers"`
 }
 
+// peerInfo represents a peer which will be marked as active or not
+type peerInfo struct {
+	UserID int `db:"user_id"`
+	IP     string
+}
+
+
 // ToJSON converts a fileRecord to a jsonFileRecord struct
 func (f fileRecord) ToJSON() []byte {
 	// Convert all standard fields to the JSON equivalent struct
