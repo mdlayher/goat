@@ -18,7 +18,7 @@ backend. This is done by supplying the 'ql' tag in the go get command:
 
 	$ go get -tags='ql' github.com/mdlayher/goat
 
-A blank ql databse file is located under 'res/ql/goat.db', and will be copied to
+A blank ql database file is located under 'res/ql/goat.db', and will be copied to
 '~/.config/goat/goat.db' on UNIX systems.  goat is now able to use ql as its
 storage backend, for those who do not wish to use an external, MySQL backend.
 
