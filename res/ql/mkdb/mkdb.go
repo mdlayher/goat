@@ -36,7 +36,7 @@ func main() {
 
 	basedir := ""
 	if basedir = os.Getenv("GOPATH"); basedir != "" {
-		basedir += "/src/github.com/mdlayher/goat/ql/"
+		basedir += "/src/github.com/mdlayher/goat/res/ql/"
 	}
 	files, err := filepath.Glob(basedir + "*.ql")
 	if nil != err {
