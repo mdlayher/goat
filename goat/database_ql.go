@@ -85,7 +85,7 @@ var (
 )
 
 func init() {
-	dbConnectFunc = func() (dbmodel, error) {
+	dbConnectFunc = func() (dbModel, error) {
 		if nil == qlwdb {
 			name := static.Config.DB.Database + ".db"
 			db, err := ql.OpenFile(name, &qlOptions)

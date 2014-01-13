@@ -5,22 +5,23 @@ import (
 )
 
 var (
-	dbConnectFunc func() (dbmodel, error)
+	dbConnectFunc func() (dbModel, error)
 	dbCloseFunc   func()      = func() {}
 	dbPingFunc    func() bool = func() bool { return true }
 )
 
 // dbConnect connects to a database
-func dbConnect() (dbmodel, error) {
+func dbConnect() (dbModel, error) {
 	return dbConnectFunc()
 }
 
-// Attempt to "ping" the database to verify connectivity
+// dbPing will attempt to "ping" the database to verify connectivity
 func dbPing() bool {
 	return dbPingFunc()
 }
 
-type dbmodel interface {
+// dbModel represents a database interface, and defines functions which act on it
+type dbModel interface {
 	// --- announceLog.go ---
 	LoadAnnounceLog(interface{}, string) (announceLog, error)
 	SaveAnnounceLog(announceLog) error

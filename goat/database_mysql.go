@@ -16,7 +16,7 @@ import (
 
 func init() {
 	// dbConnectFunc connects to MySQL database
-	dbConnectFunc = func() (dbmodel, error) {
+	dbConnectFunc = func() (dbModel, error) {
 		// Generate connection string using configuration
 		conn := fmt.Sprintf("%s:%s@/%s", static.Config.DB.Username, static.Config.DB.Password, static.Config.DB.Database)
 		// When running on Travis CI, use Travis credentials
