@@ -13,18 +13,14 @@ database and user for goat, its database schema may be imported from the SQL
 files located in 'res/'.  goat will not run unless MySQL is installed, and a
 database and user are properly configured for its use.
 
-Optionally, goat can be build to use ql (https://github.com/cznic/ql) as storage
+Optionally, goat can be built to use ql (https://github.com/cznic/ql) as its storage
 backend. This is done by supplying the 'ql' tag in the go get command:
 
-  $ go get -tags='ql' github.com/mdlayher/goat
+	$ go get -tags='ql' github.com/mdlayher/goat
 
-After installation you need to create a database, this is done (for now) by
-running the following command.
-
-  $ go run $GOPATH/src/github.com/mdlayher/goat/ql/mkdb.go -dbname='goat.db'
-
-This creates a 'goat.db' in your current working directory. If goat starts
-from here it should be able to find the database.
+A blank ql databse file is located under 'res/ql/goat.db', and will be copied to
+'~/.config/goat/goat.db' on UNIX systems.  goat is now able to use ql as its
+storage backend, for those who do not wish to use an external, MySQL backend.
 
 Configuration
 
