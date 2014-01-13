@@ -31,7 +31,7 @@ func (f fileUserRecord) Save() bool {
 		return false
 	}
 
-	if err := db.SaveFileUserRecord(f); nil != err {
+	if err := db.SaveFileUserRecord(f); err != nil {
 		log.Println(err.Error())
 		return false
 	}

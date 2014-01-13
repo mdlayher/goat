@@ -183,7 +183,7 @@ func (db *dbw) GetInactiveUserInfo(fid int, interval_ time.Duration) (users []us
 
 	if rows, err = db.Queryx(query, interval, fid); err == nil && err != sql.ErrNoRows {
 		for rows.Next() {
-			if err = rows.StructScan(&result); nil == err {
+			if err = rows.StructScan(&result); err == nil {
 				users = append(users, result)
 			}
 		}

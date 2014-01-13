@@ -25,7 +25,7 @@ func (s scrapeLog) Save() bool {
 		log.Println(err.Error())
 		return false
 	}
-	if err := db.SaveScrapeLog(s); nil != err {
+	if err := db.SaveScrapeLog(s); err != nil {
 		log.Println(err.Error())
 		return false
 	}

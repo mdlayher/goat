@@ -61,7 +61,7 @@ func (f fileRecord) Save() bool {
 		return false
 	}
 
-	if err := db.SaveFileRecord(f); nil != err {
+	if err := db.SaveFileRecord(f); err != nil {
 		log.Println(err.Error())
 		return false
 	}
@@ -77,7 +77,7 @@ func (f fileRecord) Load(id interface{}, col string) fileRecord {
 		log.Println(err.Error())
 		return f
 	}
-	if f, err = db.LoadFileRecord(id, col); nil != err {
+	if f, err = db.LoadFileRecord(id, col); err != nil {
 		log.Println(err.Error())
 		return fileRecord{}
 	}
@@ -108,7 +108,7 @@ func (f fileRecord) Seeders() (seeders int) {
 		log.Println(err.Error())
 		return 0
 	}
-	if seeders, err = db.CountFileRecordSeeders(f.ID); nil != err {
+	if seeders, err = db.CountFileRecordSeeders(f.ID); err != nil {
 		log.Println(err.Error())
 		return -1
 	}
@@ -123,7 +123,7 @@ func (f fileRecord) Leechers() (leechers int) {
 		log.Println(err.Error())
 		return 0
 	}
-	if leechers, err = db.CountFileRecordLeechers(f.ID); nil != err {
+	if leechers, err = db.CountFileRecordLeechers(f.ID); err != nil {
 		log.Println(err.Error())
 		return -1
 	}
@@ -160,7 +160,7 @@ func (f fileRecord) PeerReaper() bool {
 		return false
 	}
 
-	if err := db.MarkFileUsersInactive(f.ID, users); nil != err {
+	if err := db.MarkFileUsersInactive(f.ID, users); err != nil {
 		log.Println(err.Error())
 		return false
 	}

@@ -19,7 +19,7 @@ func (w whitelistRecord) Save() bool {
 		log.Println(err.Error())
 		return false
 	}
-	if err := db.SaveWhitelistRecord(w); nil != err {
+	if err := db.SaveWhitelistRecord(w); err != nil {
 		log.Println(err.Error())
 		return false
 	}

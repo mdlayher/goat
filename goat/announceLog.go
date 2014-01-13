@@ -34,7 +34,7 @@ func (a announceLog) Save() bool {
 		return false
 	}
 
-	if err := db.SaveAnnounceLog(a); nil != err {
+	if err := db.SaveAnnounceLog(a); err != nil {
 		log.Println(err.Error())
 		return false
 	}
@@ -50,7 +50,7 @@ func (a announceLog) Load(ID interface{}, col string) announceLog {
 		log.Println(err.Error())
 		return announceLog{}
 	}
-	if a, err = db.LoadAnnounceLog(ID, col); nil != err {
+	if a, err = db.LoadAnnounceLog(ID, col); err != nil {
 		log.Println(err.Error())
 		return announceLog{}
 	}
