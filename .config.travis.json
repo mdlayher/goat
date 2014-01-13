@@ -1,0 +1,15 @@
+{
+	"Port": 8080,
+	"Passkey": false,
+	"Whitelist": false,
+	"Interval": 3600,
+	"HTTP": true,
+	"API": true,
+	"UDP": true,
+	"Redis": true,
+	"DB": {
+		"Database": "goat",
+		"Username": "travis",
+		"Password": "travis"
+	}
+}

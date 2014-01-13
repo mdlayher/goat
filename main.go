@@ -21,7 +21,7 @@ func main() {
 	if *test {
 		go func() {
 			fmt.Println(goat.App, ": launched in test mode")
-			time.Sleep(2 * time.Second)
+			time.Sleep(5 * time.Second)
 
 			fmt.Println(goat.App, ": test mode triggering graceful shutdown")
 			syscall.Kill(os.Getpid(), syscall.SIGTERM)

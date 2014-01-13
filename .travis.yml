@@ -7,8 +7,11 @@ services:
 before_script:
   - mysql -e "CREATE DATABASE goat"
   - mysql -e "UPDATE mysql.user SET password=PASSWORD('travis') WHERE user='travis'; FLUSH PRIVILEGES"
+  - mysql goat -e "INSERT INTO files VALUES (null, '6465616462656566', 1, UNIX_TIMESTAMP(), UNIX_TIMESTAMP())"
 script:
   - go build -o bin/goat
-  - ./bin/goat -test
+  - ./bin/goat -test &
+  - sleep 1
+  - curl http://localhost:8080/announce\?info_hash\=deadbeef\&port\=5000\&uploaded\=0\&downloaded\=0\&left\=10\&compact\=1
   - go build -tags='ql' -o bin/goat
   - ./bin/goat -test

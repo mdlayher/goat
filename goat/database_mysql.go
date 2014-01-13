@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	// Bring in the MySQL driver
@@ -20,10 +19,7 @@ func init() {
 	dbConnectFunc = func() (dbModel, error) {
 		// Generate connection string using configuration
 		conn := fmt.Sprintf("%s:%s@/%s", static.Config.DB.Username, static.Config.DB.Password, static.Config.DB.Database)
-		// When running on Travis CI, use Travis credentials
-		if os.Getenv("TRAVIS") == "true" {
-			conn = "travis:travis@/goat"
-		}
+
 		// Return connection and associated errors
 		db, err := sqlx.Connect("mysql", conn)
 		return &dbw{db}, err

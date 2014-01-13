@@ -34,6 +34,9 @@ func loadConfig() conf {
 	var path string
 	config := "config.json"
 
+	// If running on Travis, use alternate configuration
+	config = ".config.travis.json"
+
 	// Load current user from OS, to get home directory
 	user, err := user.Current()
 	if err != nil {
