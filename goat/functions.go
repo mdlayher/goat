@@ -1,7 +1,9 @@
 package goat
 
 import (
+	"encoding/binary"
 	"math/rand"
+	"net"
 	"time"
 )
 

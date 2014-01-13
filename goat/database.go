@@ -1,8 +1,6 @@
 package goat
 
 import (
-	"encoding/binary"
-	"net"
 	"time"
 )
 
