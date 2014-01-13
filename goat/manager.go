@@ -36,10 +36,10 @@ func Manager(killChan chan bool, exitChan chan int) {
 
 	// Attempt database connection
 	if !dbPing() {
-		log.Println("Cannot connect to MySQL database, exiting now.")
+		log.Println("Cannot connect to database", dbName(), ", exiting now.")
 		os.Exit(1)
 	}
-	log.Println("MySQL: OK")
+	log.Println("Database", dbName(), ": OK")
 
 	// If configured, attempt redis connection
 	if static.Config.Redis {
@@ -47,7 +47,7 @@ func Manager(killChan chan bool, exitChan chan int) {
 			log.Println("Cannot connect to Redis, exiting now.")
 			os.Exit(1)
 		}
-		log.Println("Redis: OK")
+		log.Println("Redis : OK")
 	}
 
 	// Set up graceful shutdown channels
@@ -69,22 +69,21 @@ func Manager(killChan chan bool, exitChan chan int) {
 		select {
 		case <-killChan:
 			// Trigger a graceful shutdown
-			log.Println("triggering graceful shutdown, press Ctrl+C again to force halt")
+			log.Println("Triggering graceful shutdown, press Ctrl+C again to force halt")
 
 			// Stop listeners
 			if static.Config.HTTP {
-				log.Println("stopping HTTP listener")
+				log.Println("Stopping HTTP listener")
 				static.ShutdownChan <- true
 				<-httpDoneChan
 			}
 			if static.Config.UDP {
-				log.Println("stopping UDP listener")
+				log.Println("Stopping UDP listener")
 				static.ShutdownChan <- true
 				<-udpDoneChan
 			}
 
-			// TODO Is this the right place?
-			log.Println("calling dbCloseFunc")
+			log.Println("Closing database connection")
 			dbCloseFunc()
 
 			// Report that program should exit gracefully

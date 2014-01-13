@@ -29,6 +29,11 @@ func init() {
 		return &dbw{db}, err
 	}
 
+	// dbNameFunc returns the name of this backend
+	dbNameFunc = func() string {
+		return "MySQL"
+	}
+
 	// dbPingFunc tests the connection to the MySQL database
 	dbPingFunc = func() bool {
 		db, err := dbConnect()

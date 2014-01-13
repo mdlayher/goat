@@ -6,13 +6,19 @@ import (
 
 var (
 	dbConnectFunc func() (dbModel, error)
-	dbCloseFunc   func()      = func() {}
-	dbPingFunc    func() bool = func() bool { return true }
+	dbCloseFunc   func()        = func() {}
+	dbNameFunc    func() string = func() string { return "" }
+	dbPingFunc    func() bool   = func() bool { return true }
 )
 
 // dbConnect connects to a database
 func dbConnect() (dbModel, error) {
 	return dbConnectFunc()
+}
+
+// dbName will retrieve the name of the database backend currently in use
+func dbName() string {
+	return dbNameFunc()
 }
 
 // dbPing will attempt to "ping" the database to verify connectivity

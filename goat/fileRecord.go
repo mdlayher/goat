@@ -68,6 +68,7 @@ func (f fileRecord) Save() bool {
 		return false
 	}
 
+	// Save fileRecord
 	if err := db.SaveFileRecord(f); err != nil {
 		log.Println(err.Error())
 		return false
@@ -84,6 +85,8 @@ func (f fileRecord) Load(id interface{}, col string) fileRecord {
 		log.Println(err.Error())
 		return f
 	}
+
+	// Load fileRecord by column
 	if f, err = db.LoadFileRecord(id, col); err != nil {
 		log.Println(err.Error())
 		return fileRecord{}
@@ -100,6 +103,8 @@ func (f fileRecord) Completed() (completed int) {
 		log.Println(err.Error())
 		return 0
 	}
+
+	// Retrieve number of file completions
 	if completed, err = db.CountFileRecordCompleted(f.ID); err != nil {
 		log.Println(err.Error())
 		return -1
@@ -115,10 +120,13 @@ func (f fileRecord) Seeders() (seeders int) {
 		log.Println(err.Error())
 		return 0
 	}
+
+	// Return number of active seeders
 	if seeders, err = db.CountFileRecordSeeders(f.ID); err != nil {
 		log.Println(err.Error())
 		return -1
 	}
+
 	return
 }
 
@@ -130,10 +138,13 @@ func (f fileRecord) Leechers() (leechers int) {
 		log.Println(err.Error())
 		return 0
 	}
+
+	// Return number of active leechers
 	if leechers, err = db.CountFileRecordLeechers(f.ID); err != nil {
 		log.Println(err.Error())
 		return -1
 	}
+
 	return
 }
 
@@ -145,10 +156,13 @@ func (f fileRecord) PeerList(exclude string, numwant int) (peers []byte) {
 		log.Println(err.Error())
 		return
 	}
+
+	// Return compact peer list, excluding this IP
 	if peers, err = db.GetFileRecordPeerList(f.InfoHash, exclude, numwant); err != nil {
 		log.Println(err.Error())
 		return nil
 	}
+
 	return
 }
 
@@ -161,20 +175,24 @@ func (f fileRecord) PeerReaper() bool {
 		return false
 	}
 
+	// Retrieve list of inactive users (have not announced in just above maximum interval)
 	users, err := db.GetInactiveUserInfo(f.ID, time.Duration(int64(static.Config.Interval))*time.Second+60)
 	if err != nil {
 		log.Println(err.Error())
 		return false
 	}
 
+	// Mark those users inactive on this file
 	if err := db.MarkFileUsersInactive(f.ID, users); err != nil {
 		log.Println(err.Error())
 		return false
 	}
 
+	// Print number of peers reaped
 	if count := len(users); count > 0 {
 		log.Printf("reaper: reaped %d peer(s) on file %d\n", count, f.ID)
 	}
+
 	return true
 }
 
@@ -191,8 +209,11 @@ func (f fileRecordRepository) All() (files []fileRecord) {
 		log.Println(err.Error())
 		return
 	}
+
+	// Retrieve all files
 	if files, err = db.GetAllFileRecords(); err != nil {
 		log.Println(err.Error())
 	}
+
 	return files
 }

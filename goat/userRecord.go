@@ -20,10 +20,13 @@ func (u userRecord) Save() bool {
 		log.Println(err.Error())
 		return false
 	}
+
+	// Save userRecord
 	if err := db.SaveUserRecord(u); err != nil {
 		log.Println(err.Error())
 		return false
 	}
+
 	return true
 }
 
@@ -35,11 +38,14 @@ func (u userRecord) Load(id interface{}, col string) userRecord {
 		log.Println(err.Error())
 		return u
 	}
+
+	// Load userRecord by specified column
 	u, err = db.LoadUserRecord(id, col)
 	if err != nil {
 		log.Println(err.Error())
 		return userRecord{}
 	}
+
 	return u
 }
 
@@ -51,11 +57,14 @@ func (u userRecord) Uploaded() int64 {
 		log.Println(err.Error())
 		return -1
 	}
+
+	// Retrieve total bytes user has uploaded
 	uploaded, err := db.GetUserUploaded(u.ID)
 	if err != nil {
 		log.Println(err.Error())
 		return -1
 	}
+
 	return uploaded
 }
 
@@ -67,15 +76,16 @@ func (u userRecord) Downloaded() int64 {
 		log.Println(err.Error())
 		return 0
 	}
+
+	// Retrieve total bytes user has downloaded
 	downloaded, err := db.GetUserDownloaded(u.ID)
 	if err != nil {
 		log.Println(err.Error())
 		return -1
 	}
+
 	return downloaded
 }
-
-//
 
 // Seeding counts the number of torrents this user is seeding
 func (u userRecord) Seeding() int {
@@ -85,11 +95,14 @@ func (u userRecord) Seeding() int {
 		log.Println(err.Error())
 		return 0
 	}
+
+	// Retrieve total number of torrents user is actively seeding
 	seeding, err := db.GetUserSeeding(u.ID)
 	if err != nil {
 		log.Println(err.Error())
 		return -1
 	}
+
 	return seeding
 }
 
@@ -101,10 +114,13 @@ func (u userRecord) Leeching() int {
 		log.Println(err.Error())
 		return 0
 	}
+
+	// Retrieve total number of torrents user is actively leeching
 	leeching, err := db.GetUserSeeding(u.ID)
 	if err != nil {
 		log.Println(err.Error())
 		return -1
 	}
+
 	return leeching
 }

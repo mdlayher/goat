@@ -25,10 +25,13 @@ func (s scrapeLog) Save() bool {
 		log.Println(err.Error())
 		return false
 	}
+
+	// Save scrapeLog
 	if err := db.SaveScrapeLog(s); err != nil {
 		log.Println(err.Error())
 		return false
 	}
+
 	return true
 }
 
@@ -40,11 +43,14 @@ func (s scrapeLog) Load(id interface{}, col string) scrapeLog {
 		log.Println(err.Error())
 		return s
 	}
+
+	// Load scrapeLog
 	s, err = db.LoadScrapeLog(id, col)
 	if err != nil && err != sql.ErrNoRows {
 		log.Println(err.Error())
 		return scrapeLog{}
 	}
+
 	return s
 }
 

@@ -31,6 +31,7 @@ func (f fileUserRecord) Save() bool {
 		return false
 	}
 
+	// Save fileUserRecord
 	if err := db.SaveFileUserRecord(f); err != nil {
 		log.Println(err.Error())
 		return false
@@ -47,10 +48,13 @@ func (f fileUserRecord) Load(fileID int, userID int, ip string) fileUserRecord {
 		log.Println(err.Error())
 		return f
 	}
+
+	// Load fileUserRecord using file ID, user ID, IP triple
 	if f, err = db.LoadFileUserRecord(fileID, userID, ip); err != nil {
 		log.Println(err.Error())
 		return fileUserRecord{}
 	}
+
 	return f
 }
 
@@ -62,8 +66,11 @@ func (f fileUserRecordRepository) Select(id interface{}, col string) (files []fi
 		log.Println(err.Error())
 		return
 	}
+
+	// Load fileUserRecords matching specified conditions
 	if files, err = db.LoadFileUserRepository(id, col); err != nil {
 		log.Println(err.Error())
 	}
+
 	return
 }

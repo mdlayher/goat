@@ -1,8 +1,4 @@
 // +build ql
-
-// ql backend functions, courtesy of Tim Jurcka (sdgoij)
-// https://github.com/mdlayher/goat/pull/16
-
 package goat
 
 import (
@@ -12,6 +8,9 @@ import (
 	// Bring in the ql driver
 	"github.com/cznic/ql"
 )
+
+// ql backend functions, courtesy of Tim Jurcka (sdgoij)
+// https://github.com/mdlayher/goat/pull/16
 
 type qlqcc struct {
 	c map[string]ql.List
@@ -121,6 +120,11 @@ func init() {
 			log.Println("Closing ql database")
 			qlwdb.Close()
 		}
+	}
+
+	// dbNameFunc returns the name of this backend
+	dbNameFunc = func() string {
+		return "ql"
 	}
 }
 
