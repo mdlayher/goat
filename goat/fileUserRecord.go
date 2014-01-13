@@ -1,7 +1,6 @@
 package goat
 
 import (
-	"database/sql"
 	"log"
 )
 
@@ -32,19 +31,10 @@ func (f fileUserRecord) Save() bool {
 		return false
 	}
 
-	// Insert or update a file/user relationship record
-	query := "INSERT INTO files_users " +
-		"(`file_id`, `user_id`, `ip`, `active`, `completed`, `announced`, `uploaded`, `downloaded`, `left`, `time`) " +
-		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, UNIX_TIMESTAMP()) " +
-		"ON DUPLICATE KEY UPDATE " +
-		"`active`=values(`active`), `completed`=values(`completed`), `announced`=values(`announced`), " +
-		"`uploaded`=values(`uploaded`), `downloaded`=values(`downloaded`), `left`=values(`left`), " +
-		"`time`=UNIX_TIMESTAMP();"
-
-	// Create database transaction, do insert, commit
-	tx := db.MustBegin()
-	tx.Execl(query, f.FileID, f.UserID, f.IP, f.Active, f.Completed, f.Announced, f.Uploaded, f.Downloaded, f.Left)
-	tx.Commit()
+	if err := db.SaveFileUserRecord(f); nil != err {
+		log.Println(err.Error())
+		return false
+	}
 
 	return true
 }
@@ -57,43 +47,23 @@ func (f fileUserRecord) Load(fileID int, userID int, ip string) fileUserRecord {
 		log.Println(err.Error())
 		return f
 	}
-
-	// Fetch announce log into struct
-	f = fileUserRecord{}
-	err = db.Get(&f, "SELECT * FROM files_users WHERE `file_id`=? AND `user_id`=? AND `ip`=?", fileID, userID, ip)
-	if err != nil && err != sql.ErrNoRows {
+	if f, err = db.LoadFileUserRecord(fileID, userID, ip); err != nil {
 		log.Println(err.Error())
 		return fileUserRecord{}
 	}
-
 	return f
 }
 
 // Select loads selected fileUserRecord structs from storage
-func (f fileUserRecordRepository) Select(id interface{}, col string) []fileUserRecord {
-	fileUsers := make([]fileUserRecord, 0)
-
+func (f fileUserRecordRepository) Select(id interface{}, col string) (files []fileUserRecord) {
 	// Open database connection
 	db, err := dbConnect()
 	if err != nil {
 		log.Println(err.Error())
-		return fileUsers
+		return
 	}
-
-	// Load all files
-	rows, err := db.Queryx("SELECT * FROM files_users WHERE `"+col+"`=?", id)
-	if err != nil && err != sql.ErrNoRows {
+	if files, err = db.LoadFileUserRepository(id, col); err != nil {
 		log.Println(err.Error())
-		return fileUsers
 	}
-
-	// Iterate all rows and build array
-	fileUser := fileUserRecord{}
-	for rows.Next() {
-		// Scan row results
-		rows.StructScan(&fileUser)
-		fileUsers = append(fileUsers[:], fileUser)
-	}
-
-	return fileUsers
+	return
 }
