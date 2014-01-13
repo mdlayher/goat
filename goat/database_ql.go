@@ -1,4 +1,5 @@
 // +build ql
+
 package goat
 
 import (

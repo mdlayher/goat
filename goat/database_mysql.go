@@ -41,6 +41,7 @@ func init() {
 			log.Println(err.Error())
 			return false
 		}
+
 		db.(*dbw).Close()
 		return true
 	}

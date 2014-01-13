@@ -10,3 +10,5 @@ before_script:
 script:
   - go build -o bin/goat
   - ./bin/goat -test
+  - go build -tags='ql' bin/goat
+  - ./bin/goat -test
