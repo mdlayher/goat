@@ -1,7 +1,6 @@
 package goat
 
 import (
-	"database/sql"
 	"log"
 )
 
@@ -20,38 +19,23 @@ func (a apiKey) Save() bool {
 		log.Println(err.Error())
 		return false
 	}
-
-	// Insert or update an API key
-	query := "INSERT INTO api_keys " +
-		"(`user_id`, `key`) " +
-		"VALUES (?, ?) " +
-		"ON DUPLICATE KEY UPDATE " +
-		"`key`=values(`key`);"
-
-	// Create database transaction, do insert, commit
-	tx := db.MustBegin()
-	tx.Execl(query, a.UserID, a.Key)
-	tx.Commit()
-
+	if err := db.SaveApiKey(a); nil != err {
+		log.Println(err.Error())
+		return false
+	}
 	return true
 }
 
 // Load apiKey from storage
-func (a apiKey) Load(id interface{}, col string) apiKey {
+func (a apiKey) Load(id interface{}, col string) (key apiKey) {
 	// Open database connection
 	db, err := dbConnect()
 	if err != nil {
 		log.Println(err.Error())
-		return a
+		return
 	}
-
-	// Fetch apiKey into struct
-	a = apiKey{}
-	err = db.Get(&a, "SELECT * FROM api_keys WHERE `"+col+"`=?", id)
-	if err != nil && err != sql.ErrNoRows {
+	if key, err = db.LoadApiKey(id, col); nil != err {
 		log.Println(err.Error())
-		return apiKey{}
 	}
-
-	return a
+	return
 }

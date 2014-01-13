@@ -1,7 +1,6 @@
 package goat
 
 import (
-	"database/sql"
 	"encoding/hex"
 	"log"
 	"net/url"
@@ -35,15 +34,10 @@ func (a announceLog) Save() bool {
 		return false
 	}
 
-	// Store announce log
-	query := "INSERT INTO announce_log " +
-		"(`info_hash`, `passkey`, `key`, `ip`, `port`, `udp`, `uploaded`, `downloaded`, `left`, `event`, `client`, `time`) " +
-		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UNIX_TIMESTAMP());"
-
-	// Create database transaction, do insert, commit
-	tx := db.MustBegin()
-	tx.Execl(query, a.InfoHash, a.Passkey, a.Key, a.IP, a.Port, a.UDP, a.Uploaded, a.Downloaded, a.Left, a.Event, a.Client)
-	tx.Commit()
+	if err := db.SaveAnnounceLog(a); nil != err {
+		log.Println(err.Error())
+		return false
+	}
 
 	return true
 }
@@ -56,15 +50,10 @@ func (a announceLog) Load(ID interface{}, col string) announceLog {
 		log.Println(err.Error())
 		return announceLog{}
 	}
-
-	// Fetch announce log into struct
-	a = announceLog{}
-	err = db.Get(&a, "SELECT * FROM announce_log WHERE `"+col+"`=?", ID)
-	if err != nil && err != sql.ErrNoRows {
+	if a, err = db.LoadAnnounceLog(ID, col); nil != err {
 		log.Println(err.Error())
 		return announceLog{}
 	}
-
 	return a
 }
 
