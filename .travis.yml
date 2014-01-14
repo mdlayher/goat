@@ -20,5 +20,6 @@ script:
   - ./bin/goat -test &
   - sleep 1
   - curl http://localhost:8080/announce\?info_hash\=deadbeef\&port\=5000\&uploaded\=0\&downloaded\=0\&left\=10\&compact\=1
+  - sleep 5
   - go build -tags='ql' -o bin/goat
   - ./bin/goat -test
