@@ -18,13 +18,17 @@ func Manager(killChan chan bool, exitChan chan int) {
 	shutdownChan := make(chan bool)
 	static.ShutdownChan = shutdownChan
 
-	// Set up logger
-	go logManager()
-
+	// Set up logging flags
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	log.Println("Starting " + App + " " + Version)
 
-	// Print startup status banner
-	go printStatusBanner()
+	// Grab initial server status
+	stat := getServerStatus()
+	if stat == (serverStatus{}) {
+		log.Println("Could not print get startup status")
+	} else {
+		log.Printf("%s - %s_%s (%d CPU) [pid: %d]", stat.Hostname, stat.Platform, stat.Architecture, stat.NumCPU, stat.PID)
+	}
 
 	// Load configuration
 	config := loadConfig()
@@ -49,6 +53,9 @@ func Manager(killChan chan bool, exitChan chan int) {
 		}
 		log.Println("Redis : OK")
 	}
+
+	// Start cron manager
+	go cronManager()
 
 	// Set up graceful shutdown channels
 	httpDoneChan := make(chan bool)
