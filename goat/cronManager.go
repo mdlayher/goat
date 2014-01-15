@@ -39,7 +39,7 @@ func cronPeerReaper() {
 	// Iterate all files
 	for _, f := range files {
 		// Reap peers on each
-		if (!f.PeerReaper()) {
+		if !f.PeerReaper() {
 			log.Println("cronPeerReaper: failed to reap peers on file ID:", f.ID)
 		}
 	}

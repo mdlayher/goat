@@ -17,9 +17,9 @@ type DBConf struct {
 
 // SSLConf represents SSL configuration
 type SSLConf struct {
-	Port int
+	Port        int
 	Certificate string
-	Key string
+	Key         string
 }
 
 // Conf represents server configuration
