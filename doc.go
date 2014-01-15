@@ -57,6 +57,9 @@ describing the settings available to the user.
 		// listener should only be used for public trackers
 		"UDP": false,
 
+		// Redis: enable caching and rate limiting features using Redis
+		"Redis": true,
+
 		// DB: MySQL database configuration
 		"DB": {
 			// Database: the database goat will use to store its tracker data
