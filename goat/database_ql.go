@@ -375,7 +375,7 @@ func (db *qlw) MarkFileUsersInactive(fid int, users []peerInfo) (err error) {
 
 // GetAllFileRecords returns a list of all fileRecords known to the database
 func (db *qlw) GetAllFileRecords() (files []fileRecord, err error) {
-	if rs, _, err := qlQuery(db, "fileuser_load_all", false); err == nil && len(rs) > 0 {
+	if rs, _, err := qlQuery(db, "filerecord_load_all", false); err == nil && len(rs) > 0 {
 		err = rs[0].Do(false, func(data []interface{}) (bool, error) {
 			files = append(files, fileRecord{
 				ID:         int(data[0].(int64)),
