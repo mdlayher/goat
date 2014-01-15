@@ -512,7 +512,7 @@ func (db *qlw) LoadUserRecord(id interface{}, col string) (userRecord, error) {
 			ID:           int(data[0].(int64)),
 			Username:     data[1].(string),
 			Passkey:      data[2].(string),
-			TorrentLimit: data[3].(int),
+			TorrentLimit: int(data[3].(int64)),
 		}
 
 		return false, nil
