@@ -16,10 +16,6 @@ import (
 // ql backend functions, courtesy of Tim Jurcka (sdgoij)
 // https://github.com/mdlayher/goat/pull/16
 
-type qlqcc struct {
-	c map[string]ql.List
-}
-
 var (
 	qlOptions = ql.Options{CanCreate: true}
 	qlwdb     *qlw
