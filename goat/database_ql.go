@@ -49,6 +49,7 @@ var (
 
 		// fileRecord
 		"filerecord_load_all":         "SELECT id(),info_hash,verified,create_time,update_time FROM files",
+		"filerecord_load_id":          "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE id()==$1 ORDER BY id()",
 		"filerecord_load_info_hash":   "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE info_hash==$1 ORDER BY id()",
 		"filerecord_load_verified":    "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE verified==$1 ORDER BY id()",
 		"filerecord_load_create_time": "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE create_time==$1 ORDER BY id()",
@@ -275,6 +276,10 @@ func (db *qlw) SaveApiKey(key apiKey) (err error) {
 
 // LoadFileRecord loads a fileRecord using a defined ID and column for query
 func (db *qlw) LoadFileRecord(id interface{}, col string) (fileRecord, error) {
+	// Prevent error cannot convert 1 (type int) to type int64
+	if value, ok := id.(int); ok {
+		id = int64(value)
+	}
 	rs, _, err := qlQuery(db, "filerecord_load_"+col, true, id)
 
 	result := fileRecord{}
