@@ -48,14 +48,32 @@ describing the settings available to the user.
 		// HTTP: enable listening for client connections via HTTP
 		"HTTP": true,
 
+		// HTTP: enable listening for client connections over HTTPS (SSL)
+		"HTTPS": true,
+
 		// API: enable a HTTP RESTful API, used to pull statistics from goat
-		// note: only enabled when HTTP is enabled
+		// note: only enabled when HTTP/HTTPS is enabled
 		"API": true,
 
 		// UDP: enable listening for client connections via UDP
 		// note: it is not possible to use a passkey with this listener, so this
 		// listener should only be used for public trackers
 		"UDP": false,
+
+		// Redis: enable caching and rate limiting features using Redis
+		"Redis": true,
+
+		// SSL: HTTPS configuration
+		"SSL": {
+			// Port: the port number on which goat will listen using HTTPS
+			"Port": 8443,
+
+			// Certificate: the path to the certificate file used for HTTPS
+			"Certificate": "goat.crt",
+
+			// Key: the path to the key file used for HTTPS
+			"Key": "goat.key"
+		},
 
 		// DB: MySQL database configuration
 		"DB": {

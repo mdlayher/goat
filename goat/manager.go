@@ -2,6 +2,7 @@ package goat
 
 import (
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 )
@@ -18,13 +19,17 @@ func Manager(killChan chan bool, exitChan chan int) {
 	shutdownChan := make(chan bool)
 	static.ShutdownChan = shutdownChan
 
-	// Set up logger
-	go logManager()
-
+	// Set up logging flags
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	log.Println("Starting " + App + " " + Version)
 
-	// Print startup status banner
-	go printStatusBanner()
+	// Grab initial server status
+	stat := getServerStatus()
+	if stat == (serverStatus{}) {
+		log.Println("Could not print get startup status")
+	} else {
+		log.Printf("%s - %s_%s (%d CPU) [pid: %d]", stat.Hostname, stat.Platform, stat.Architecture, stat.NumCPU, stat.PID)
+	}
 
 	// Load configuration
 	config := loadConfig()
@@ -50,14 +55,25 @@ func Manager(killChan chan bool, exitChan chan int) {
 		log.Println("Redis : OK")
 	}
 
+	// Start cron manager
+	go cronManager()
+
 	// Set up graceful shutdown channels
 	httpDoneChan := make(chan bool)
+	httpsDoneChan := make(chan bool)
 	udpDoneChan := make(chan bool)
+
+	// Set up HTTP(S) route
+	http.HandleFunc("/", parseHTTP)
 
 	// Launch listeners as configured
 	if static.Config.HTTP {
 		go listenHTTP(httpDoneChan)
 		log.Println("HTTP listener launched on port " + strconv.Itoa(static.Config.Port))
+	}
+	if static.Config.HTTPS {
+		go listenHTTPS(httpsDoneChan)
+		log.Println("HTTPS listener launched on port " + strconv.Itoa(static.Config.SSL.Port))
 	}
 	if static.Config.UDP {
 		go listenUDP(udpDoneChan)
@@ -76,6 +92,11 @@ func Manager(killChan chan bool, exitChan chan int) {
 				log.Println("Stopping HTTP listener")
 				static.ShutdownChan <- true
 				<-httpDoneChan
+			}
+			if static.Config.HTTPS {
+				log.Println("Stopping HTTPS listener")
+				static.ShutdownChan <- true
+				<-httpsDoneChan
 			}
 			if static.Config.UDP {
 				log.Println("Stopping UDP listener")
