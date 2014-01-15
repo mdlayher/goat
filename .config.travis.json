@@ -4,9 +4,15 @@
 	"Whitelist": false,
 	"Interval": 3600,
 	"HTTP": true,
+	"HTTPS": false,
 	"API": true,
 	"UDP": true,
 	"Redis": true,
+	"SSL": {
+		"Port": 8443,
+		"Certificate": "goat.crt",
+		"Key": "goat.key"
+	},
 	"DB": {
 		"Database": "goat",
 		"Username": "travis",

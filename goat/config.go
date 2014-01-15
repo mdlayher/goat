@@ -9,10 +9,17 @@ import (
 )
 
 // DBConf represents database configuration
-type dbConf struct {
+type DBConf struct {
 	Database string
 	Username string
 	Password string
+}
+
+// SSLConf represents SSL configuration
+type SSLConf struct {
+	Port int
+	Certificate string
+	Key string
 }
 
 // Conf represents server configuration
@@ -22,10 +29,12 @@ type conf struct {
 	Whitelist bool
 	Interval  int
 	HTTP      bool
+	HTTPS     bool
 	API       bool
 	UDP       bool
 	Redis     bool
-	DB        dbConf
+	SSL       SSLConf
+	DB        DBConf
 }
 
 // LoadConfig loads configuration

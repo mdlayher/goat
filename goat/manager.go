@@ -59,12 +59,17 @@ func Manager(killChan chan bool, exitChan chan int) {
 
 	// Set up graceful shutdown channels
 	httpDoneChan := make(chan bool)
+	httpsDoneChan := make(chan bool)
 	udpDoneChan := make(chan bool)
 
 	// Launch listeners as configured
 	if static.Config.HTTP {
 		go listenHTTP(httpDoneChan)
 		log.Println("HTTP listener launched on port " + strconv.Itoa(static.Config.Port))
+	}
+	if static.Config.HTTPS {
+		go listenHTTPS(httpsDoneChan)
+		log.Println("HTTPS listener launched on port " + strconv.Itoa(static.Config.SSL.Port))
 	}
 	if static.Config.UDP {
 		go listenUDP(udpDoneChan)
@@ -83,6 +88,11 @@ func Manager(killChan chan bool, exitChan chan int) {
 				log.Println("Stopping HTTP listener")
 				static.ShutdownChan <- true
 				<-httpDoneChan
+			}
+			if static.Config.HTTPS {
+				log.Println("Stopping HTTPS listener")
+				static.ShutdownChan <- true
+				<-httpsDoneChan
 			}
 			if static.Config.UDP {
 				log.Println("Stopping UDP listener")

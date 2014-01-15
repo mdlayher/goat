@@ -35,6 +35,28 @@ func handleHTTP(l net.Listener, httpDoneChan chan bool) {
 	http.Serve(l, nil)
 }
 
+// Handle incoming HTTPS connections and serve
+func handleHTTPS(l net.Listener, httpsDoneChan chan bool) {
+	// Create shutdown function
+	go func(l net.Listener, httpsDoneChan chan bool) {
+		// Wait for done signal
+		<-static.ShutdownChan
+
+		// Close listener
+		l.Close()
+		log.Println("HTTPS listener stopped")
+		httpsDoneChan <- true
+	}(l, httpsDoneChan)
+
+	// Log API configuration
+	if static.Config.API {
+		log.Println("SSL API functionality enabled")
+	}
+
+	// Serve HTTPS requests
+	http.Serve(l, nil)
+}
+
 // Parse incoming HTTP connections before making tracker calls
 func parseHTTP(w http.ResponseWriter, r *http.Request) {
 	// Count incoming connections
