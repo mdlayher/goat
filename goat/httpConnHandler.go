@@ -19,7 +19,7 @@ func handleHTTP(l net.Listener, httpDoneChan chan bool) {
 
 		// Close listener
 		l.Close()
-		log.Println("HTTP listener stopped")
+		log.Println("HTTP(S) listener stopped")
 		httpDoneChan <- true
 	}(l, httpDoneChan)
 
@@ -27,9 +27,6 @@ func handleHTTP(l net.Listener, httpDoneChan chan bool) {
 	if static.Config.API {
 		log.Println("API functionality enabled")
 	}
-
-	// Set up HTTP routes for handling functions
-	http.HandleFunc("/", parseHTTP)
 
 	// Serve HTTP requests
 	http.Serve(l, nil)

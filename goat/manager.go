@@ -2,6 +2,7 @@ package goat
 
 import (
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 )
@@ -61,6 +62,9 @@ func Manager(killChan chan bool, exitChan chan int) {
 	httpDoneChan := make(chan bool)
 	httpsDoneChan := make(chan bool)
 	udpDoneChan := make(chan bool)
+
+	// Set up HTTP(S) route
+	http.HandleFunc("/", parseHTTP)
 
 	// Launch listeners as configured
 	if static.Config.HTTP {

@@ -46,7 +46,7 @@ func listenHTTPS(httpsDoneChan chan bool) {
 	}
 
 	// Send listener to handler
-	go handleHTTPS(l, httpsDoneChan)
+	go handleHTTP(l, httpsDoneChan)
 }
 
 // Listen on specified UDP port, accept and handle connections
