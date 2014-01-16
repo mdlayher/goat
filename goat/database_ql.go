@@ -16,10 +16,6 @@ import (
 // ql backend functions, courtesy of Tim Jurcka (sdgoij)
 // https://github.com/mdlayher/goat/pull/16
 
-type qlqcc struct {
-	c map[string]ql.List
-}
-
 var (
 	qlOptions = ql.Options{CanCreate: true}
 	qlwdb     *qlw
@@ -53,6 +49,7 @@ var (
 
 		// fileRecord
 		"filerecord_load_all":         "SELECT id(),info_hash,verified,create_time,update_time FROM files",
+		"filerecord_load_id":          "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE id()==$1 ORDER BY id()",
 		"filerecord_load_info_hash":   "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE info_hash==$1 ORDER BY id()",
 		"filerecord_load_verified":    "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE verified==$1 ORDER BY id()",
 		"filerecord_load_create_time": "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE create_time==$1 ORDER BY id()",
@@ -279,6 +276,10 @@ func (db *qlw) SaveApiKey(key apiKey) (err error) {
 
 // LoadFileRecord loads a fileRecord using a defined ID and column for query
 func (db *qlw) LoadFileRecord(id interface{}, col string) (fileRecord, error) {
+	// Prevent error cannot convert 1 (type int) to type int64
+	if value, ok := id.(int); ok {
+		id = int64(value)
+	}
 	rs, _, err := qlQuery(db, "filerecord_load_"+col, true, id)
 
 	result := fileRecord{}
@@ -379,7 +380,7 @@ func (db *qlw) MarkFileUsersInactive(fid int, users []peerInfo) (err error) {
 
 // GetAllFileRecords returns a list of all fileRecords known to the database
 func (db *qlw) GetAllFileRecords() (files []fileRecord, err error) {
-	if rs, _, err := qlQuery(db, "fileuser_load_all", false); err == nil && len(rs) > 0 {
+	if rs, _, err := qlQuery(db, "filerecord_load_all", false); err == nil && len(rs) > 0 {
 		err = rs[0].Do(false, func(data []interface{}) (bool, error) {
 			files = append(files, fileRecord{
 				ID:         int(data[0].(int64)),
@@ -516,7 +517,7 @@ func (db *qlw) LoadUserRecord(id interface{}, col string) (userRecord, error) {
 			ID:           int(data[0].(int64)),
 			Username:     data[1].(string),
 			Passkey:      data[2].(string),
-			TorrentLimit: data[3].(int),
+			TorrentLimit: int(data[3].(int64)),
 		}
 
 		return false, nil
