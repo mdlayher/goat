@@ -8,15 +8,15 @@ import (
 	"os/user"
 )
 
-// DBConf represents database configuration
-type DBConf struct {
+// dbConf represents database configuration
+type dbConf struct {
 	Database string
 	Username string
 	Password string
 }
 
-// SSLConf represents SSL configuration
-type SSLConf struct {
+// sslConf represents SSL configuration
+type sslConf struct {
 	Port        int
 	Certificate string
 	Key         string
@@ -33,8 +33,8 @@ type conf struct {
 	API       bool
 	UDP       bool
 	Redis     bool
-	SSL       SSLConf
-	DB        DBConf
+	SSL       sslConf
+	DB        dbConf
 }
 
 // LoadConfig loads configuration
