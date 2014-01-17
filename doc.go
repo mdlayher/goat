@@ -22,6 +22,68 @@ A blank ql database file is located under 'res/ql/goat.db', and will be copied t
 '~/.config/goat/goat.db' on UNIX systems.  goat is now able to use ql as its
 storage backend, for those who do not wish to use an external, MySQL backend.
 
+Features
+
+goat is built with a multitude of features which allow it to be used in a wide
+variety of configurations.  It features many of the standby features of tracker
+software, but also adds some new ones into the mix.
+
+Listeners
+
+goat is capable of listening for torrent traffic in three modes: HTTP, HTTPS,
+and UDP.  HTTP/HTTPS are the recommended methods, and are required in order for
+goat to serve its API, and to allow use of private tracker passkeys.
+
+HTTP is considered the standard mode of operation for goat.  HTTP allows gathering
+a great number of metrics, use of passkeys, use of a client whitelist, and access
+to goat's RESTful API, when configured.  For most trackers, this will be the only
+listener which is necessary in order for goat to function properly.
+
+The HTTPS listener provides a method to encrypt traffic to the tracker, but must
+be used with caution.  Unless the SSL certificate in use is signed by a proper
+certificate authority, it will distress most clients, and they may outright refuse
+to announce to it.  If you are in possession of a certificate signed by a certificate
+authority, this mode may be more ideal, as it provides added security for your
+clients.
+
+The UDP listener is the most unusual method of the three, and should only be used
+for public trackers.  The BitTorrent UDP tracker protocol specifies a very specific
+packet format, meaning that additional information or parameters cannot be packed
+into a UDP datagram in a standard way.  The UDP tracker may be the fastest and least
+bandwidth-intensive, but as stated, should only be used for public trackers.
+
+API
+
+A new feature goat added to goat in order to allow better interoperability with many
+languages is a RESTful API, which is served using the HTTP or HTTPS listeners.  This
+API enables easy retrieval of tracker statistics, while allowing goat to run as a
+completely independent process.
+
+Currently, the API is read-only, and only allows use of the HTTP GET method.  This
+may change in the future, but as of now, it doesn't make any sense to modify tracker
+parameters without doing a proper announce or scrape via BitTorrent client.
+
+The API will feature several modes of authentication, including HTTP Basic and
+HMAC-SHA1.  For the time being, only HTTP Basic is implemented.  This method makes
+use of a username/password pair using the user's username, and an API key as the
+password.
+
+API Calls
+
+This list contains all API calls currently recognized by goat.  Each call must be
+authenticated using the aforementioned methods.
+
+	/api/files[/id]
+
+Retrieve a list of all files tracked by goat.  If an ID is specified, retrieve the
+file with matching ID, with an additional list of fileUser records associated with
+that file.
+
+	/api/status
+
+Retrieve a variety of metrics about the current status of goat, including its PID,
+hostname, memory usage, number of HTTP/UDP hits, etc.
+
 Configuration
 
 goat is configured using a JSON file, which will be created under
