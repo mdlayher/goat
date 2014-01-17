@@ -89,12 +89,12 @@ func (db *dbw) LoadApiKey(id interface{}, col string) (apiKey, error) {
 
 // SaveApiKey saves an apiKey to the database
 func (db *dbw) SaveApiKey(key apiKey) error {
-	query := "INSERT INTO api_keys (`user_id`, `key`) " +
-		"VALUES (?, ?) ON DUPLICATE KEY UPDATE " +
-		"`key`=values(`key`);"
+	query := "INSERT INTO api_keys (`user_id`, `key`, `salt`) " +
+		"VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE " +
+		"`key`=values(`key`), `salt`=values(`salt`);"
 
 	tx := db.MustBegin()
-	tx.Execl(query, key.UserID, key.Key)
+	tx.Execl(query, key.UserID, key.Key, key.Salt)
 
 	return tx.Commit()
 }

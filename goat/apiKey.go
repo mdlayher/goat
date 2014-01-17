@@ -9,6 +9,7 @@ type apiKey struct {
 	ID     int
 	UserID int `db:"user_id"`
 	Key    string
+	Salt   string
 }
 
 // Save apiKey to storage

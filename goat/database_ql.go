@@ -41,11 +41,11 @@ var (
 		"announcelog_save":            "INSERT INTO announce_log VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,now());",
 
 		// apiKey
-		"apikey_load_id":      "SELECT id(),user_id,key FROM api_keys WHERE id()==$1",
-		"apikey_load_user_id": "SELECT id(),user_id,key FROM api_keys WHERE user_id==$1",
-		"apikey_load_key":     "SELECT id(),user_id,key FROM api_keys WHERE key==$1",
-		"apikey_insert":       "INSERT INTO api_keys VALUES ($1, $2)",
-		"apikey_update":       "UPDATE api_keys key=$1 WHERE id()==$1",
+		"apikey_load_id":      "SELECT id(),user_id,key,salt FROM api_keys WHERE id()==$1",
+		"apikey_load_user_id": "SELECT id(),user_id,key,salt FROM api_keys WHERE user_id==$1",
+		"apikey_load_key":     "SELECT id(),user_id,key,salt FROM api_keys WHERE key==$1",
+		"apikey_insert":       "INSERT INTO api_keys VALUES ($1, $2, $3)",
+		"apikey_update":       "UPDATE api_keys key=$2,salt=$3 WHERE id()==$1",
 
 		// fileRecord
 		"filerecord_load_all":         "SELECT id(),info_hash,verified,create_time,update_time FROM files",
@@ -253,6 +253,7 @@ func (db *qlw) LoadApiKey(id interface{}, col string) (apiKey, error) {
 			ID:     int(data[0].(int64)),
 			UserID: int(data[1].(int64)),
 			Key:    data[2].(string),
+			Salt:   data[3].(string),
 		}
 
 		return false, nil
@@ -264,9 +265,9 @@ func (db *qlw) LoadApiKey(id interface{}, col string) (apiKey, error) {
 // SaveApiKey saves an apiKey to the database
 func (db *qlw) SaveApiKey(key apiKey) (err error) {
 	if k, err := db.LoadApiKey(key.ID, "id"); (k == apiKey{}) && err == nil {
-		_, _, err = qlQuery(db, "apikey_insert", true, int64(key.UserID), key.Key)
+		_, _, err = qlQuery(db, "apikey_insert", true, int64(key.UserID), key.Key, key.Salt)
 	} else {
-		_, _, err = qlQuery(db, "apikey_update", true, k.ID, key.Key)
+		_, _, err = qlQuery(db, "apikey_update", true, k.ID, key.Key, key.Salt)
 	}
 
 	return

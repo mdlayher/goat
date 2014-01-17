@@ -50,15 +50,19 @@ func (a basicAPIAuthenticator) Auth(r *http.Request) bool {
 		return false
 	}
 
+	// Load user's API key
+	key := new(apiKey).Load(user.ID, "user_id")
+	if key == (apiKey{}) {
+		return false
+	}
+
 	// Hash input password
-	// TODO: use something better than SHA1, but still fast
 	sha := sha1.New()
-	sha.Write([]byte(credentials[1]))
+	sha.Write([]byte(credentials[1]+key.Salt))
 	hash := fmt.Sprintf("%x", sha.Sum(nil))
 
-	// Attempt to load user's API key from hash
-	key := new(apiKey).Load(hash, "key")
-	if key == (apiKey{}) {
+	// Verify hashes match
+	if hash != key.Key {
 		return false
 	}
 
