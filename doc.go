@@ -76,13 +76,74 @@ API Calls
 This list contains all API calls currently recognized by goat.  Each call must be
 authenticated using the aforementioned methods.
 
-	/api/files[/id]
+	GET /api/files
 
-Retrieve a list of all files tracked by goat.  If an ID is specified, retrieve the
-file with matching ID, with an additional list of fileUser records associated with
-that file.
+	$ curl --user username:password http://localhost:8080/api/files
+	[
+		{
+			"id":1,
+			"infoHash":"abcdef0123456789",
+			"verified":true,
+			"createTime":1389737644,
+			"updateTime":1389737644
+		}
+	]
 
-	/api/status
+Retrieve a list of all files tracked by goat.  Some extended attributes are not added
+to reduce strain on database, and to provide a more general overview.
+
+	GET /api/files/:id
+
+	$ curl --user username:password http://localhost:8080/api/files/1
+	{
+		"id":1,
+		"infoHash":"abcdef0123456789",
+		"verified":true,
+		"createTime":1389737644,
+		"updateTime":1389737644,
+		"completed":0,
+		"seeders":0,
+		"leechers":0,
+		"fileUsers": [
+			{
+				"fileId":1,
+				"userId":1,
+				"ip":"8.8.8.8",
+				"active":true,
+				"completed":false,
+				"announced":1,
+				"uploaded":0,
+				"downloaded":0,
+				"left":0,
+				"time":1389983002
+			}
+		]
+	}
+
+Retrieve extended attributes about a specific file with matching ID.  This provides
+counts for number of completions, seeders, leechers, and a list of fileUser relationships
+associated with a given file.
+
+	GET /api/status
+
+	$ curl --user username:password http://localhost:8080/api/status
+	{
+		"pid":27796,
+		"hostname":"goat",
+		"platform":"linux",
+		"architecture":"amd64",
+		"numCpu":4,
+		"numGoroutine":14,
+		"memoryMb":1.03678,
+		"http": {
+			"current":1,
+			"total":11
+		},
+		"udp": {
+			"current":1,
+			"total":2
+		}
+	}
 
 Retrieve a variety of metrics about the current status of goat, including its PID,
 hostname, memory usage, number of HTTP/UDP hits, etc.
