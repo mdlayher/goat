@@ -22,6 +22,9 @@ type jsonFileRecord struct {
 	Verified   bool             `json:"verified"`
 	CreateTime int64            `json:"createTime"`
 	UpdateTime int64            `json:"updateTime"`
+	Completed  int              `json:"completed"`
+	Seeders    int              `json:"seeders"`
+	Leechers   int              `json:"leechers"`
 	FileUsers  []fileUserRecord `json:"fileUsers"`
 }
 
@@ -43,6 +46,11 @@ func (f fileRecord) ToJSON() []byte {
 
 	// Load in fileUserRecords associated with this file
 	j.FileUsers = f.Users()
+
+	// Load counts for completions, seeding, leeching
+	j.Completed = f.Completed()
+	j.Seeders = f.Seeders()
+	j.Leechers = f.Leechers()
 
 	// Marshal into JSON
 	out, err := json.Marshal(j)
