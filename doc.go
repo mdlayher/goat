@@ -59,6 +59,9 @@ languages is a RESTful API, which is served using the HTTP or HTTPS listeners.  
 API enables easy retrieval of tracker statistics, while allowing goat to run as a
 completely independent process.
 
+It should be noted that the API is only enabled when configured, and when a HTTP or
+HTTPS listener is enabled.  Without a transport mechanism, the API will be inaccessible.
+
 Currently, the API is read-only, and only allows use of the HTTP GET method.  This
 may change in the future, but as of now, it doesn't make any sense to modify tracker
 parameters without doing a proper announce or scrape via BitTorrent client.
