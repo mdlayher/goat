@@ -286,7 +286,7 @@ func (db *dbw) LoadFileUserRepository(id interface{}, col string) ([]fileUserRec
 	rows, err := db.Queryx("SELECT * FROM files_users WHERE `"+col+"`=?", id)
 	files, user := []fileUserRecord{}, fileUserRecord{}
 
-	if err == nil && err != sql.ErrNoRows {
+	if err != nil && err != sql.ErrNoRows {
 		return files, err
 	}
 
