@@ -8,12 +8,12 @@ import (
 	"strings"
 )
 
-// APIError represents an error response from the API
+// apiError represents an error response from the API
 type apiError struct {
 	Error string `json:"error"`
 }
 
-// APIRouter handles the routing of HTTP API requests
+// apiRouter handles the routing of HTTP API requests
 func apiRouter(w http.ResponseWriter, r *http.Request) {
 	// API is read-only, at least for the time being
 	if r.Method != "GET" {
