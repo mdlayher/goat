@@ -8,6 +8,9 @@ import (
 
 // cronManager spawns and triggers events at regular intervals
 func cronManager() {
+	// Run on startup
+	go cronPeerReaper()
+
 	// cronPeerReaper - run at regular announce interval
 	peerReaper := time.NewTicker(time.Duration(static.Config.Interval) * time.Second)
 
