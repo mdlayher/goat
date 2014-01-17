@@ -39,6 +39,12 @@ func Manager(killChan chan bool, exitChan chan int) {
 	}
 	static.Config = config
 
+	// Check for sane announce interval (10 minutes or more)
+	if static.Config.Interval <= 600 {
+		log.Println("Announce interval must be at least 600 seconds.")
+		os.Exit(1)
+	}
+
 	// Attempt database connection
 	if !dbPing() {
 		log.Println("Cannot connect to database", dbName(), ", exiting now.")
