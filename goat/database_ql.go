@@ -264,10 +264,10 @@ func (db *qlw) LoadApiKey(id interface{}, col string) (apiKey, error) {
 
 // SaveApiKey saves an apiKey to the database
 func (db *qlw) SaveApiKey(key apiKey) (err error) {
-	if k, err := db.LoadApiKey(key.ID, "id"); (k == apiKey{}) && err == nil {
+	if k, _ := db.LoadApiKey(key.ID, "id"); (k == apiKey{}) && err == nil {
 		_, _, err = qlQuery(db, "apikey_insert", true, int64(key.UserID), key.Key, key.Salt)
 	} else {
-		_, _, err = qlQuery(db, "apikey_update", true, k.ID, key.Key, key.Salt)
+		_, _, err = qlQuery(db, "apikey_update", true, int64(k.ID), key.Key, key.Salt)
 	}
 
 	return
@@ -305,10 +305,10 @@ func (db *qlw) LoadFileRecord(id interface{}, col string) (fileRecord, error) {
 
 // SaveFileRecord saves a fileRecord to the database
 func (db *qlw) SaveFileRecord(f fileRecord) (err error) {
-	if fr, err := db.LoadFileRecord(f.ID, "id"); (fr == fileRecord{}) && err == nil {
+	if fr, _ := db.LoadFileRecord(f.ID, "id"); (fr == fileRecord{}) && err == nil {
 		_, _, err = qlQuery(db, "filerecord_insert", true, f.InfoHash, f.Verified)
 	} else {
-		_, _, err = qlQuery(db, "filerecord_update", true, f.ID, f.Verified)
+		_, _, err = qlQuery(db, "filerecord_update", true, int64(f.ID), f.Verified)
 	}
 
 	return
