@@ -193,9 +193,6 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create channel to return response to client
-	resChan := make(chan []byte)
-
 	// Tracker announce
 	if url == "announce" {
 		// Validate required parameter input
@@ -207,7 +204,6 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 		for _, r := range required {
 			if query.Get(r) == "" {
 				w.Write(httpTrackerError("Missing required parameter: " + r))
-				close(resChan)
 				return
 			}
 		}
@@ -218,7 +214,6 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 				_, err := strconv.Atoi(query.Get(r))
 				if err != nil {
 					w.Write(httpTrackerError("Invalid integer parameter: " + r))
-					close(resChan)
 					return
 				}
 			}
@@ -227,19 +222,19 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 		// Only allow compact announce
 		if query.Get("compact") == "" || query.Get("compact") != "1" {
 			w.Write(httpTrackerError("Your client does not support compact announce"))
-			close(resChan)
 			return
 		}
 
 		// Perform tracker announce
-		go trackerAnnounce(user, query, nil, resChan)
-		// Tracker scrape
-	} else if url == "scrape" {
-		go trackerScrape(user, query, resChan)
+		w.Write(trackerAnnounce(user, query, nil))
+		return
 	}
 
-	// Wait for response, and send it when ready
-	w.Write(<-resChan)
-	close(resChan)
+	// Tracker scrape
+	if url == "scrape" {
+		w.Write(trackerScrape(user, query))
+		return
+	}
+
 	return
 }
