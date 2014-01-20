@@ -13,13 +13,10 @@ before_script:
   - mysql goat < res/mysql/scrape_log.sql
   - mysql goat < res/mysql/users.sql
   - mysql goat < res/mysql/whitelist.sql
-  - mysql -e "INSERT INTO goat.files VALUES (null, '6465616462656566', 1, UNIX_TIMESTAMP(), UNIX_TIMESTAMP())"
   - mysql -e "UPDATE mysql.user SET password=PASSWORD('travis') WHERE user='travis'; FLUSH PRIVILEGES"
 script:
   - go build -o bin/goat
-  - ./bin/goat -test &
-  - sleep 1
-  - curl http://localhost:8080/announce\?info_hash\=deadbeef\&port\=5000\&uploaded\=0\&downloaded\=0\&left\=10\&compact\=1
-  - sleep 5
+  - ./bin/goat -test
+  - go test github.com/mdlayher/goat/goat/
   - go build -tags='ql' -o bin/goat
   - ./bin/goat -test

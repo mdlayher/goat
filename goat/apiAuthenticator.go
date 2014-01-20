@@ -58,7 +58,7 @@ func (a basicAPIAuthenticator) Auth(r *http.Request) bool {
 
 	// Hash input password
 	sha := sha1.New()
-	sha.Write([]byte(credentials[1]+key.Salt))
+	sha.Write([]byte(credentials[1] + key.Salt))
 	hash := fmt.Sprintf("%x", sha.Sum(nil))
 
 	// Verify hashes match

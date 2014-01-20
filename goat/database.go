@@ -34,10 +34,12 @@ type dbModel interface {
 	SaveAnnounceLog(announceLog) error
 
 	// --- apiKey.go ---
+	DeleteApiKey(interface{}, string) error
 	LoadApiKey(interface{}, string) (apiKey, error)
 	SaveApiKey(apiKey) error
 
 	// --- fileRecord.go ---
+	DeleteFileRecord(interface{}, string) error
 	LoadFileRecord(interface{}, string) (fileRecord, error)
 	SaveFileRecord(fileRecord) error
 	CountFileRecordCompleted(int) (int, error)
@@ -58,6 +60,7 @@ type dbModel interface {
 	SaveScrapeLog(scrapeLog) error
 
 	// --- userRecord.go ---
+	DeleteUserRecord(interface{}, string) error
 	LoadUserRecord(interface{}, string) (userRecord, error)
 	SaveUserRecord(userRecord) error
 	GetUserUploaded(int) (int64, error)

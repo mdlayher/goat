@@ -66,6 +66,24 @@ func (f fileRecord) ToJSON() []byte {
 type fileRecordRepository struct {
 }
 
+// Delete fileRecord from storage
+func (f fileRecord) Delete() bool {
+	// Open database connection
+	db, err := dbConnect()
+	if err != nil {
+		log.Println(err.Error())
+		return false
+	}
+
+	// Delete fileRecord
+	if err = db.DeleteFileRecord(f.ID, "id"); err != nil {
+		log.Println(err.Error())
+		return false
+	}
+
+	return true
+}
+
 // Save fileRecord to storage
 func (f fileRecord) Save() bool {
 	// Open database connection

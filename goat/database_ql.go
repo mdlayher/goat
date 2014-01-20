@@ -42,6 +42,7 @@ var (
 		"announcelog_save":            "INSERT INTO announce_log VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,now());",
 
 		// apiKey
+		"apikey_delete_id":    "DELETE FROM api_keys WHERE id()==$1",
 		"apikey_load_id":      "SELECT id(),user_id,key,salt FROM api_keys WHERE id()==$1",
 		"apikey_load_user_id": "SELECT id(),user_id,key,salt FROM api_keys WHERE user_id==$1",
 		"apikey_load_key":     "SELECT id(),user_id,key,salt FROM api_keys WHERE key==$1",
@@ -49,6 +50,7 @@ var (
 		"apikey_update":       "UPDATE api_keys key=$2,salt=$3 WHERE id()==$1",
 
 		// fileRecord
+		"filerecord_delete_id":        "DELETE FROM files WHERE id()==$1",
 		"filerecord_load_all":         "SELECT id(),info_hash,verified,create_time,update_time FROM files",
 		"filerecord_load_id":          "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE id()==$1 ORDER BY id()",
 		"filerecord_load_info_hash":   "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE info_hash==$1 ORDER BY id()",
@@ -78,6 +80,7 @@ var (
 		"scrapelog_insert":         "INSERT INTO scrape_log VALUES ($1, $2, $3, now())",
 
 		// userRecord
+		"user_delete_id":          "DELETE FROM users WHERE id()==$1",
 		"user_load_id":            "SELECT id(),username,passkey,torrent_limit FROM users WHERE id()==$1",
 		"user_load_username":      "SELECT id(),username,passkey,torrent_limit FROM users WHERE username==$1",
 		"user_load_passkey":       "SELECT id(),username,passkey,torrent_limit FROM users WHERE passkey==$1",
@@ -246,6 +249,12 @@ func (db *qlw) SaveAnnounceLog(a announceLog) (err error) {
 
 // --- apiKey.go ---
 
+// DeleteApiKey deletes an announceLog using a defined ID and column for query
+func (db *qlw) DeleteApiKey(id interface{}, col string) (err error) {
+	_, _, err = qlQuery(db, "apikey_delete_"+col, true, id)
+	return
+}
+
 // LoadApiKey loads an apiKey using a defined ID and column for query
 func (db *qlw) LoadApiKey(id interface{}, col string) (apiKey, error) {
 	rs, _, err := qlQuery(db, "apikey_load_"+col, true, id)
@@ -281,6 +290,12 @@ func (db *qlw) SaveApiKey(key apiKey) (err error) {
 }
 
 // --- fileRecord.go ---
+
+// DeleteFileRecord deletes an announceLog using a defined ID and column for query
+func (db *qlw) DeleteFileRecord(id interface{}, col string) (err error) {
+	_, _, err = qlQuery(db, "filerecord_delete_"+col, true, id)
+	return
+}
 
 // LoadFileRecord loads a fileRecord using a defined ID and column for query
 func (db *qlw) LoadFileRecord(id interface{}, col string) (fileRecord, error) {
@@ -510,6 +525,12 @@ func (db *qlw) SaveScrapeLog(s scrapeLog) (err error) {
 }
 
 // --- userRecord.go ---
+
+// DeleteUserRecord deletes an announceLog using a defined ID and column for query
+func (db *qlw) DeleteUserRecord(id interface{}, col string) (err error) {
+	_, _, err = qlQuery(db, "user_delete_"+col, true, id)
+	return
+}
 
 // LoadUserRecord loads a userRecord using a defined ID and column for query
 func (db *qlw) LoadUserRecord(id interface{}, col string) (userRecord, error) {

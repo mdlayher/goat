@@ -35,7 +35,7 @@ func cronPeerReaper() {
 	// Load all files
 	files := new(fileRecordRepository).All()
 	if len(files) == 0 {
-		log.Println("cronPeerReaper: could not retrieve list of files")
+		log.Println("cronPeerReaper: no files found")
 		return
 	}
 

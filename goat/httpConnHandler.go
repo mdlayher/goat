@@ -86,14 +86,6 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// API enabled
 		if static.Config.API {
-			// If configured, use redis for rate limiting
-			if static.Config.Redis {
-				if !apiRateLimit(strings.Split(r.RemoteAddr, ":")[0]) {
-					http.Error(w, string(apiErrorResponse("Rate limit exceeded")), 429)
-					return
-				}
-			}
-
 			// API authentication
 			auth := new(basicAPIAuthenticator).Auth(r)
 			if !auth {
@@ -224,6 +216,11 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 			w.Write(httpTrackerError("Your client does not support compact announce"))
 			return
 		}
+
+		// NOTE: currently, we do not bother using gzip to compress the tracker announce response
+		// This is done for two reasons:
+		// 1) Clients may or may not support gzip in the first place
+		// 2) gzip may actually make announce response larger, as per testing in What.CD's ocelot
 
 		// Perform tracker announce
 		w.Write(trackerAnnounce(user, query, nil))
