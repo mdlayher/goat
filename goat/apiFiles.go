@@ -6,22 +6,19 @@ import (
 )
 
 // GetFilesJSON returns a JSON representation of one or more fileRecords
-func getFilesJSON(ID int, resChan chan []byte) {
+func getFilesJSON(ID int) []byte {
 	// Check for a valid integer ID
 	if ID > 0 {
 		// Load file
-		resChan <- new(fileRecord).Load(ID, "id").ToJSON()
-		return
+		return new(fileRecord).Load(ID, "id").ToJSON()
 	}
 
 	// Marshal into JSON
 	res, err := json.Marshal(new(fileRecordRepository).All())
 	if err != nil {
 		log.Println(err.Error())
-		resChan <- nil
-		return
+		return nil
 	}
 
-	resChan <- res
-	return
+	return res
 }
