@@ -46,6 +46,6 @@ func TestAPIRouter(t *testing.T) {
 		}
 
 		log.Printf("OK - %s %s -> HTTP %d", test.method, test.url, w.Code)
-		log.Println(w.Body.String())
+		log.Printf(w.Body.String())
 	}
 }
