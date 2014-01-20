@@ -229,6 +229,12 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Tracker scrape
 	if url == "scrape" {
+		// Check for required parameter info_hash
+		if query.Get("info_hash") == "" {
+			w.Write(httpTrackerError("Missing required parameter: info_hash"))
+			return
+		}
+
 		w.Write(trackerScrape(user, query))
 		return
 	}
