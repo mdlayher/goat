@@ -117,6 +117,14 @@ func (db *dbw) SaveApiKey(key apiKey) error {
 
 // --- fileRecord.go ---
 
+// DeleteFileRecord deletes an announceLog using a defined ID and column
+func (db *dbw) DeleteFileRecord(id interface{}, col string) error {
+	tx := db.MustBegin()
+	tx.Execl("DELETE FROM files WHERE `"+col+"` = ?", id)
+
+	return tx.Commit()
+}
+
 // LoadFileRecord loads a fileRecord using a defined ID and column for query
 func (db *dbw) LoadFileRecord(id interface{}, col string) (fileRecord, error) {
 	data := fileRecord{}

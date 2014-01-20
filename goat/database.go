@@ -39,6 +39,7 @@ type dbModel interface {
 	SaveApiKey(apiKey) error
 
 	// --- fileRecord.go ---
+	DeleteFileRecord(interface{}, string) error
 	LoadFileRecord(interface{}, string) (fileRecord, error)
 	SaveFileRecord(fileRecord) error
 	CountFileRecordCompleted(int) (int, error)

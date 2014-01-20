@@ -50,6 +50,7 @@ var (
 		"apikey_update":       "UPDATE api_keys key=$2,salt=$3 WHERE id()==$1",
 
 		// fileRecord
+		"filerecord_delete_id":        "DELETE FROM files WHERE id()==$1",
 		"filerecord_load_all":         "SELECT id(),info_hash,verified,create_time,update_time FROM files",
 		"filerecord_load_id":          "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE id()==$1 ORDER BY id()",
 		"filerecord_load_info_hash":   "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE info_hash==$1 ORDER BY id()",
@@ -289,6 +290,12 @@ func (db *qlw) SaveApiKey(key apiKey) (err error) {
 }
 
 // --- fileRecord.go ---
+
+// DeleteFileRecord deletes an announceLog using a defined ID and column for query
+func (db *qlw) DeleteFileRecord(id interface{}, col string) (err error) {
+	_, _, err = qlQuery(db, "filerecord_delete_"+col, true, id)
+	return
+}
 
 // LoadFileRecord loads a fileRecord using a defined ID and column for query
 func (db *qlw) LoadFileRecord(id interface{}, col string) (fileRecord, error) {
