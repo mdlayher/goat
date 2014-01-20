@@ -83,6 +83,14 @@ func (db *dbw) SaveAnnounceLog(a announceLog) error {
 
 // --- apiKey.go ---
 
+// DeleteApiKey deletes an apiKey using a defined ID and column
+func (db *dbw) DeleteApiKey(id interface{}, col string) error {
+	tx := db.MustBegin()
+	tx.Execl("DELETE FROM api_keys WHERE `"+col+"` = ?", id)
+
+	return tx.Commit()
+}
+
 // LoadApiKey loads an apiKey using a defined ID and column for query
 func (db *dbw) LoadApiKey(id interface{}, col string) (apiKey, error) {
 	key := apiKey{}
@@ -333,6 +341,14 @@ func (db *dbw) SaveScrapeLog(s scrapeLog) error {
 }
 
 // --- userRecord.go ---
+
+// DeleteUserRecord deletes a userRecord using a defined ID and column
+func (db *dbw) DeleteUserRecord(id interface{}, col string) error {
+	tx := db.MustBegin()
+	tx.Execl("DELETE FROM users WHERE `"+col+"` = ?", id)
+
+	return tx.Commit()
+}
 
 // LoadUserRecord loads a userRecord using a defined ID and column for query
 func (db *dbw) LoadUserRecord(id interface{}, col string) (userRecord, error) {

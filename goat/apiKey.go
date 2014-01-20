@@ -12,6 +12,24 @@ type apiKey struct {
 	Salt   string
 }
 
+// Delete apiKey from storage
+func (a apiKey) Delete() bool {
+	// Open database connection
+	db, err := dbConnect()
+	if err != nil {
+		log.Println(err.Error())
+		return false
+	}
+
+	// Delete apiKey
+	if err = db.DeleteApiKey(a.ID, "id"); err != nil {
+		log.Println(err.Error())
+		return false
+	}
+
+	return true
+}
+
 // Save apiKey to storage
 func (a apiKey) Save() bool {
 	// Open database connection

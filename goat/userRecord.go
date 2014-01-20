@@ -12,6 +12,24 @@ type userRecord struct {
 	TorrentLimit int `db:"torrent_limit"`
 }
 
+// Delete userRecord from storage
+func (a userRecord) Delete() bool {
+	// Open database connection
+	db, err := dbConnect()
+	if err != nil {
+		log.Println(err.Error())
+		return false
+	}
+
+	// Delete userRecord
+	if err = db.DeleteUserRecord(a.ID, "id"); err != nil {
+		log.Println(err.Error())
+		return false
+	}
+
+	return true
+}
+
 // Save userRecord to storage
 func (u userRecord) Save() bool {
 	// Open database connection
