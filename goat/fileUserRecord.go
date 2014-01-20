@@ -22,6 +22,24 @@ type fileUserRecord struct {
 type fileUserRecordRepository struct {
 }
 
+// Delete fileUserRecord from storage
+func (f fileUserRecord) Delete() bool {
+	// Open database connection
+	db, err := dbConnect()
+	if err != nil {
+		log.Println(err.Error())
+		return false
+	}
+
+	// Delete fileUserRecord
+	if err = db.DeleteFileUserRecord(f.FileID, f.UserID, f.IP); err != nil {
+		log.Println(err.Error())
+		return false
+	}
+
+	return true
+}
+
 // Save fileUserRecord to storage
 func (f fileUserRecord) Save() bool {
 	// Open database connection

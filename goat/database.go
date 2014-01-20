@@ -51,6 +51,7 @@ type dbModel interface {
 	GetAllFileRecords() ([]fileRecord, error)
 
 	// --- fileUserRecord.go ---
+	DeleteFileUserRecord(int, int, string) error
 	LoadFileUserRecord(int, int, string) (fileUserRecord, error)
 	SaveFileUserRecord(fileUserRecord) error
 	LoadFileUserRepository(interface{}, string) ([]fileUserRecord, error)

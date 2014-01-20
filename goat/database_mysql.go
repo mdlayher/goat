@@ -276,7 +276,15 @@ func (db *dbw) GetAllFileRecords() ([]fileRecord, error) {
 
 // --- fileUserRecord.go ---
 
-// LoadFileUserRecord loads a fileUserRecord using a defined ID and column for query
+// DeleteFileUserRecord deletes a fileUserRecord using using a file ID, user ID, and IP triple
+func (db *dbw) DeleteFileUserRecord(fid, uid int, ip string) error {
+	tx := db.MustBegin()
+	tx.Execl("DELETE FROM files_users WHERE `file_id`=? AND `user_id`=? AND `ip`=?", fid, uid, ip)
+
+	return tx.Commit()
+}
+
+// LoadFileUserRecord loads a fileUserRecord using a file ID, user ID, and IP triple
 func (db *dbw) LoadFileUserRecord(fid, uid int, ip string) (fileUserRecord, error) {
 	query := "SELECT * FROM files_users WHERE `file_id`=? AND `user_id`=? AND `ip`=?;"
 

@@ -61,6 +61,7 @@ var (
 		"filerecord_update":           "UPDATE files verified=$2,update_time=now() WHERE id()==$1",
 
 		// fileUser
+		"fileuser_delete":          "DELETE FROM files_users WHERE file_id==$1 && user_id==$2 && ip==$3",
 		"fileuser_load":            "SELECT * FROM files_users WHERE file_id==$1 && user_id==$2 && ip==$3",
 		"fileuser_load_file_id":    "SELECT * FROM files_users WHERE file_id==$1",
 		"fileuser_count_completed": "SELECT count(user_id) FROM files_users WHERE file_id==$1 && completed==true && left==0",
@@ -422,7 +423,13 @@ func (db *qlw) GetAllFileRecords() (files []fileRecord, err error) {
 
 // --- fileUserRecord.go ---
 
-// LoadFileUserRecord loads a fileUserRecord using a defined ID and column for query
+// DeleteUserRecord deletes an announceLog using a file ID, user ID, and IP triple
+func (db *qlw) DeleteFileUserRecord(fid, uid int, ip string) (err error) {
+	_, _, err = qlQuery(db, "fileuser_delete", true, int64(fid), int64(uid), ip)
+	return
+}
+
+// LoadFileUserRecord loads a fileUserRecord using a file ID, user ID, and IP triple
 func (db *qlw) LoadFileUserRecord(fid, uid int, ip string) (fileUserRecord, error) {
 	rs, _, err := qlQuery(db, "fileuser_load", true, int64(fid), int64(uid), ip)
 
