@@ -17,6 +17,7 @@ before_script:
   - mysql -e "UPDATE mysql.user SET password=PASSWORD('travis') WHERE user='travis'; FLUSH PRIVILEGES"
 script:
   - go build -o bin/goat
+  - go test github.com/mdlayher/goat/goat/
   - ./bin/goat -test &
   - sleep 1
   - curl http://localhost:8080/announce\?info_hash\=deadbeef\&port\=5000\&uploaded\=0\&downloaded\=0\&left\=10\&compact\=1
