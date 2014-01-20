@@ -80,14 +80,14 @@ func getServerStatus() serverStatus {
 }
 
 // GetStatusJSON returns a JSON representation of server status
-func getStatusJSON(resChan chan []byte) {
+func getStatusJSON() []byte {
 	// Marshal into JSON from request
 	res, err := json.Marshal(getServerStatus())
 	if err != nil {
 		log.Println(err.Error())
-		resChan <- nil
+		return nil
 	}
 
 	// Return status
-	resChan <- res
+	return res
 }

@@ -1,6 +1,7 @@
 package goat
 
 import (
+	"compress/gzip"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -45,26 +46,38 @@ func apiRouter(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// API response chan
-	apiChan := make(chan []byte)
+	// Response buffer
+	res := make([]byte, 0)
 
 	// Choose API method
 	switch urlArr[2] {
 	// Files on tracker
 	case "files":
-		go getFilesJSON(ID, apiChan)
+		res = getFilesJSON(ID)
 	// Server status
 	case "status":
-		go getStatusJSON(apiChan)
+		res = getStatusJSON()
 	// Return error response
 	default:
 		http.Error(w, string(apiErrorResponse("Undefined API call")), 404)
-		close(apiChan)
 		return
 	}
 
-	w.Write(<-apiChan)
-	close(apiChan)
+	// If requested, compress response using gzip
+	if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+		w.Header().Add("Content-Encoding", "gzip")
+
+		// Write gzip'd response
+		gz := gzip.NewWriter(w)
+		defer gz.Close()
+		if _, err := gz.Write(res); err != nil {
+			log.Println(err.Error())
+		}
+
+		return
+	}
+
+	w.Write(res)
 	return
 }
 

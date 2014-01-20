@@ -199,11 +199,7 @@ func handleUDP(l *net.UDPConn, udpDoneChan chan bool) {
 			query.Set("port", strconv.FormatInt(t, 10))
 
 			// Trigger an anonymous announce
-			resChan := make(chan []byte)
-			go trackerAnnounce(userRecord{}, query, transID, resChan)
-
-			_, err = l.WriteToUDP(<-resChan, addr)
-			close(resChan)
+			_, err = l.WriteToUDP(trackerAnnounce(userRecord{}, query, transID), addr)
 			if err != nil {
 				log.Println(err.Error())
 				return

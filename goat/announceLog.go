@@ -61,6 +61,24 @@ func (a announceLog) Load(ID interface{}, col string) announceLog {
 	return a
 }
 
+// Delete announceLog from storage
+func (a announceLog) Delete() bool {
+	// Open database connection
+	db, err := dbConnect()
+	if err != nil {
+		log.Println(err.Error())
+		return false
+	}
+
+	// Delete announceLog
+	if err = db.DeleteAnnounceLog(a.ID, "id"); err != nil {
+		log.Println(err.Error())
+		return false
+	}
+
+	return true
+}
+
 // FromValues generates an announceLog struct from a url.Values map
 func (a announceLog) FromValues(query url.Values) announceLog {
 	a = announceLog{}
