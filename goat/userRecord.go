@@ -13,7 +13,7 @@ type userRecord struct {
 }
 
 // Delete userRecord from storage
-func (a userRecord) Delete() bool {
+func (u userRecord) Delete() bool {
 	// Open database connection
 	db, err := dbConnect()
 	if err != nil {
@@ -22,7 +22,7 @@ func (a userRecord) Delete() bool {
 	}
 
 	// Delete userRecord
-	if err = db.DeleteUserRecord(a.ID, "id"); err != nil {
+	if err = db.DeleteUserRecord(u.ID, "id"); err != nil {
 		log.Println(err.Error())
 		return false
 	}

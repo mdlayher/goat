@@ -1,12 +1,15 @@
 package goat
 
 import (
+	"log"
 	"net/url"
 	"testing"
 )
 
 // TestAnnounceLog verifies that announce log creation, save, load, and delete work properly
 func TestAnnounceLog(t *testing.T) {
+	log.Println("TestAnnounceLog()")
+
 	// Load config
 	config := loadConfig()
 	static.Config = config

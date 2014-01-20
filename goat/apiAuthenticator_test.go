@@ -4,12 +4,15 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"fmt"
+	"log"
 	"net/http"
 	"testing"
 )
 
 // TestBasicAPIAuthenticator verifies that basicAPIAuthenticator.Auth works properly
 func TestBasicAPIAuthenticator(t *testing.T) {
+	log.Println("TestBasicAPIAuthenticator()")
+
 	// Load config
 	config := loadConfig()
 	static.Config = config
