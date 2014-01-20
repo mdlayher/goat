@@ -63,15 +63,6 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 	// Add header to identify goat
 	w.Header().Add("Server", fmt.Sprintf("%s/%s", App, Version))
 
-	// Parse querystring into a Values map
-	query := r.URL.Query()
-
-	// Check if IP was previously set
-	if query.Get("ip") == "" {
-		// If no IP set, detect and store it in query map
-		query.Set("ip", strings.Split(r.RemoteAddr, ":")[0])
-	}
-
 	// Store current URL path
 	url := r.URL.Path
 
@@ -146,6 +137,15 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 
 			return
 		}
+	}
+
+	// Parse querystring into a Values map
+	query := r.URL.Query()
+
+	// Check if IP was previously set
+	if query.Get("ip") == "" {
+		// If no IP set, detect and store it in query map
+		query.Set("ip", strings.Split(r.RemoteAddr, ":")[0])
 	}
 
 	// Put client in query map
