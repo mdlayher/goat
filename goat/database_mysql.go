@@ -50,6 +50,14 @@ type dbw struct {
 
 // --- announceLog.go ---
 
+// DeleteAnnounceLog deletes an announceLog using a defined ID and column
+func (db *dbw) DeleteAnnounceLog(id interface{}, col string) error {
+	tx := db.MustBegin()
+	tx.Execl("DELETE FROM announce_log WHERE `"+col+"` = ?", id)
+
+	return tx.Commit()
+}
+
 // LoadAnnounceLog loads an announceLog using a defined ID and column for query
 func (db *dbw) LoadAnnounceLog(id interface{}, col string) (announceLog, error) {
 	data := announceLog{}

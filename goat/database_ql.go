@@ -25,6 +25,7 @@ var (
 	// Map of all queries available to ql
 	qlq = map[string]string{
 		// announceLog
+		"announcelog_delete_id":       "DELETE FROM announce_log WHERE id()==$1",
 		"announcelog_load_id":         "SELECT id(),info_hash,passkey,key,ip,port,udp,uploaded,downloaded,left,event,client,ts FROM announce_log WHERE id()==$1 ORDER BY id()",
 		"announcelog_load_info_hash":  "SELECT id(),info_hash,passkey,key,ip,port,udp,uploaded,downloaded,left,event,client,ts FROM announce_log WHERE info_hash==$1 ORDER BY id()",
 		"announcelog_load_passkey":    "SELECT id(),info_hash,passkey,key,ip,port,udp,uploaded,downloaded,left,event,client,ts FROM announce_log WHERE passkey==$1 ORDER BY id()",
@@ -192,6 +193,12 @@ func (db *qlw) NewTransaction() qltx {
 }
 
 // --- announceLog.go ---
+
+// DeleteAnnounceLog deletes an announceLog using a defined ID and column for query
+func (db *qlw) DeleteAnnounceLog(id interface{}, col string) (err error) {
+	_, _, err = qlQuery(db, "announcelog_delete_"+col, true, id)
+	return
+}
 
 // LoadAnnounceLog loads an announceLog using a defined ID and column for query
 func (db *qlw) LoadAnnounceLog(id interface{}, col string) (announceLog, error) {

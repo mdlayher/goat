@@ -29,6 +29,7 @@ func dbPing() bool {
 // dbModel represents a database interface, and defines functions which act on it
 type dbModel interface {
 	// --- announceLog.go ---
+	DeleteAnnounceLog(interface{}, string) error
 	LoadAnnounceLog(interface{}, string) (announceLog, error)
 	SaveAnnounceLog(announceLog) error
 
