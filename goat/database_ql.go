@@ -529,16 +529,16 @@ func (db *qlw) LoadUserRecord(id interface{}, col string) (userRecord, error) {
 
 // SaveUserRecord saves a userRecord to the database
 func (db *qlw) SaveUserRecord(u userRecord) (err error) {
-	if user, e := db.LoadUserRecord(u.ID, "id"); (user == userRecord{}) {
+	if user, e := db.LoadUserRecord(int64(u.ID), "id"); (user == userRecord{}) {
 		if nil == e {
 			_, _, err = qlQuery(db, "user_insert", true,
-				u.Username, u.Passkey, u.TorrentLimit)
+				u.Username, u.Passkey, int64(u.TorrentLimit))
 		} else {
 			err = e
 		}
 	} else {
 		_, _, err = qlQuery(db, "user_update", true,
-			user.ID, u.Username, u.Passkey, u.TorrentLimit)
+			int64(user.ID), u.Username, u.Passkey, int64(u.TorrentLimit))
 	}
 
 	return
