@@ -42,7 +42,6 @@ func redisPing() bool {
 func redisDo(command string, args ...interface{}) (interface{}, error) {
 	// Open Redis connection
 	c, err := redisConnect()
-	defer c.Close()
 	if err != nil {
 		log.Println(err.Error())
 		return nil, errors.New("redisDo: failed to connect to redis")
@@ -53,6 +52,10 @@ func redisDo(command string, args ...interface{}) (interface{}, error) {
 	if err != nil {
 		log.Println(err.Error())
 		return nil, errors.New("redisDo: failed to send command to redis: " + command)
+	}
+
+	if err := c.Close(); err != nil {
+		log.Println(err.Error())
 	}
 
 	return reply, nil

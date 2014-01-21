@@ -24,7 +24,11 @@ func main() {
 			time.Sleep(5 * time.Second)
 
 			fmt.Println(goat.App, ": test mode triggering graceful shutdown")
-			syscall.Kill(os.Getpid(), syscall.SIGTERM)
+			err := syscall.Kill(os.Getpid(), syscall.SIGTERM)
+			if err != nil {
+				fmt.Println(goat.App, ": failed to invoke graceful shutdown, halting")
+				os.Exit(1)
+			}
 		}()
 	}
 

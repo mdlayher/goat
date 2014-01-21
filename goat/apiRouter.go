@@ -69,15 +69,22 @@ func apiRouter(w http.ResponseWriter, r *http.Request) {
 
 		// Write gzip'd response
 		gz := gzip.NewWriter(w)
-		defer gz.Close()
 		if _, err := gz.Write(res); err != nil {
+			log.Println(err.Error())
+			return
+		}
+
+		if err := gz.Close(); err != nil {
 			log.Println(err.Error())
 		}
 
 		return
 	}
 
-	w.Write(res)
+	if _, err := w.Write(res); err != nil {
+		log.Println(err.Error())
+	}
+
 	return
 }
 

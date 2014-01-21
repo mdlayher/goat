@@ -38,7 +38,11 @@ func init() {
 			return false
 		}
 
-		db.(*dbw).Close()
+		if err = db.(*dbw).Close(); err != nil {
+			log.Println(err.Error())
+			return false
+		}
+
 		return true
 	}
 }
@@ -215,7 +219,11 @@ func (db *dbw) GetFileRecordPeerList(infohash, exclude string, limit int) ([]byt
 	buf := make([]byte, 0)
 
 	for rows.Next() {
-		rows.StructScan(&result)
+		if err = rows.StructScan(&result); err != nil {
+			log.Println(err.Error())
+			break
+		}
+
 		buf = append(buf, ip2b(result.IP, result.Port)...)
 	}
 
@@ -267,7 +275,10 @@ func (db *dbw) GetAllFileRecords() ([]fileRecord, error) {
 	}
 
 	for rows.Next() {
-		rows.StructScan(&file)
+		if err = rows.StructScan(&file); err != nil {
+			break
+		}
+
 		files = append(files[:], file)
 	}
 
@@ -323,7 +334,11 @@ func (db *dbw) LoadFileUserRepository(id interface{}, col string) ([]fileUserRec
 	}
 
 	for rows.Next() {
-		rows.StructScan(&user)
+		if err = rows.StructScan(&user); err != nil {
+			log.Println(err.Error())
+			break
+		}
+
 		files = append(files[:], user)
 	}
 

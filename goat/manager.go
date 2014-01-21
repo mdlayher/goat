@@ -99,7 +99,9 @@ func Manager(killChan chan bool, exitChan chan int) {
 			go func() {
 				time.Sleep(10 * time.Second)
 				log.Println("Timeout reached, triggering force halt")
-				syscall.Kill(os.Getpid(), syscall.SIGTERM)
+				if err := syscall.Kill(os.Getpid(), syscall.SIGTERM); err != nil {
+					log.Println(err.Error())
+				}
 			}()
 
 			// Stop listeners
