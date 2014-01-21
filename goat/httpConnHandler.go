@@ -34,38 +34,12 @@ func handleHTTP(l net.Listener, httpDoneChan chan bool) {
 
 	// Serve HTTP requests
 	if err := http.Serve(l, nil); err != nil {
-		log.Println(err.Error())
-		log.Println("Could not serve HTTP, exiting now")
-		os.Exit(1)
-	}
-}
-
-// Handle incoming HTTPS connections and serve
-func handleHTTPS(l net.Listener, httpsDoneChan chan bool) {
-	// Create shutdown function
-	go func(l net.Listener, httpsDoneChan chan bool) {
-		// Wait for done signal
-		<-static.ShutdownChan
-
-		// Close listener
-		if err := l.Close(); err != nil {
+		// Ignore connection closing error, caused by stopping listener
+		if !strings.Contains(err.Error(), "use of closed network connection") {
 			log.Println(err.Error())
+			log.Println("Could not serve HTTP(S), exiting now")
+			os.Exit(1)
 		}
-
-		log.Println("HTTPS listener stopped")
-		httpsDoneChan <- true
-	}(l, httpsDoneChan)
-
-	// Log API configuration
-	if static.Config.API {
-		log.Println("SSL API functionality enabled")
-	}
-
-	// Serve HTTPS requests
-	if err := http.Serve(l, nil); err != nil {
-		log.Println(err.Error())
-		log.Println("Could not serve HTTPS, exiting now")
-		os.Exit(1)
 	}
 }
 
