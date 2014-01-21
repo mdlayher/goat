@@ -74,7 +74,7 @@ var (
 		"fileuser_update":          "UPDATE files_users active=$4,completed=$5,announced=$6,uploaded=$7,downloaded=$8,left=$9,ts=now() WHERE file_id==$1 && user_id==$2 && ip==$3",
 
 		// scrapeLog
-		"scrapelog_delete_id":      "DELETE FROM scrape_log WHERE id()==$1"
+		"scrapelog_delete_id":      "DELETE FROM scrape_log WHERE id()==$1",
 		"scrapelog_load_id":        "SELECT id(),info_hash,passkey,ip,ts FROM scrape_log WHERE id()==$1",
 		"scrapelog_load_info_hash": "SELECT id(),info_hash,passkey,ip,ts FROM scrape_log WHERE info_hash==$1",
 		"scrapelog_load_passkey":   "SELECT id(),info_hash,passkey,ip,ts FROM scrape_log WHERE passkey==$1",
