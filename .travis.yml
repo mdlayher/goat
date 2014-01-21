@@ -15,10 +15,10 @@ before_script:
   - mysql goat < res/mysql/whitelist.sql
   - mysql -e "UPDATE mysql.user SET password=PASSWORD('travis') WHERE user='travis'; FLUSH PRIVILEGES"
 script:
-  - go test github.com/mdlayher/goat/goat/
-  - go get github.com/kisielk/errcheck
-  - errcheck github.com/mdlayher/goat/goat/
   - go build -o bin/goat
   - ./bin/goat -test
+  - go test github.com/mdlayher/goat/goat/
+  - go get github.com/kisielk/errcheck
+  - $GOPATH/bin/errcheck github.com/mdlayher/goat/goat/
   - go build -tags='ql' -o bin/goat
   - ./bin/goat -test
