@@ -12,16 +12,16 @@ func TestFileUserRecord(t *testing.T) {
 
 	// Generate mock fileUserRecord
 	fileUser := fileUserRecord{
-		FileID: 1,
-		UserID: 1,
-		IP: "127.0.0.1",
-		Active: true,
-		Completed: true,
-		Announced: 10,
-		Uploaded: 5000,
+		FileID:     1,
+		UserID:     1,
+		IP:         "127.0.0.1",
+		Active:     true,
+		Completed:  true,
+		Announced:  10,
+		Uploaded:   5000,
 		Downloaded: 5000,
-		Left: 0,
-		Time: time.Now().Unix(),
+		Left:       0,
+		Time:       time.Now().Unix(),
 	}
 
 	// Save mock fileUser

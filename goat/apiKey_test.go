@@ -16,8 +16,8 @@ func TestApiKey(t *testing.T) {
 	// Generate mock apiKey
 	key := apiKey{
 		UserID: 1,
-		Key: "deadbeef",
-		Salt: "test",
+		Key:    "deadbeef",
+		Salt:   "test",
 	}
 
 	// Verify key can be saved

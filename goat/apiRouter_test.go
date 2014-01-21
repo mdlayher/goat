@@ -10,8 +10,8 @@ import (
 // Table driven tests to iterate over and test the API router
 var apiTests = []struct {
 	method string
-	url string
-	code int
+	url    string
+	code   int
 }{
 	{"POST", "/api/", 405},
 	{"GET", "/api/", 404},
