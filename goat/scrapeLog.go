@@ -17,6 +17,24 @@ type scrapeLog struct {
 	Time     int64
 }
 
+// Delete scrapeLog from storage
+func (s scrapeLog) Delete() bool {
+	// Open database connection
+	db, err := dbConnect()
+	if err != nil {
+		log.Println(err.Error())
+		return false
+	}
+
+	// Delete scrapeLog
+	if err = db.DeleteScrapeLog(s.ID, "id"); err != nil {
+		log.Println(err.Error())
+		return false
+	}
+
+	return true
+}
+
 // Save scrapeLog to storage
 func (s scrapeLog) Save() bool {
 	// Open database connection

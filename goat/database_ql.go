@@ -74,6 +74,7 @@ var (
 		"fileuser_update":          "UPDATE files_users active=$4,completed=$5,announced=$6,uploaded=$7,downloaded=$8,left=$9,ts=now() WHERE file_id==$1 && user_id==$2 && ip==$3",
 
 		// scrapeLog
+		"scrapelog_delete_id":      "DELETE FROM scrape_log WHERE id()==$1"
 		"scrapelog_load_id":        "SELECT id(),info_hash,passkey,ip,ts FROM scrape_log WHERE id()==$1",
 		"scrapelog_load_info_hash": "SELECT id(),info_hash,passkey,ip,ts FROM scrape_log WHERE info_hash==$1",
 		"scrapelog_load_passkey":   "SELECT id(),info_hash,passkey,ip,ts FROM scrape_log WHERE passkey==$1",
@@ -505,6 +506,12 @@ func (db *qlw) LoadFileUserRepository(id interface{}, col string) (files []fileU
 }
 
 // --- scrapeLog.go ---
+
+// DeleteScrapeLog deletes an scrapeLog using a defined ID and column for query
+func (db *qlw) DeleteScrapeLog(id interface{}, col string) (err error) {
+	_, _, err = qlQuery(db, "scrapelog_delete_"+col, true, id)
+	return
+}
 
 // LoadScrapeLog loads a scrapeLog using a defined ID and column for query
 func (db *qlw) LoadScrapeLog(id interface{}, col string) (scrape scrapeLog, err error) {

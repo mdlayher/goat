@@ -57,6 +57,7 @@ type dbModel interface {
 	LoadFileUserRepository(interface{}, string) ([]fileUserRecord, error)
 
 	// --- scrapeLog.go ---
+	DeleteScrapeLog(interface{}, string) error
 	LoadScrapeLog(interface{}, string) (scrapeLog, error)
 	SaveScrapeLog(scrapeLog) error
 

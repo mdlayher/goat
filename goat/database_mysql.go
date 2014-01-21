@@ -332,6 +332,14 @@ func (db *dbw) LoadFileUserRepository(id interface{}, col string) ([]fileUserRec
 
 // --- scrapeLog.go ---
 
+// DeleteScrapeLog deletes a scrapeLog using a defined ID and column
+func (db *dbw) DeleteScrapeLog(id interface{}, col string) error {
+	tx := db.MustBegin()
+	tx.Execl("DELETE FROM scrape_log WHERE `"+col+"` = ?", id)
+
+	return tx.Commit()
+}
+
 // LoadScrapeLog loads a scrapeLog using a defined ID and column for query
 func (db *dbw) LoadScrapeLog(id interface{}, col string) (scrapeLog, error) {
 	query := "SELECT * FROM scrape_log WHERE `" + col + "`=?;"
