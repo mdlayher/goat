@@ -61,6 +61,7 @@ var (
 		"filerecord_update":           "UPDATE files verified=$2,update_time=now() WHERE id()==$1",
 
 		// fileUser
+		"fileuser_delete":          "DELETE FROM files_users WHERE file_id==$1 && user_id==$2 && ip==$3",
 		"fileuser_load":            "SELECT * FROM files_users WHERE file_id==$1 && user_id==$2 && ip==$3",
 		"fileuser_load_file_id":    "SELECT * FROM files_users WHERE file_id==$1",
 		"fileuser_count_completed": "SELECT count(user_id) FROM files_users WHERE file_id==$1 && completed==true && left==0",
@@ -73,6 +74,7 @@ var (
 		"fileuser_update":          "UPDATE files_users active=$4,completed=$5,announced=$6,uploaded=$7,downloaded=$8,left=$9,ts=now() WHERE file_id==$1 && user_id==$2 && ip==$3",
 
 		// scrapeLog
+		"scrapelog_delete_id":      "DELETE FROM scrape_log WHERE id()==$1",
 		"scrapelog_load_id":        "SELECT id(),info_hash,passkey,ip,ts FROM scrape_log WHERE id()==$1",
 		"scrapelog_load_info_hash": "SELECT id(),info_hash,passkey,ip,ts FROM scrape_log WHERE info_hash==$1",
 		"scrapelog_load_passkey":   "SELECT id(),info_hash,passkey,ip,ts FROM scrape_log WHERE passkey==$1",
@@ -422,7 +424,13 @@ func (db *qlw) GetAllFileRecords() (files []fileRecord, err error) {
 
 // --- fileUserRecord.go ---
 
-// LoadFileUserRecord loads a fileUserRecord using a defined ID and column for query
+// DeleteUserRecord deletes an announceLog using a file ID, user ID, and IP triple
+func (db *qlw) DeleteFileUserRecord(fid, uid int, ip string) (err error) {
+	_, _, err = qlQuery(db, "fileuser_delete", true, int64(fid), int64(uid), ip)
+	return
+}
+
+// LoadFileUserRecord loads a fileUserRecord using a file ID, user ID, and IP triple
 func (db *qlw) LoadFileUserRecord(fid, uid int, ip string) (fileUserRecord, error) {
 	rs, _, err := qlQuery(db, "fileuser_load", true, int64(fid), int64(uid), ip)
 
@@ -498,6 +506,12 @@ func (db *qlw) LoadFileUserRepository(id interface{}, col string) (files []fileU
 }
 
 // --- scrapeLog.go ---
+
+// DeleteScrapeLog deletes an scrapeLog using a defined ID and column for query
+func (db *qlw) DeleteScrapeLog(id interface{}, col string) (err error) {
+	_, _, err = qlQuery(db, "scrapelog_delete_"+col, true, id)
+	return
+}
 
 // LoadScrapeLog loads a scrapeLog using a defined ID and column for query
 func (db *qlw) LoadScrapeLog(id interface{}, col string) (scrape scrapeLog, err error) {

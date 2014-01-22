@@ -23,7 +23,10 @@ func handleUDP(l *net.UDPConn, udpDoneChan chan bool) {
 		<-static.ShutdownChan
 
 		// Close listener
-		l.Close()
+		if err := l.Close(); err != nil {
+			log.Println(err.Error())
+		}
+
 		log.Println("UDP listener stopped")
 		udpDoneChan <- true
 	}(l, udpDoneChan)

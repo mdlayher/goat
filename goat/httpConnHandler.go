@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -18,7 +19,10 @@ func handleHTTP(l net.Listener, httpDoneChan chan bool) {
 		<-static.ShutdownChan
 
 		// Close listener
-		l.Close()
+		if err := l.Close(); err != nil {
+			log.Println(err.Error())
+		}
+
 		log.Println("HTTP(S) listener stopped")
 		httpDoneChan <- true
 	}(l, httpDoneChan)
@@ -29,29 +33,14 @@ func handleHTTP(l net.Listener, httpDoneChan chan bool) {
 	}
 
 	// Serve HTTP requests
-	http.Serve(l, nil)
-}
-
-// Handle incoming HTTPS connections and serve
-func handleHTTPS(l net.Listener, httpsDoneChan chan bool) {
-	// Create shutdown function
-	go func(l net.Listener, httpsDoneChan chan bool) {
-		// Wait for done signal
-		<-static.ShutdownChan
-
-		// Close listener
-		l.Close()
-		log.Println("HTTPS listener stopped")
-		httpsDoneChan <- true
-	}(l, httpsDoneChan)
-
-	// Log API configuration
-	if static.Config.API {
-		log.Println("SSL API functionality enabled")
+	if err := http.Serve(l, nil); err != nil {
+		// Ignore connection closing error, caused by stopping listener
+		if !strings.Contains(err.Error(), "use of closed network connection") {
+			log.Println(err.Error())
+			log.Println("Could not serve HTTP(S), exiting now")
+			os.Exit(1)
+		}
 	}
-
-	// Serve HTTPS requests
-	http.Serve(l, nil)
 }
 
 // Parse incoming HTTP connections before making tracker calls
@@ -62,15 +51,6 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Add header to identify goat
 	w.Header().Add("Server", fmt.Sprintf("%s/%s", App, Version))
-
-	// Parse querystring into a Values map
-	query := r.URL.Query()
-
-	// Check if IP was previously set
-	if query.Get("ip") == "" {
-		// If no IP set, detect and store it in query map
-		query.Set("ip", strings.Split(r.RemoteAddr, ":")[0])
-	}
 
 	// Store current URL path
 	url := r.URL.Path
@@ -111,13 +91,19 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Make sure URL is valid torrent function
 	if url != "announce" && url != "scrape" {
-		w.Write(httpTrackerError("Malformed announce"))
+		if _, err := w.Write(httpTrackerError("Malformed announce")); err != nil {
+			log.Println(err.Error())
+		}
+
 		return
 	}
 
 	// Verify that torrent client is advertising its User-Agent, so we can use a whitelist
 	if r.Header.Get("User-Agent") == "" {
-		w.Write(httpTrackerError("Your client is not identifying itself"))
+		if _, err := w.Write(httpTrackerError("Your client is not identifying itself")); err != nil {
+			log.Println(err.Error())
+		}
+
 		return
 	}
 
@@ -127,7 +113,9 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 	if static.Config.Whitelist {
 		whitelist := new(whitelistRecord).Load(client, "client")
 		if whitelist == (whitelistRecord{}) || !whitelist.Approved {
-			w.Write(httpTrackerError("Your client is not whitelisted"))
+			if _, err := w.Write(httpTrackerError("Your client is not whitelisted")); err != nil {
+				log.Println(err.Error())
+			}
 
 			// Block things like browsers and web crawlers, because they will just clutter up the table
 			if strings.Contains(client, "Mozilla") || strings.Contains(client, "Opera") {
@@ -148,19 +136,34 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Parse querystring into a Values map
+	query := r.URL.Query()
+
+	// Check if IP was previously set
+	if query.Get("ip") == "" {
+		// If no IP set, detect and store it in query map
+		query.Set("ip", strings.Split(r.RemoteAddr, ":")[0])
+	}
+
 	// Put client in query map
 	query.Set("client", client)
 
 	// Check if server is configured for passkey announce
 	if static.Config.Passkey && passkey == "" {
-		w.Write(httpTrackerError("No passkey found in announce URL"))
+		if _, err := w.Write(httpTrackerError("No passkey found in announce URL")); err != nil {
+			log.Println(err.Error())
+		}
+
 		return
 	}
 
 	// Validate passkey if needed
 	user := new(userRecord).Load(passkey, "passkey")
 	if static.Config.Passkey && user == (userRecord{}) {
-		w.Write(httpTrackerError("Invalid passkey"))
+		if _, err := w.Write(httpTrackerError("Invalid passkey")); err != nil {
+			log.Println(err.Error())
+		}
+
 		return
 	}
 
@@ -174,14 +177,21 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 	seeding := user.Seeding()
 	leeching := user.Leeching()
 	if seeding == -1 || leeching == -1 {
-		w.Write(httpTrackerError("Failed to calculate active torrents"))
+		if _, err := w.Write(httpTrackerError("Failed to calculate active torrents")); err != nil {
+			log.Println(err.Error())
+		}
+
 		return
 	}
 
 	// Verify that client has not exceeded this user's torrent limit
 	activeSum := seeding + leeching
 	if user.TorrentLimit < activeSum {
-		w.Write(httpTrackerError(fmt.Sprintf("Exceeded active torrent limit: %d > %d", activeSum, user.TorrentLimit)))
+		msg := fmt.Sprintf("Exceeded active torrent limit: %d > %d", activeSum, user.TorrentLimit)
+		if _, err := w.Write(httpTrackerError(msg)); err != nil {
+			log.Println(err.Error())
+		}
+
 		return
 	}
 
@@ -195,7 +205,10 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 		// Check for required parameters
 		for _, r := range required {
 			if query.Get(r) == "" {
-				w.Write(httpTrackerError("Missing required parameter: " + r))
+				if _, err := w.Write(httpTrackerError("Missing required parameter: " + r)); err != nil {
+					log.Println(err.Error())
+				}
+
 				return
 			}
 		}
@@ -205,7 +218,10 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 			if query.Get(r) != "" {
 				_, err := strconv.Atoi(query.Get(r))
 				if err != nil {
-					w.Write(httpTrackerError("Invalid integer parameter: " + r))
+					if _, err := w.Write(httpTrackerError("Invalid integer parameter: " + r)); err != nil {
+						log.Println(err.Error())
+					}
+
 					return
 				}
 			}
@@ -213,7 +229,10 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// Only allow compact announce
 		if query.Get("compact") == "" || query.Get("compact") != "1" {
-			w.Write(httpTrackerError("Your client does not support compact announce"))
+			if _, err := w.Write(httpTrackerError("Your client does not support compact announce")); err != nil {
+				log.Println(err.Error())
+			}
+
 			return
 		}
 
@@ -223,13 +242,28 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 		// 2) gzip may actually make announce response larger, as per testing in What.CD's ocelot
 
 		// Perform tracker announce
-		w.Write(trackerAnnounce(user, query, nil))
+		if _, err := w.Write(trackerAnnounce(user, query, nil)); err != nil {
+			log.Println(err.Error())
+		}
+
 		return
 	}
 
 	// Tracker scrape
 	if url == "scrape" {
-		w.Write(trackerScrape(user, query))
+		// Check for required parameter info_hash
+		if query.Get("info_hash") == "" {
+			if _, err := w.Write(httpTrackerError("Missing required parameter: info_hash")); err != nil {
+				log.Println(err.Error())
+			}
+
+			return
+		}
+
+		if _, err := w.Write(trackerScrape(user, query)); err != nil {
+			log.Println(err.Error())
+		}
+
 		return
 	}
 

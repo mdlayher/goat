@@ -22,6 +22,28 @@ type fileUserRecord struct {
 type fileUserRecordRepository struct {
 }
 
+// Delete fileUserRecord from storage
+func (f fileUserRecord) Delete() bool {
+	// Open database connection
+	db, err := dbConnect()
+	if err != nil {
+		log.Println(err.Error())
+		return false
+	}
+
+	// Delete fileUserRecord
+	if err = db.DeleteFileUserRecord(f.FileID, f.UserID, f.IP); err != nil {
+		log.Println(err.Error())
+		return false
+	}
+
+	if err := db.Close(); err != nil {
+		log.Println(err.Error())
+	}
+
+	return true
+}
+
 // Save fileUserRecord to storage
 func (f fileUserRecord) Save() bool {
 	// Open database connection
@@ -35,6 +57,10 @@ func (f fileUserRecord) Save() bool {
 	if err := db.SaveFileUserRecord(f); err != nil {
 		log.Println(err.Error())
 		return false
+	}
+
+	if err := db.Close(); err != nil {
+		log.Println(err.Error())
 	}
 
 	return true
@@ -55,6 +81,10 @@ func (f fileUserRecord) Load(fileID int, userID int, ip string) fileUserRecord {
 		return fileUserRecord{}
 	}
 
+	if err := db.Close(); err != nil {
+		log.Println(err.Error())
+	}
+
 	return f
 }
 
@@ -69,6 +99,10 @@ func (f fileUserRecordRepository) Select(id interface{}, col string) (files []fi
 
 	// Load fileUserRecords matching specified conditions
 	if files, err = db.LoadFileUserRepository(id, col); err != nil {
+		log.Println(err.Error())
+	}
+
+	if err := db.Close(); err != nil {
 		log.Println(err.Error())
 	}
 

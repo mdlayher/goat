@@ -10,8 +10,8 @@ import (
 // Table driven tests to iterate over and test the API router
 var apiTests = []struct {
 	method string
-	url string
-	code int
+	url    string
+	code   int
 }{
 	{"POST", "/api/", 405},
 	{"GET", "/api/", 404},
@@ -46,6 +46,6 @@ func TestAPIRouter(t *testing.T) {
 		}
 
 		log.Printf("OK - %s %s -> HTTP %d", test.method, test.url, w.Code)
-		log.Println(w.Body.String())
+		log.Printf(w.Body.String())
 	}
 }

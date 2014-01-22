@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"syscall"
+	"time"
 )
 
 // Application name
@@ -92,6 +94,15 @@ func Manager(killChan chan bool, exitChan chan int) {
 		case <-killChan:
 			// Trigger a graceful shutdown
 			log.Println("Triggering graceful shutdown, press Ctrl+C again to force halt")
+
+			// If program hangs for more than 10 seconds, trigger a force halt
+			go func() {
+				time.Sleep(10 * time.Second)
+				log.Println("Timeout reached, triggering force halt")
+				if err := syscall.Kill(os.Getpid(), syscall.SIGTERM); err != nil {
+					log.Println(err.Error())
+				}
+			}()
 
 			// Stop listeners
 			if static.Config.HTTP {

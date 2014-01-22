@@ -38,7 +38,11 @@ func init() {
 			return false
 		}
 
-		db.(*dbw).Close()
+		if err = db.(*dbw).Close(); err != nil {
+			log.Println(err.Error())
+			return false
+		}
+
 		return true
 	}
 }
@@ -46,6 +50,11 @@ func init() {
 // dbw contains a sqlx MySQL database connection
 type dbw struct {
 	*sqlx.DB
+}
+
+// Close database connection
+func (db *dbw) Close() error {
+	return db.DB.Close()
 }
 
 // --- announceLog.go ---
@@ -87,6 +96,11 @@ func (db *dbw) SaveAnnounceLog(a announceLog) error {
 func (db *dbw) DeleteApiKey(id interface{}, col string) error {
 	tx := db.MustBegin()
 	tx.Execl("DELETE FROM api_keys WHERE `"+col+"` = ?", id)
+
+	if err := db.Close(); err != nil {
+		log.Println(err.Error())
+	}
+
 
 	return tx.Commit()
 }
@@ -215,7 +229,11 @@ func (db *dbw) GetFileRecordPeerList(infohash, exclude string, limit int) ([]byt
 	buf := make([]byte, 0)
 
 	for rows.Next() {
-		rows.StructScan(&result)
+		if err = rows.StructScan(&result); err != nil {
+			log.Println(err.Error())
+			break
+		}
+
 		buf = append(buf, ip2b(result.IP, result.Port)...)
 	}
 
@@ -267,7 +285,10 @@ func (db *dbw) GetAllFileRecords() ([]fileRecord, error) {
 	}
 
 	for rows.Next() {
-		rows.StructScan(&file)
+		if err = rows.StructScan(&file); err != nil {
+			break
+		}
+
 		files = append(files[:], file)
 	}
 
@@ -276,7 +297,15 @@ func (db *dbw) GetAllFileRecords() ([]fileRecord, error) {
 
 // --- fileUserRecord.go ---
 
-// LoadFileUserRecord loads a fileUserRecord using a defined ID and column for query
+// DeleteFileUserRecord deletes a fileUserRecord using using a file ID, user ID, and IP triple
+func (db *dbw) DeleteFileUserRecord(fid, uid int, ip string) error {
+	tx := db.MustBegin()
+	tx.Execl("DELETE FROM files_users WHERE `file_id`=? AND `user_id`=? AND `ip`=?", fid, uid, ip)
+
+	return tx.Commit()
+}
+
+// LoadFileUserRecord loads a fileUserRecord using a file ID, user ID, and IP triple
 func (db *dbw) LoadFileUserRecord(fid, uid int, ip string) (fileUserRecord, error) {
 	query := "SELECT * FROM files_users WHERE `file_id`=? AND `user_id`=? AND `ip`=?;"
 
@@ -315,7 +344,11 @@ func (db *dbw) LoadFileUserRepository(id interface{}, col string) ([]fileUserRec
 	}
 
 	for rows.Next() {
-		rows.StructScan(&user)
+		if err = rows.StructScan(&user); err != nil {
+			log.Println(err.Error())
+			break
+		}
+
 		files = append(files[:], user)
 	}
 
@@ -323,6 +356,14 @@ func (db *dbw) LoadFileUserRepository(id interface{}, col string) ([]fileUserRec
 }
 
 // --- scrapeLog.go ---
+
+// DeleteScrapeLog deletes a scrapeLog using a defined ID and column
+func (db *dbw) DeleteScrapeLog(id interface{}, col string) error {
+	tx := db.MustBegin()
+	tx.Execl("DELETE FROM scrape_log WHERE `"+col+"` = ?", id)
+
+	return tx.Commit()
+}
 
 // LoadScrapeLog loads a scrapeLog using a defined ID and column for query
 func (db *dbw) LoadScrapeLog(id interface{}, col string) (scrapeLog, error) {

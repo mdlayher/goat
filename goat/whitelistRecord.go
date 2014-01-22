@@ -26,6 +26,10 @@ func (w whitelistRecord) Save() bool {
 		return false
 	}
 
+	if err := db.Close(); err != nil {
+		log.Println(err.Error())
+	}
+
 	return true
 }
 
@@ -42,6 +46,10 @@ func (w whitelistRecord) Load(id interface{}, col string) whitelistRecord {
 	if w, err = db.LoadWhitelistRecord(id, col); err != nil {
 		log.Println(err.Error())
 		return whitelistRecord{}
+	}
+
+	if err := db.Close(); err != nil {
+		log.Println(err.Error())
 	}
 
 	return w

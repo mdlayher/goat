@@ -66,8 +66,7 @@ func loadConfig() conf {
 		if os.IsNotExist(err) {
 			log.Println("Could not find configuration, attempting to create it...")
 
-			err = os.MkdirAll(path, 0775)
-			if err != nil {
+			if err = os.MkdirAll(path, 0775); err != nil {
 				log.Println("Failed to create directory: " + path)
 			}
 
@@ -84,14 +83,18 @@ func loadConfig() conf {
 			}
 
 			// Copy contents
-			_, err = io.Copy(dest, source)
-			if err != nil {
+			if _, err = io.Copy(dest, source); err != nil {
 				log.Println("Failed to copy to configuration file: " + path + config)
 			}
 
 			// Close files
-			source.Close()
-			dest.Close()
+			if err = source.Close(); err != nil {
+				log.Println(err.Error())
+			}
+
+			if err = dest.Close(); err != nil {
+				log.Println(err.Error())
+			}
 		}
 	}
 
