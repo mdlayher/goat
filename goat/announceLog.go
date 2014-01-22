@@ -40,6 +40,10 @@ func (a announceLog) Save() bool {
 		return false
 	}
 
+	if err := db.Close(); err != nil {
+		log.Println(err.Error())
+	}
+
 	return true
 }
 
@@ -58,6 +62,10 @@ func (a announceLog) Load(ID interface{}, col string) announceLog {
 		return announceLog{}
 	}
 
+	if err := db.Close(); err != nil {
+		log.Println(err.Error())
+	}
+
 	return a
 }
 
@@ -74,6 +82,10 @@ func (a announceLog) Delete() bool {
 	if err = db.DeleteAnnounceLog(a.ID, "id"); err != nil {
 		log.Println(err.Error())
 		return false
+	}
+
+	if err := db.Close(); err != nil {
+		log.Println(err.Error())
 	}
 
 	return true

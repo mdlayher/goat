@@ -27,6 +27,10 @@ func (u userRecord) Delete() bool {
 		return false
 	}
 
+	if err := db.Close(); err != nil {
+		log.Println(err.Error())
+	}
+
 	return true
 }
 
@@ -43,6 +47,10 @@ func (u userRecord) Save() bool {
 	if err := db.SaveUserRecord(u); err != nil {
 		log.Println(err.Error())
 		return false
+	}
+
+	if err := db.Close(); err != nil {
+		log.Println(err.Error())
 	}
 
 	return true
@@ -64,6 +72,10 @@ func (u userRecord) Load(id interface{}, col string) userRecord {
 		return userRecord{}
 	}
 
+	if err := db.Close(); err != nil {
+		log.Println(err.Error())
+	}
+
 	return u
 }
 
@@ -81,6 +93,10 @@ func (u userRecord) Uploaded() int64 {
 	if err != nil {
 		log.Println(err.Error())
 		return -1
+	}
+
+	if err := db.Close(); err != nil {
+		log.Println(err.Error())
 	}
 
 	return uploaded
@@ -102,6 +118,10 @@ func (u userRecord) Downloaded() int64 {
 		return -1
 	}
 
+	if err := db.Close(); err != nil {
+		log.Println(err.Error())
+	}
+
 	return downloaded
 }
 
@@ -121,6 +141,10 @@ func (u userRecord) Seeding() int {
 		return -1
 	}
 
+	if err := db.Close(); err != nil {
+		log.Println(err.Error())
+	}
+
 	return seeding
 }
 
@@ -138,6 +162,10 @@ func (u userRecord) Leeching() int {
 	if err != nil {
 		log.Println(err.Error())
 		return -1
+	}
+
+	if err := db.Close(); err != nil {
+		log.Println(err.Error())
 	}
 
 	return leeching

@@ -81,6 +81,10 @@ func (f fileRecord) Delete() bool {
 		return false
 	}
 
+	if err := db.Close(); err != nil {
+		log.Println(err.Error())
+	}
+
 	return true
 }
 
@@ -97,6 +101,10 @@ func (f fileRecord) Save() bool {
 	if err := db.SaveFileRecord(f); err != nil {
 		log.Println(err.Error())
 		return false
+	}
+
+	if err := db.Close(); err != nil {
+		log.Println(err.Error())
 	}
 
 	return true
@@ -117,6 +125,10 @@ func (f fileRecord) Load(id interface{}, col string) fileRecord {
 		return fileRecord{}
 	}
 
+	if err := db.Close(); err != nil {
+		log.Println(err.Error())
+	}
+
 	return f
 }
 
@@ -134,6 +146,11 @@ func (f fileRecord) Completed() (completed int) {
 		log.Println(err.Error())
 		return -1
 	}
+
+	if err := db.Close(); err != nil {
+		log.Println(err.Error())
+	}
+
 	return
 }
 
@@ -150,6 +167,10 @@ func (f fileRecord) Seeders() (seeders int) {
 	if seeders, err = db.CountFileRecordSeeders(f.ID); err != nil {
 		log.Println(err.Error())
 		return -1
+	}
+
+	if err := db.Close(); err != nil {
+		log.Println(err.Error())
 	}
 
 	return
@@ -170,6 +191,10 @@ func (f fileRecord) Leechers() (leechers int) {
 		return -1
 	}
 
+	if err := db.Close(); err != nil {
+		log.Println(err.Error())
+	}
+
 	return
 }
 
@@ -186,6 +211,10 @@ func (f fileRecord) PeerList(exclude string, numwant int) (peers []byte) {
 	if peers, err = db.GetFileRecordPeerList(f.InfoHash, exclude, numwant); err != nil {
 		log.Println(err.Error())
 		return nil
+	}
+
+	if err := db.Close(); err != nil {
+		log.Println(err.Error())
 	}
 
 	return
@@ -218,6 +247,10 @@ func (f fileRecord) PeerReaper() bool {
 		log.Printf("reaper: reaped %d peer(s) on file %d\n", count, f.ID)
 	}
 
+	if err := db.Close(); err != nil {
+		log.Println(err.Error())
+	}
+
 	return true
 }
 
@@ -237,6 +270,10 @@ func (f fileRecordRepository) All() (files []fileRecord) {
 
 	// Retrieve all files
 	if files, err = db.GetAllFileRecords(); err != nil {
+		log.Println(err.Error())
+	}
+
+	if err := db.Close(); err != nil {
 		log.Println(err.Error())
 	}
 

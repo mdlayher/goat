@@ -52,6 +52,11 @@ type dbw struct {
 	*sqlx.DB
 }
 
+// Close database connection
+func (db *dbw) Close() error {
+	return db.DB.Close()
+}
+
 // --- announceLog.go ---
 
 // DeleteAnnounceLog deletes an announceLog using a defined ID and column
@@ -91,6 +96,11 @@ func (db *dbw) SaveAnnounceLog(a announceLog) error {
 func (db *dbw) DeleteApiKey(id interface{}, col string) error {
 	tx := db.MustBegin()
 	tx.Execl("DELETE FROM api_keys WHERE `"+col+"` = ?", id)
+
+	if err := db.Close(); err != nil {
+		log.Println(err.Error())
+	}
+
 
 	return tx.Commit()
 }
