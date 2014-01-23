@@ -1,6 +1,8 @@
 package goat
 
 import (
+	"crypto/sha1"
+	"fmt"
 	"log"
 )
 
@@ -10,6 +12,23 @@ type userRecord struct {
 	Username     string
 	Passkey      string
 	TorrentLimit int `db:"torrent_limit"`
+}
+
+// Create a userRecord, using defined parameters
+func (u userRecord) Create(username string, torrentLimit int) userRecord {
+	// Set username and torrent limit
+	u.Username = username
+	u.TorrentLimit = torrentLimit
+
+	// Randomly generate a new passkey
+	sha := sha1.New()
+	if _, err := sha.Write([]byte(randString())); err != nil {
+		log.Println(err.Error())
+		return userRecord{}
+	}
+
+	u.Passkey = fmt.Sprintf("%x", sha.Sum(nil))
+	return u
 }
 
 // Delete userRecord from storage
