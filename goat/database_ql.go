@@ -251,14 +251,14 @@ func (db *qlw) SaveAnnounceLog(a announceLog) (err error) {
 
 // --- apiKey.go ---
 
-// DeleteApiKey deletes an announceLog using a defined ID and column for query
-func (db *qlw) DeleteApiKey(id interface{}, col string) (err error) {
+// DeleteAPIKey deletes an announceLog using a defined ID and column for query
+func (db *qlw) DeleteAPIKey(id interface{}, col string) (err error) {
 	_, _, err = qlQuery(db, "apikey_delete_"+col, true, id)
 	return
 }
 
-// LoadApiKey loads an apiKey using a defined ID and column for query
-func (db *qlw) LoadApiKey(id interface{}, col string) (apiKey, error) {
+// LoadAPIKey loads an apiKey using a defined ID and column for query
+func (db *qlw) LoadAPIKey(id interface{}, col string) (apiKey, error) {
 	rs, _, err := qlQuery(db, "apikey_load_"+col, true, id)
 
 	result := apiKey{}
@@ -280,9 +280,9 @@ func (db *qlw) LoadApiKey(id interface{}, col string) (apiKey, error) {
 	return result, err
 }
 
-// SaveApiKey saves an apiKey to the database
-func (db *qlw) SaveApiKey(key apiKey) (err error) {
-	if k, err := db.LoadApiKey(key.ID, "id"); (k == apiKey{}) && err == nil {
+// SaveAPIKey saves an apiKey to the database
+func (db *qlw) SaveAPIKey(key apiKey) (err error) {
+	if k, err := db.LoadAPIKey(key.ID, "id"); (k == apiKey{}) && err == nil {
 		_, _, err = qlQuery(db, "apikey_insert", true, int64(key.UserID), key.Key, key.Salt)
 	} else {
 		_, _, err = qlQuery(db, "apikey_update", true, k.ID, key.Key, key.Salt)
@@ -653,9 +653,9 @@ func (db *qlw) SaveWhitelistRecord(w whitelistRecord) (err error) {
 func qlQuery(db *qlw, key string, wraptx bool, arg ...interface{}) ([]ql.Recordset, int, error) {
 	if list, err := qlCompile(key, wraptx); err == nil {
 		return db.Execute(ql.NewRWCtx(), list, arg...)
-	} else {
-		return []ql.Recordset(nil), 0, err
 	}
+
+	return []ql.Recordset(nil), 0, err
 }
 
 // qlQueryI64 provides a wrapper to return int64 values from ql

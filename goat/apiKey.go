@@ -22,7 +22,7 @@ func (a apiKey) Delete() bool {
 	}
 
 	// Delete apiKey
-	if err = db.DeleteApiKey(a.ID, "id"); err != nil {
+	if err = db.DeleteAPIKey(a.ID, "id"); err != nil {
 		log.Println(err.Error())
 		return false
 	}
@@ -40,7 +40,7 @@ func (a apiKey) Save() bool {
 	}
 
 	// Save apiKey
-	if err := db.SaveApiKey(a); err != nil {
+	if err := db.SaveAPIKey(a); err != nil {
 		log.Println(err.Error())
 		return false
 	}
@@ -58,7 +58,7 @@ func (a apiKey) Load(id interface{}, col string) (key apiKey) {
 	}
 
 	// Load apiKey
-	if key, err = db.LoadApiKey(id, col); err != nil {
+	if key, err = db.LoadAPIKey(id, col); err != nil {
 		log.Println(err.Error())
 	}
 

@@ -8,18 +8,18 @@ import (
 )
 
 // Parse IP and port into byte buffer
-func ip2b(ip_ string, port_ uint16) []byte {
+func ip2b(ip string, port uint16) []byte {
 	// Empty buffers
-	ip, port := [4]byte{}, [2]byte{}
+	ipBuf, portBuf := [4]byte{}, [2]byte{}
 
 	// Write IP
-	binary.BigEndian.PutUint32(ip[:], binary.BigEndian.Uint32(net.ParseIP(ip_).To4()))
+	binary.BigEndian.PutUint32(ipBuf[:], binary.BigEndian.Uint32(net.ParseIP(ip).To4()))
 
 	// Write port
-	binary.BigEndian.PutUint16(port[:], port_)
+	binary.BigEndian.PutUint16(portBuf[:], port)
 
 	// Concatenate buffers
-	return append(ip[:], port[:]...)
+	return append(ipBuf[:], portBuf[:]...)
 }
 
 // RandRange generates a random announce interval in the specified range

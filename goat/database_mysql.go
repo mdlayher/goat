@@ -92,8 +92,8 @@ func (db *dbw) SaveAnnounceLog(a announceLog) error {
 
 // --- apiKey.go ---
 
-// DeleteApiKey deletes an apiKey using a defined ID and column
-func (db *dbw) DeleteApiKey(id interface{}, col string) error {
+// DeleteAPIKey deletes an apiKey using a defined ID and column
+func (db *dbw) DeleteAPIKey(id interface{}, col string) error {
 	tx := db.MustBegin()
 	tx.Execl("DELETE FROM api_keys WHERE `"+col+"` = ?", id)
 
@@ -101,12 +101,11 @@ func (db *dbw) DeleteApiKey(id interface{}, col string) error {
 		log.Println(err.Error())
 	}
 
-
 	return tx.Commit()
 }
 
-// LoadApiKey loads an apiKey using a defined ID and column for query
-func (db *dbw) LoadApiKey(id interface{}, col string) (apiKey, error) {
+// LoadAPIKey loads an apiKey using a defined ID and column for query
+func (db *dbw) LoadAPIKey(id interface{}, col string) (apiKey, error) {
 	key := apiKey{}
 
 	err := db.Get(&key, "SELECT * FROM api_keys WHERE `"+col+"`=?", id)
@@ -117,8 +116,8 @@ func (db *dbw) LoadApiKey(id interface{}, col string) (apiKey, error) {
 	return key, nil
 }
 
-// SaveApiKey saves an apiKey to the database
-func (db *dbw) SaveApiKey(key apiKey) error {
+// SaveAPIKey saves an apiKey to the database
+func (db *dbw) SaveAPIKey(key apiKey) error {
 	query := "INSERT INTO api_keys (`user_id`, `key`, `salt`) " +
 		"VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE " +
 		"`key`=values(`key`), `salt`=values(`salt`);"
@@ -241,17 +240,17 @@ func (db *dbw) GetFileRecordPeerList(infohash, exclude string, limit int) ([]byt
 }
 
 // GetInactiveUserInfo returns a list of users who have not been active for the specified time interval
-func (db *dbw) GetInactiveUserInfo(fid int, interval_ time.Duration) (users []peerInfo, err error) {
+func (db *dbw) GetInactiveUserInfo(fid int, interval time.Duration) (users []peerInfo, err error) {
 	query := `SELECT user_id, ip FROM files_users
 		WHERE time < (UNIX_TIMESTAMP() - ?)
 		AND active = 1
 		AND file_id = ?;`
 
 	result := peerInfo{}
-	interval := int(interval_ / time.Second)
+	checkInterval := int(interval / time.Second)
 
 	var rows *sqlx.Rows
-	if rows, err = db.Queryx(query, interval, fid); err == nil && err != sql.ErrNoRows {
+	if rows, err = db.Queryx(query, checkInterval, fid); err == nil && err != sql.ErrNoRows {
 		for rows.Next() {
 			if err = rows.StructScan(&result); err == nil {
 				users = append(users, result)

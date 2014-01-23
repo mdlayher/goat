@@ -6,9 +6,9 @@ import (
 
 var (
 	dbConnectFunc func() (dbModel, error)
-	dbCloseFunc   func()        = func() {}
-	dbNameFunc    func() string = func() string { return "" }
-	dbPingFunc    func() bool   = func() bool { return true }
+	dbCloseFunc   = func() {}
+	dbNameFunc    = func() string { return "" }
+	dbPingFunc    = func() bool { return true }
 )
 
 // dbConnect connects to a database
@@ -36,9 +36,9 @@ type dbModel interface {
 	SaveAnnounceLog(announceLog) error
 
 	// --- apiKey.go ---
-	DeleteApiKey(interface{}, string) error
-	LoadApiKey(interface{}, string) (apiKey, error)
-	SaveApiKey(apiKey) error
+	DeleteAPIKey(interface{}, string) error
+	LoadAPIKey(interface{}, string) (apiKey, error)
+	SaveAPIKey(apiKey) error
 
 	// --- fileRecord.go ---
 	DeleteFileRecord(interface{}, string) error
