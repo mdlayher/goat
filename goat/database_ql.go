@@ -189,6 +189,11 @@ type qlw struct {
 	*ql.DB
 }
 
+// Close closes the ql database
+func (db *qlw) Close() error {
+	return nil
+}
+
 // NewTransaction starts a new ql transaction
 func (db *qlw) NewTransaction() qltx {
 	tx := qltx{ql.NewRWCtx(), db}
