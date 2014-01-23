@@ -149,15 +149,6 @@ func trackerAnnounce(user userRecord, query url.Values, transID []byte) []byte {
 	return httpTrackerAnnounce(query, file, fileUser)
 }
 
-// announceResponse defines the response structure of an HTTP tracker announce
-type announceResponse struct {
-	Complete    int    "complete"
-	Incomplete  int    "incomplete"
-	Interval    int    "interval"
-	MinInterval int    "min interval"
-	Peers       []byte "peers"
-}
-
 // trackerScrape scrapes a tracker request
 func trackerScrape(user userRecord, query url.Values) []byte {
 	// List of files to be scraped
@@ -203,6 +194,15 @@ func trackerScrape(user userRecord, query url.Values) []byte {
 	return httpTrackerScrape(scrapeFiles)
 }
 
+// announceResponse defines the response structure of an HTTP tracker announce
+type announceResponse struct {
+	Complete    int    "complete"
+	Incomplete  int    "incomplete"
+	Interval    int    "interval"
+	MinInterval int    "min interval"
+	Peers       string "peers"
+}
+
 // httpTrackerAnnounce announces using HTTP format
 func httpTrackerAnnounce(query url.Values, file fileRecord, fileUser fileUserRecord) []byte {
 	// Generate response struct
@@ -233,9 +233,6 @@ func httpTrackerAnnounce(query url.Values, file fileRecord, fileUser fileUserRec
 		}
 	}
 
-	// Generate compact peer list of length numwant, exclude this user
-	announce.Peers = file.PeerList(query.Get("ip"), numwant)
-
 	// Marshal struct into bencode
 	buf := bytes.NewBuffer(make([]byte, 0))
 	if err := bencode.Marshal(buf, announce); err != nil {
@@ -243,7 +240,21 @@ func httpTrackerAnnounce(query url.Values, file fileRecord, fileUser fileUserRec
 		return httpTrackerError("Tracker error: failed to create announce response")
 	}
 
-	return buf.Bytes()
+	// Generate compact peer list of length numwant, exclude this user
+	peers := file.PeerList(query.Get("ip"), numwant)
+
+	// Because the bencode marshaler does not handle compact, binary peer list conversion,
+	// we handle it manually here.
+
+	// Get initial buffer, chop off 3 bytes: "0:e", append the actual list length with new colon
+	out := buf.Bytes()
+	out = append(out[0:len(out)-3], []byte(strconv.Itoa(len(peers))+":")...)
+
+	// Append peers list, terminate with an "e"
+	out = append(append(out, peers...), byte('e'))
+
+	// Return final announce message
+	return out
 }
 
 // scrapeResponse defines the top-level response structure of an HTTP tracker scrape
