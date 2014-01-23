@@ -18,5 +18,5 @@ script:
   - go build -o bin/goat
   - ./bin/goat -test
   - go test github.com/mdlayher/goat/goat/
-  # - go build -tags='ql' -o bin/goat
-  # - ./bin/goat -test
+  - go build -tags='ql' -o bin/goat
+  - ./bin/goat -test
