@@ -651,6 +651,7 @@ func (db *qlw) SaveWhitelistRecord(w whitelistRecord) (err error) {
 
 // qlQuery provides a wrapper to compile a ql query
 func qlQuery(db *qlw, key string, wraptx bool, arg ...interface{}) ([]ql.Recordset, int, error) {
+	var err error
 	if list, err := qlCompile(key, wraptx); err == nil {
 		return db.Execute(ql.NewRWCtx(), list, arg...)
 	}
