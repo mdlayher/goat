@@ -16,11 +16,11 @@ import (
 const udpInitID = 4497486125440
 
 // Handle incoming UDP connections and return response
-func handleUDP(l *net.UDPConn, udpDoneChan chan bool) {
+func handleUDP(l *net.UDPConn, sendChan chan bool, recvChan chan bool) {
 	// Create shutdown function
-	go func(l *net.UDPConn, udpDoneChan chan bool) {
+	go func(l *net.UDPConn, sendChan chan bool, recvChan chan bool) {
 		// Wait for done signal
-		<-static.ShutdownChan
+		<-sendChan
 
 		// Close listener
 		if err := l.Close(); err != nil {
@@ -28,8 +28,8 @@ func handleUDP(l *net.UDPConn, udpDoneChan chan bool) {
 		}
 
 		log.Println("UDP listener stopped")
-		udpDoneChan <- true
-	}(l, udpDoneChan)
+		recvChan <- true
+	}(l, sendChan, recvChan)
 
 	// Count incoming connections
 	atomic.AddInt64(&static.UDP.Current, 1)
