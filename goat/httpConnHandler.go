@@ -12,11 +12,11 @@ import (
 )
 
 // Handle incoming HTTP connections and serve
-func handleHTTP(l net.Listener, httpDoneChan chan bool) {
+func handleHTTP(l net.Listener, sendChan chan bool, recvChan chan bool) {
 	// Create shutdown function
-	go func(l net.Listener, httpDoneChan chan bool) {
+	go func(l net.Listener, sendChan chan bool, recvChan chan bool) {
 		// Wait for done signal
-		<-static.ShutdownChan
+		<-sendChan
 
 		// Close listener
 		if err := l.Close(); err != nil {
@@ -24,8 +24,8 @@ func handleHTTP(l net.Listener, httpDoneChan chan bool) {
 		}
 
 		log.Println("HTTP(S) listener stopped")
-		httpDoneChan <- true
-	}(l, httpDoneChan)
+		recvChan <- true
+	}(l, sendChan, recvChan)
 
 	// Log API configuration
 	if static.Config.API {
@@ -76,10 +76,10 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 			// Handle API calls, output JSON
 			apiRouter(w, r)
 			return
-		} else {
-			http.Error(w, string(apiErrorResponse("API is currently disabled")), 503)
-			return
 		}
+
+		http.Error(w, string(apiErrorResponse("API is currently disabled")), 503)
+		return
 	}
 
 	// Detect if passkey present in URL

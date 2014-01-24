@@ -18,6 +18,7 @@ var httpTests = []struct {
 	{"/announce?info_hash=deadbeef&ip=127.0.0.1&port=5000&uploaded=0&downloaded=0&left=10&compact=1"},
 	{"/scrape"},
 	{"/scrape?info_hash=deadbeef"},
+	{"/scrape?info_hash=deadbeef&info_hash=beefdead"},
 }
 
 // TestHTTPRouter verifies that the main HTTP router is working properly
@@ -32,6 +33,17 @@ func TestHTTPRouter(t *testing.T) {
 
 	// Save mock file
 	if !file.Save() {
+		t.Fatalf("Failed to save mock file")
+	}
+
+	// Generate mock fileRecord
+	file2 := fileRecord{
+		InfoHash: "6265656664656164",
+		Verified: true,
+	}
+
+	// Save mock file
+	if !file2.Save() {
 		t.Fatalf("Failed to save mock file")
 	}
 
@@ -53,8 +65,8 @@ func TestHTTPRouter(t *testing.T) {
 		log.Println(w.Body.String())
 	}
 
-	// Delete mock file
-	if !file.Delete() {
+	// Delete mock file2
+	if !file.Delete() || !file2.Delete() {
 		t.Fatalf("Failed to delete mock file")
 	}
 }

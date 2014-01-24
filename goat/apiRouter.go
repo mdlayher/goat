@@ -41,9 +41,9 @@ func apiRouter(w http.ResponseWriter, r *http.Request) {
 		if err != nil || i < 1 {
 			http.Error(w, string(apiErrorResponse("Invalid integer ID")), 400)
 			return
-		} else {
-			ID = i
 		}
+
+		ID = i
 	}
 
 	// Response buffer

@@ -189,6 +189,11 @@ type qlw struct {
 	*ql.DB
 }
 
+// Close closes the ql database
+func (db *qlw) Close() error {
+	return nil
+}
+
 // NewTransaction starts a new ql transaction
 func (db *qlw) NewTransaction() qltx {
 	tx := qltx{ql.NewRWCtx(), db}
@@ -251,14 +256,14 @@ func (db *qlw) SaveAnnounceLog(a announceLog) (err error) {
 
 // --- apiKey.go ---
 
-// DeleteApiKey deletes an announceLog using a defined ID and column for query
-func (db *qlw) DeleteApiKey(id interface{}, col string) (err error) {
+// DeleteAPIKey deletes an announceLog using a defined ID and column for query
+func (db *qlw) DeleteAPIKey(id interface{}, col string) (err error) {
 	_, _, err = qlQuery(db, "apikey_delete_"+col, true, id)
 	return
 }
 
-// LoadApiKey loads an apiKey using a defined ID and column for query
-func (db *qlw) LoadApiKey(id interface{}, col string) (apiKey, error) {
+// LoadAPIKey loads an apiKey using a defined ID and column for query
+func (db *qlw) LoadAPIKey(id interface{}, col string) (apiKey, error) {
 	rs, _, err := qlQuery(db, "apikey_load_"+col, true, id)
 
 	result := apiKey{}
@@ -651,11 +656,12 @@ func (db *qlw) SaveWhitelistRecord(w whitelistRecord) (err error) {
 
 // qlQuery provides a wrapper to compile a ql query
 func qlQuery(db *qlw, key string, wraptx bool, arg ...interface{}) ([]ql.Recordset, int, error) {
+	var err error
 	if list, err := qlCompile(key, wraptx); err == nil {
 		return db.Execute(ql.NewRWCtx(), list, arg...)
-	} else {
-		return []ql.Recordset(nil), 0, err
 	}
+
+	return []ql.Recordset(nil), 0, err
 }
 
 // qlQueryI64 provides a wrapper to return int64 values from ql

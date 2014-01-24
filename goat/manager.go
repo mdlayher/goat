@@ -17,10 +17,6 @@ const Version = "git-master"
 
 // Manager is responsible for coordinating the application
 func Manager(killChan chan bool, exitChan chan int) {
-	// Set up graceful shutdown channel
-	shutdownChan := make(chan bool)
-	static.ShutdownChan = shutdownChan
-
 	// Set up logging flags
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	log.Println("Starting " + App + " " + Version)
@@ -67,24 +63,27 @@ func Manager(killChan chan bool, exitChan chan int) {
 	go cronManager()
 
 	// Set up graceful shutdown channels
-	httpDoneChan := make(chan bool)
-	httpsDoneChan := make(chan bool)
-	udpDoneChan := make(chan bool)
+	httpSendChan := make(chan bool)
+	httpRecvChan := make(chan bool)
+	httpsSendChan := make(chan bool)
+	httpsRecvChan := make(chan bool)
+	udpSendChan := make(chan bool)
+	udpRecvChan := make(chan bool)
 
 	// Set up HTTP(S) route
 	http.HandleFunc("/", parseHTTP)
 
 	// Launch listeners as configured
 	if static.Config.HTTP {
-		go listenHTTP(httpDoneChan)
+		go listenHTTP(httpSendChan, httpRecvChan)
 		log.Println("HTTP listener launched on port " + strconv.Itoa(static.Config.Port))
 	}
 	if static.Config.HTTPS {
-		go listenHTTPS(httpsDoneChan)
+		go listenHTTPS(httpsSendChan, httpsRecvChan)
 		log.Println("HTTPS listener launched on port " + strconv.Itoa(static.Config.SSL.Port))
 	}
 	if static.Config.UDP {
-		go listenUDP(udpDoneChan)
+		go listenUDP(udpSendChan, udpRecvChan)
 		log.Println("UDP listener launched on port " + strconv.Itoa(static.Config.Port))
 	}
 
@@ -107,18 +106,18 @@ func Manager(killChan chan bool, exitChan chan int) {
 			// Stop listeners
 			if static.Config.HTTP {
 				log.Println("Stopping HTTP listener")
-				static.ShutdownChan <- true
-				<-httpDoneChan
+				httpSendChan <- true
+				<-httpRecvChan
 			}
 			if static.Config.HTTPS {
 				log.Println("Stopping HTTPS listener")
-				static.ShutdownChan <- true
-				<-httpsDoneChan
+				httpsSendChan <- true
+				<-httpsRecvChan
 			}
 			if static.Config.UDP {
 				log.Println("Stopping UDP listener")
-				static.ShutdownChan <- true
-				<-udpDoneChan
+				udpSendChan <- true
+				<-udpRecvChan
 			}
 
 			log.Println("Closing database connection")

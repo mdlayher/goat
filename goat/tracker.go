@@ -3,44 +3,13 @@ package goat
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/hex"
-	"github.com/mdlayher/bencode"
 	"log"
 	"net/url"
 	"strconv"
+
+	// Import bencode library
+	bencode "code.google.com/p/bencode-go"
 )
-
-// trackerScrape scrapes a tracker request
-func trackerScrape(user userRecord, query url.Values) []byte {
-	// Store scrape information in struct
-	scrape := new(scrapeLog).FromValues(query)
-	if scrape == (scrapeLog{}) {
-		return httpTrackerError("Malformed scrape")
-	}
-
-	// Request to store scrape
-	go scrape.Save()
-
-	log.Printf("scrape: [%s] %s", scrape.IP, scrape.InfoHash)
-
-	// Check for a matching file via info_hash
-	file := new(fileRecord).Load(scrape.InfoHash, "info_hash")
-	if file == (fileRecord{}) {
-		// Torrent is not currently registered
-		return httpTrackerError("Unregistered torrent")
-	}
-
-	// Ensure file is verified, meaning we will permit scraping of it
-	if !file.Verified {
-		return httpTrackerError("Unverified torrent")
-	}
-
-	// Launch peer reaper to remove old peers from this file
-	go file.PeerReaper()
-
-	// Create scrape
-	return httpTrackerScrape(file)
-}
 
 // trackerAnnounce nnounces a tracker request
 func trackerAnnounce(user userRecord, query url.Values, transID []byte) []byte {
@@ -180,23 +149,77 @@ func trackerAnnounce(user userRecord, query url.Values, transID []byte) []byte {
 	return httpTrackerAnnounce(query, file, fileUser)
 }
 
+// trackerScrape scrapes a tracker request
+func trackerScrape(user userRecord, query url.Values) []byte {
+	// List of files to be scraped
+	scrapeFiles := make([]fileRecord, 0)
+
+	// Iterate all info_hash values in query
+	for _, infoHash := range query["info_hash"] {
+		// Make a copy of query, set the info hash as current in loop
+		localQuery := query
+		localQuery.Set("info_hash", infoHash)
+
+		// Store scrape information in struct
+		scrape := new(scrapeLog).FromValues(localQuery)
+		if scrape == (scrapeLog{}) {
+			return httpTrackerError("Malformed scrape")
+		}
+
+		// Request to store scrape
+		go scrape.Save()
+
+		log.Printf("scrape: [%s] %s", scrape.IP, scrape.InfoHash)
+
+		// Check for a matching file via info_hash
+		file := new(fileRecord).Load(scrape.InfoHash, "info_hash")
+		if file == (fileRecord{}) {
+			// Torrent is not currently registered
+			return httpTrackerError("Unregistered torrent")
+		}
+
+		// Ensure file is verified, meaning we will permit scraping of it
+		if !file.Verified {
+			return httpTrackerError("Unverified torrent")
+		}
+
+		// Launch peer reaper to remove old peers from this file
+		go file.PeerReaper()
+
+		// File is valid, add it to list to be scraped
+		scrapeFiles = append(scrapeFiles[:], file)
+	}
+
+	// Create scrape
+	return httpTrackerScrape(scrapeFiles)
+}
+
+// announceResponse defines the response structure of an HTTP tracker announce
+type announceResponse struct {
+	Complete    int    "complete"
+	Incomplete  int    "incomplete"
+	Interval    int    "interval"
+	MinInterval int    "min interval"
+	Peers       string "peers"
+}
+
 // httpTrackerAnnounce announces using HTTP format
 func httpTrackerAnnounce(query url.Values, file fileRecord, fileUser fileUserRecord) []byte {
-	// Begin generating response map, with current number of known seeders/leechers
-	res := map[string][]byte{
-		"complete":   bencode.EncInt(file.Seeders()),
-		"incomplete": bencode.EncInt(file.Leechers()),
+	// Generate response struct
+	announce := announceResponse{
+		Complete:   file.Seeders(),
+		Incomplete: file.Leechers(),
 	}
 
 	// If client has not yet completed torrent, ask them to announce more frequently, so they can gather
 	// more peers and quickly report their statistics
 	if fileUser.Completed == false {
-		res["interval"] = bencode.EncInt(randRange(300, 600))
-		res["min interval"] = bencode.EncInt(300)
+		announce.Interval = 600
+		announce.MinInterval = 300
 	} else {
 		// Once a torrent has been completed, report statistics less frequently
-		res["interval"] = bencode.EncInt(randRange(static.Config.Interval-600, static.Config.Interval))
-		res["min interval"] = bencode.EncInt(static.Config.Interval / 2)
+		announce.Interval = randRange(static.Config.Interval-600, static.Config.Interval)
+		announce.MinInterval = static.Config.Interval / 2
 	}
 
 	// Check for numwant parameter, return up to that number of peers
@@ -210,37 +233,96 @@ func httpTrackerAnnounce(query url.Values, file fileRecord, fileUser fileUserRec
 		}
 	}
 
-	// Generaate compact peer list of length numwant, exclude this user
-	res["peers"] = bencode.EncBytes(file.PeerList(query.Get("ip"), numwant))
-
-	// Bencode entire map and return
-	return bencode.EncDictMap(res)
-}
-
-// httpTrackerScrape reports scrape using HTTP format
-func httpTrackerScrape(file fileRecord) []byte {
-	// Decode hex string to byte format
-	hash, err := hex.DecodeString(file.InfoHash)
-	if err != nil {
-		hash = make([]byte, 0)
+	// Marshal struct into bencode
+	buf := bytes.NewBuffer(make([]byte, 0))
+	if err := bencode.Marshal(buf, announce); err != nil {
+		log.Println(err.Error())
+		return httpTrackerError("Tracker error: failed to create announce response")
 	}
 
-	return bencode.EncDictMap(map[string][]byte{
-		"files":      bencode.EncBytes(hash),
-		"complete":   bencode.EncInt(file.Seeders()),
-		"downloaded": bencode.EncInt(file.Completed()),
-		"incomplete": bencode.EncInt(file.Leechers()),
-		// optional field: name, string
-	})
+	// Generate compact peer list of length numwant, exclude this user
+	peers := file.PeerList(query.Get("ip"), numwant)
+
+	// Because the bencode marshaler does not handle compact, binary peer list conversion,
+	// we handle it manually here.
+
+	// Get initial buffer, chop off 3 bytes: "0:e", append the actual list length with new colon
+	out := buf.Bytes()
+	out = append(out[0:len(out)-3], []byte(strconv.Itoa(len(peers))+":")...)
+
+	// Append peers list, terminate with an "e"
+	out = append(append(out, peers...), byte('e'))
+
+	// Return final announce message
+	return out
+}
+
+// scrapeResponse defines the top-level response structure of an HTTP tracker scrape
+type scrapeResponse struct {
+	Files map[string]scrapeFile "files"
+}
+
+// scrapeFile defines the fields of a scrape response for a single info_hash
+type scrapeFile struct {
+	Complete   int "complete"
+	Downloaded int "downloaded"
+	Incomplete int "incomplete"
+	// optional field: Name string "name"
+}
+
+// httpTrackerScrape reports scrape for one or more files, using HTTP format
+func httpTrackerScrape(files []fileRecord) []byte {
+	// Response struct
+	scrape := scrapeResponse{
+		Files: make(map[string]scrapeFile),
+	}
+
+	// Iterate all files
+	for _, file := range files {
+		// Generate scrapeFile struct
+		fileInfo := scrapeFile{
+			Complete:   file.Seeders(),
+			Downloaded: file.Completed(),
+			Incomplete: file.Leechers(),
+		}
+
+		// Add hash and file info to map
+		scrape.Files[file.InfoHash] = fileInfo
+	}
+
+	// Marshal struct into bencode
+	buf := bytes.NewBuffer(make([]byte, 0))
+	if err := bencode.Marshal(buf, scrape); err != nil {
+		log.Println(err.Error())
+		return httpTrackerError("Tracker error: failed to create scrape response")
+	}
+
+	return buf.Bytes()
+}
+
+// errorResponse defines the response structure of an HTTP tracker error
+type errorResponse struct {
+	FailureReason string "failure reason"
+	Interval      int    "interval"
+	MinInterval   int    "min interval"
 }
 
 // httpTrackerError reports a bencoded []byte response as specified by input string
 func httpTrackerError(err string) []byte {
-	return bencode.EncDictMap(map[string][]byte{
-		"failure reason": bencode.EncString(err),
-		"interval":       bencode.EncInt(randRange(static.Config.Interval-600, static.Config.Interval)),
-		"min interval":   bencode.EncInt(static.Config.Interval / 2),
-	})
+	res := errorResponse{
+		FailureReason: err,
+		Interval:      static.Config.Interval,
+		MinInterval:   static.Config.Interval / 2,
+	}
+
+	// Marshal struct into bencode
+	buf := bytes.NewBuffer(make([]byte, 0))
+	if err := bencode.Marshal(buf, res); err != nil {
+		log.Println(err.Error())
+		return nil
+	}
+
+	return buf.Bytes()
 }
 
 // udpTrackerAnnounce announces using UDP format

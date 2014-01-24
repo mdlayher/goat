@@ -5,9 +5,9 @@ import (
 	"testing"
 )
 
-// TestApiKey verifies that apiKey creation, save, load, and delete work properly
-func TestApiKey(t *testing.T) {
-	log.Println("TestApiKey()")
+// TestAPIKey verifies that apiKey creation, save, load, and delete work properly
+func TestAPIKey(t *testing.T) {
+	log.Println("TestAPIKey()")
 
 	// Load config
 	config := loadConfig()
