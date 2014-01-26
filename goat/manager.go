@@ -46,7 +46,7 @@ func Manager(killChan chan bool, exitChan chan int) {
 
 	// Attempt database connection
 	if !dbPing() {
-		panic(fmt.Errorf("Cannot connect to database", dbName(), ", exiting now."))
+		panic(fmt.Errorf("Cannot connect to database %s; exiting now", dbName()))
 	}
 	log.Println("Database", dbName(), ": OK")
 
