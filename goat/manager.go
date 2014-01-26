@@ -1,6 +1,7 @@
 package goat
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -45,10 +46,19 @@ func Manager(killChan chan bool, exitChan chan int) {
 
 	// Attempt database connection
 	if !dbPing() {
-		log.Println("Cannot connect to database", dbName(), ", exiting now.")
-		os.Exit(1)
+		panic(fmt.Errorf("Cannot connect to database", dbName(), ", exiting now."))
 	}
 	log.Println("Database", dbName(), ": OK")
+
+	db, err := dbConnectFunc()
+	if err != nil {
+	}
+	for _, schema := range mysql_schemas {
+		_ = (db).(*dbw).Execf(schema)
+		if err != nil {
+			panic(err)
+		}
+	}
 
 	// If configured, attempt redis connection
 	if static.Config.Redis {
