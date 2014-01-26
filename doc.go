@@ -22,12 +22,6 @@ A blank ql database file is located under 'res/ql/goat.db', and will be copied t
 '~/.config/goat/goat.db' on UNIX systems.  goat is now able to use ql as its
 storage backend, for those who do not wish to use an external, MySQL backend.
 
-Features
-
-goat is built with a multitude of features which allow it to be used in a wide
-variety of configurations.  It features many of the standby features of tracker
-software, but also adds some new ones into the mix.
-
 Listeners
 
 goat is capable of listening for torrent traffic in three modes: HTTP, HTTPS,
