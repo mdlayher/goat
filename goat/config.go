@@ -5,7 +5,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"os/user"
 )
 
 // dbConf represents database configuration
@@ -49,12 +48,12 @@ func loadConfig() conf {
 	}
 
 	// Store config in standard location
-	path = user.HomeDir + "/.config/goat/"
+	path = "./"
 
 	log.Println("Loading configuration: " + path + config)
 
 	// Check file existence
-	_, err = os.Stat(path + config)
+	_, err := os.Stat(path + config)
 	if err != nil {
 		if os.IsNotExist(err) {
 			log.Println("Could not find configuration, attempting to create it...")
