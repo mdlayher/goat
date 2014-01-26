@@ -48,15 +48,8 @@ func loadConfig() conf {
 		config = ".config.travis.json"
 	}
 
-	// Load current user from OS, to get home directory
-	user, err := user.Current()
-	if err != nil {
-		log.Println(err.Error())
-		path = "./"
-	} else {
-		// Store config in standard location
-		path = user.HomeDir + "/.config/goat/"
-	}
+	// Store config in standard location
+	path = user.HomeDir + "/.config/goat/"
 
 	log.Println("Loading configuration: " + path + config)
 
