@@ -34,14 +34,14 @@ func Manager(killChan chan bool, exitChan chan int) {
 	config := loadConfig()
 	if config == (conf{}) {
 		log.Println("Cannot load configuration, exiting now.")
-		os.Exit(1)
+		panic(err)
 	}
 	static.Config = config
 
 	// Check for sane announce interval (10 minutes or more)
 	if static.Config.Interval <= 600 {
 		log.Println("Announce interval must be at least 600 seconds.")
-		os.Exit(1)
+		panic(err)
 	}
 
 	// Attempt database connection
@@ -64,7 +64,7 @@ func Manager(killChan chan bool, exitChan chan int) {
 	if static.Config.Redis {
 		if !redisPing() {
 			log.Println("Cannot connect to Redis, exiting now.")
-			os.Exit(1)
+			panic(err)
 		}
 		log.Println("Redis : OK")
 	}

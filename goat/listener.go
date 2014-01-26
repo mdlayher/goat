@@ -13,9 +13,8 @@ func listenHTTP(sendChan chan bool, recvChan chan bool) {
 	// Listen on specified TCP port
 	l, err := net.Listen("tcp", ":"+strconv.Itoa(static.Config.Port))
 	if err != nil {
-		log.Println(err.Error())
 		log.Println("Cannot start HTTP server, exiting now.")
-		os.Exit(1)
+		panic(err)
 	}
 
 	// Send listener to handler
@@ -27,9 +26,8 @@ func listenHTTPS(sendChan chan bool, recvChan chan bool) {
 	// Load certificate and key
 	cert, err := tls.LoadX509KeyPair(static.Config.SSL.Certificate, static.Config.SSL.Key)
 	if err != nil {
-		log.Println(err.Error())
 		log.Println("Cannot load HTTPS X509 key pair, exiting now.")
-		os.Exit(1)
+		panic(err)
 	}
 
 	// SSL configuration
@@ -40,9 +38,8 @@ func listenHTTPS(sendChan chan bool, recvChan chan bool) {
 	// Listen on specified SSL port
 	l, err := tls.Listen("tcp", ":"+strconv.Itoa(static.Config.SSL.Port), &sslConfig)
 	if err != nil {
-		log.Println(err.Error())
 		log.Println("Cannot start HTTPS server, exiting now.")
-		os.Exit(1)
+		panic(err)
 	}
 
 	// Send listener to handler

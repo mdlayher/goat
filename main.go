@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/mdlayher/goat/goat"
+	"github.com/ChimeraCoder/telescope/goat"
 )
 
 var test = flag.Bool("test", false, "Make goat start, and exit shortly after. Used for testing.")

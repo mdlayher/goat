@@ -36,9 +36,8 @@ func handleHTTP(l net.Listener, sendChan chan bool, recvChan chan bool) {
 	if err := http.Serve(l, nil); err != nil {
 		// Ignore connection closing error, caused by stopping listener
 		if !strings.Contains(err.Error(), "use of closed network connection") {
-			log.Println(err.Error())
 			log.Println("Could not serve HTTP(S), exiting now")
-			os.Exit(1)
+			panic(err)
 		}
 	}
 }
