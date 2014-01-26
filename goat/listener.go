@@ -11,7 +11,7 @@ import (
 // Listen and handle HTTP (TCP) connections
 func listenHTTP(sendChan chan bool, recvChan chan bool) {
 	// Listen on specified TCP port
-	l, err := net.Listen("tcp", ":" + strconv.Itoa(static.Config.Port))
+	l, err := net.Listen("tcp", ":"+strconv.Itoa(static.Config.Port))
 	if err != nil {
 		log.Println(err.Error())
 		log.Println("Cannot start HTTP server, exiting now.")
@@ -38,7 +38,7 @@ func listenHTTPS(sendChan chan bool, recvChan chan bool) {
 	}
 
 	// Listen on specified SSL port
-	l, err := tls.Listen("tcp", ":" + strconv.Itoa(static.Config.SSL.Port), &sslConfig)
+	l, err := tls.Listen("tcp", ":"+strconv.Itoa(static.Config.SSL.Port), &sslConfig)
 	if err != nil {
 		log.Println(err.Error())
 		log.Println("Cannot start HTTPS server, exiting now.")
@@ -52,7 +52,7 @@ func listenHTTPS(sendChan chan bool, recvChan chan bool) {
 // Listen on specified UDP port, accept and handle connections
 func listenUDP(sendChan chan bool, recvChan chan bool) {
 	// Listen on specified UDP port
-	addr, err := net.ResolveUDPAddr("udp", ":" + strconv.Itoa(static.Config.Port))
+	addr, err := net.ResolveUDPAddr("udp", ":"+strconv.Itoa(static.Config.Port))
 	l, err := net.ListenUDP("udp", addr)
 	if err != nil {
 		log.Println(err.Error())

@@ -64,7 +64,7 @@ func TestBasicAPIAuthenticator(t *testing.T) {
 	// Generate mock HTTP request
 	r := http.Request{}
 	headers := map[string][]string{
-		"Authorization": []string{"Basic " + base64.URLEncoding.EncodeToString([]byte(user.Username+":"+pass))},
+		"Authorization": {"Basic " + base64.URLEncoding.EncodeToString([]byte(user.Username+":"+pass))},
 	}
 	r.Header = headers
 
