@@ -8,13 +8,20 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/mdlayher/goat/goat"
+	"github.com/ChimeraCoder/telescope/goat"
 )
+
+var test = flag.Bool("test", false, "Make goat start, and exit shortly after. Used for testing.")
+var redisPass = flag.String("redispass", "", "password for the Redis database, if any")
+var mysqlDSN = flag.String("mysqldsn", "", "msql data source name")
 
 func main() {
 	// Set up command line options
-	test := flag.Bool("test", false, "Make goat start, and exit shortly after. Used for testing.")
 	flag.Parse()
+
+	// Set password for Redis database and DSN for MySQL database
+	goat.RedisPass = redisPass
+	goat.MysqlDSN = mysqlDSN
 
 	// If test mode, trigger quit shortly after startup
 	// Used for CI tests, so that we ensure goat starts up and is able to stop gracefully

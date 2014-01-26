@@ -5,7 +5,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"os/user"
 )
 
 // dbConf represents database configuration
@@ -48,20 +47,13 @@ func loadConfig() conf {
 		config = ".config.travis.json"
 	}
 
-	// Load current user from OS, to get home directory
-	user, err := user.Current()
-	if err != nil {
-		log.Println(err.Error())
-		path = "./"
-	} else {
-		// Store config in standard location
-		path = user.HomeDir + "/.config/goat/"
-	}
+	// Store config in standard location
+	path = "./"
 
 	log.Println("Loading configuration: " + path + config)
 
 	// Check file existence
-	_, err = os.Stat(path + config)
+	_, err := os.Stat(path + config)
 	if err != nil {
 		if os.IsNotExist(err) {
 			log.Println("Could not find configuration, attempting to create it...")

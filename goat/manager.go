@@ -1,6 +1,7 @@
 package goat
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -33,28 +34,37 @@ func Manager(killChan chan bool, exitChan chan int) {
 	config := loadConfig()
 	if config == (conf{}) {
 		log.Println("Cannot load configuration, exiting now.")
-		os.Exit(1)
+		panic(err)
 	}
 	static.Config = config
 
 	// Check for sane announce interval (10 minutes or more)
 	if static.Config.Interval <= 600 {
 		log.Println("Announce interval must be at least 600 seconds.")
-		os.Exit(1)
+		panic(err)
 	}
 
 	// Attempt database connection
 	if !dbPing() {
-		log.Println("Cannot connect to database", dbName(), ", exiting now.")
-		os.Exit(1)
+		panic(fmt.Errorf("Cannot connect to database %s; exiting now", dbName()))
 	}
 	log.Println("Database", dbName(), ": OK")
+
+	db, err := dbConnectFunc()
+	if err != nil {
+	}
+	for _, schema := range mysql_schemas {
+		_ = (db).(*dbw).Execf(schema)
+		if err != nil {
+			panic(err)
+		}
+	}
 
 	// If configured, attempt redis connection
 	if static.Config.Redis {
 		if !redisPing() {
 			log.Println("Cannot connect to Redis, exiting now.")
-			os.Exit(1)
+			panic(err)
 		}
 		log.Println("Redis : OK")
 	}
@@ -96,7 +106,7 @@ func Manager(killChan chan bool, exitChan chan int) {
 
 			// If program hangs for more than 10 seconds, trigger a force halt
 			go func() {
-				time.Sleep(10 * time.Second)
+				<-time.After(10 * time.Second)
 				log.Println("Timeout reached, triggering force halt")
 				if err := syscall.Kill(os.Getpid(), syscall.SIGTERM); err != nil {
 					log.Println(err.Error())
