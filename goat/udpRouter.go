@@ -151,8 +151,14 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 		return res.Bytes(), nil
 	// Announce
 	case 1:
+		// Ensure connection ID map contains this IP address
+		expID, ok := udpAddrToID[addr.String()];
+		if !ok {
+			return udpTrackerError("Client must properly handshake before announce", transID), udpHandshakeError
+		}
+
 		// Validate expected connection ID using map
-		if connID != udpAddrToID[addr.String()] {
+		if connID != expID {
 			return udpTrackerError("Invalid UDP connection ID", transID), udpHandshakeError
 		}
 
