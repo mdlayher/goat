@@ -111,9 +111,8 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 	transID := buf[12:16]
 
 	// Action switch
-	switch action {
-	// Connect
-	case 0:
+	// Action 0: Connect
+	if action == 0 {
 		// Validate UDP tracker handshake
 		if connID != udpInitID {
 			return udpTrackerError("Invalid UDP tracker handshake", transID), errUDPHandshake
@@ -149,30 +148,32 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 		}
 
 		return res.Bytes(), nil
-	// Announce
-	case 1:
-		// Ensure connection ID map contains this IP address
-		expID, ok := udpAddrToID[addr.String()]
-		if !ok {
-			return udpTrackerError("Client must properly handshake before announce", transID), errUDPHandshake
-		}
+	}
 
-		// Validate expected connection ID using map
-		if connID != expID {
-			return udpTrackerError("Invalid UDP connection ID", transID), errUDPHandshake
-		}
+	// For all tracker actions other than connect, we must validate the connection ID for this
+	// address, ensuring it matches the previously set value
 
-		// Clear this IP from the connection map
-		delete(udpAddrToID, addr.String())
+	// Ensure connection ID map contains this IP address
+	expID, ok := udpAddrToID[addr.String()]
+	if !ok {
+		return udpTrackerError("Client must properly handshake before announce", transID), errUDPHandshake
+	}
 
+	// Validate expected connection ID using map
+	if connID != expID {
+		return udpTrackerError("Invalid UDP connection ID", transID), errUDPHandshake
+	}
+
+	// Clear this IP from the connection map
+	delete(udpAddrToID, addr.String())
+
+	// Action 1: Announce
+	if action == 1 {
 		// Generate connection query
 		query := url.Values{}
 
 		// Mark client as UDP
 		query.Set("udp", "1")
-
-		// Transaction ID
-		transID := buf[12:16]
 
 		// Info hash
 		query.Set("info_hash", string(buf[16:36]))
@@ -257,7 +258,13 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 
 		// Trigger an anonymous announce
 		return trackerAnnounce(userRecord{}, query, transID), nil
-	default:
-		return udpTrackerError("Invalid action", transID), errUDPAction
 	}
+
+	// Action 2: Scrape
+	if action == 2 {
+		return udpTrackerError("Scrape is not yet implemented", transID), errUDPAction
+	}
+
+	// No action matched
+	return udpTrackerError("Invalid action", transID), errUDPAction
 }
