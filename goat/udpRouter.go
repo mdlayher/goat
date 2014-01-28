@@ -18,18 +18,18 @@ const udpInitID = 4497486125440
 
 // UDP errors
 var (
-	// udpActionError is returned when a client requests an invalid tracker action
-	udpActionError = errors.New("udp: client did not send a valid UDP tracker action")
-	// udpHandshakeError is returned when a client does not send the proper handshake ID
-	udpHandshakeError = errors.New("udp: client did not send proper UDP tracker handshake")
-	// udpIntegerError is returned when a client sends an invalid integer parameter
-	udpIntegerError = errors.New("udp: client sent an invalid integer parameter")
-	// udpWriteError is returned when the tracker cannot generate a proper response
-	udpWriteError = errors.New("udp: tracker cannot generate UDP tracker response")
+	// errUDPAction is returned when a client requests an invalid tracker action
+	errUDPAction = errors.New("udp: client did not send a valid UDP tracker action")
+	// errUDPHandshake is returned when a client does not send the proper handshake ID
+	errUDPHandshake = errors.New("udp: client did not send proper UDP tracker handshake")
+	// errUDPInteger is returned when a client sends an invalid integer parameter
+	errUDPInteger = errors.New("udp: client sent an invalid integer parameter")
+	// errUDPWrite is returned when the tracker cannot generate a proper response
+	errUDPWrite = errors.New("udp: tracker cannot generate UDP tracker response")
 )
 
 // UDP address to connection ID map
-var udpAddrToID map[string]uint64 = map[string]uint64{}
+var udpAddrToID = map[string]uint64{}
 
 // Handle incoming UDP connections and return response
 func handleUDP(l *net.UDPConn, sendChan chan bool, recvChan chan bool) {
@@ -116,7 +116,7 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 	case 0:
 		// Validate UDP tracker handshake
 		if connID != udpInitID {
-			return udpTrackerError("Invalid UDP tracker handshake", transID), udpHandshakeError
+			return udpTrackerError("Invalid UDP tracker handshake", transID), errUDPHandshake
 		}
 
 		res := bytes.NewBuffer(make([]byte, 0))
@@ -125,14 +125,14 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 		err := binary.Write(res, binary.BigEndian, uint32(0))
 		if err != nil {
 			log.Println(err.Error())
-			return udpTrackerError("Could not generate UDP tracker response", transID), udpWriteError
+			return udpTrackerError("Could not generate UDP tracker response", transID), errUDPWrite
 		}
 
 		// Transaction ID
 		err = binary.Write(res, binary.BigEndian, transID)
 		if err != nil {
 			log.Println(err.Error())
-			return udpTrackerError("Could not generate UDP tracker response", transID), udpWriteError
+			return udpTrackerError("Could not generate UDP tracker response", transID), errUDPWrite
 		}
 
 		// Generate a connection ID, which will be expected for this client next call
@@ -145,21 +145,21 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 		err = binary.Write(res, binary.BigEndian, expID)
 		if err != nil {
 			log.Println(err.Error())
-			return udpTrackerError("Could not generate UDP tracker response", transID), udpWriteError
+			return udpTrackerError("Could not generate UDP tracker response", transID), errUDPWrite
 		}
 
 		return res.Bytes(), nil
 	// Announce
 	case 1:
 		// Ensure connection ID map contains this IP address
-		expID, ok := udpAddrToID[addr.String()];
+		expID, ok := udpAddrToID[addr.String()]
 		if !ok {
-			return udpTrackerError("Client must properly handshake before announce", transID), udpHandshakeError
+			return udpTrackerError("Client must properly handshake before announce", transID), errUDPHandshake
 		}
 
 		// Validate expected connection ID using map
 		if connID != expID {
-			return udpTrackerError("Invalid UDP connection ID", transID), udpHandshakeError
+			return udpTrackerError("Invalid UDP connection ID", transID), errUDPHandshake
 		}
 
 		// Clear this IP from the connection map
@@ -183,7 +183,7 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 		t, err := strconv.ParseInt(hex.EncodeToString(buf[56:64]), 16, 64)
 		if err != nil {
 			log.Println(err.Error())
-			return udpTrackerError("Invalid integer parameter: downloaded", transID), udpIntegerError
+			return udpTrackerError("Invalid integer parameter: downloaded", transID), errUDPInteger
 		}
 		query.Set("downloaded", strconv.FormatInt(t, 10))
 
@@ -191,7 +191,7 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 		t, err = strconv.ParseInt(hex.EncodeToString(buf[64:72]), 16, 64)
 		if err != nil {
 			log.Println(err.Error())
-			return udpTrackerError("Invalid integer parameter: left", transID), udpIntegerError
+			return udpTrackerError("Invalid integer parameter: left", transID), errUDPInteger
 		}
 		query.Set("left", strconv.FormatInt(t, 10))
 
@@ -199,7 +199,7 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 		t, err = strconv.ParseInt(hex.EncodeToString(buf[72:80]), 16, 64)
 		if err != nil {
 			log.Println(err.Error())
-			return udpTrackerError("Invalid integer parameter: uploaded", transID), udpIntegerError
+			return udpTrackerError("Invalid integer parameter: uploaded", transID), errUDPInteger
 		}
 		query.Set("uploaded", strconv.FormatInt(t, 10))
 
@@ -207,7 +207,7 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 		t, err = strconv.ParseInt(hex.EncodeToString(buf[80:84]), 16, 32)
 		if err != nil {
 			log.Println(err.Error())
-			return udpTrackerError("Invalid integer parameter: event", transID), udpIntegerError
+			return udpTrackerError("Invalid integer parameter: event", transID), errUDPInteger
 		}
 		event := strconv.FormatInt(t, 10)
 
@@ -227,7 +227,7 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 		t, err = strconv.ParseInt(hex.EncodeToString(buf[84:88]), 16, 32)
 		if err != nil {
 			log.Println(err.Error())
-			return udpTrackerError("Invalid integer parameter: ip", transID), udpIntegerError
+			return udpTrackerError("Invalid integer parameter: ip", transID), errUDPInteger
 		}
 		query.Set("ip", strconv.FormatInt(t, 10))
 
@@ -251,13 +251,13 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 		t, err = strconv.ParseInt(hex.EncodeToString(buf[96:98]), 16, 32)
 		if err != nil {
 			log.Println(err.Error())
-			return udpTrackerError("Invalid integer parameter: port", transID), udpIntegerError
+			return udpTrackerError("Invalid integer parameter: port", transID), errUDPInteger
 		}
 		query.Set("port", strconv.FormatInt(t, 10))
 
 		// Trigger an anonymous announce
 		return trackerAnnounce(userRecord{}, query, transID), nil
 	default:
-		return udpTrackerError("Invalid action", transID), udpActionError
+		return udpTrackerError("Invalid action", transID), errUDPAction
 	}
 }
