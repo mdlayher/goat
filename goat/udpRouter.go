@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"sync/atomic"
+	"time"
 )
 
 // Handshake for UDP tracker protocol
@@ -164,8 +165,12 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 		return udpTrackerError("Invalid UDP connection ID", transID), errUDPHandshake
 	}
 
-	// Clear this IP from the connection map
-	delete(udpAddrToID, addr.String())
+	// Clear this IP from the connection map after 2 minutes
+	// note: this is done to conserve memory and prevent session fixation
+	go func(addr *net.UDPAddr) {
+		<-time.After(2 * time.Minute)
+		delete(udpAddrToID, addr.String())
+	}(addr)
 
 	// Action 1: Announce
 	if action == 1 {
@@ -271,7 +276,7 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 		// Loop and iterate info_hash, up to 70 total (74 is said to be max by BEP15)
 		for i := 16; i < 16+(70*20); i += 20 {
 			// Validate that we are not appending nil bytes
-			if buf[i+20] == byte(0) {
+			if buf[i] == byte(0) {
 				break
 			}
 
