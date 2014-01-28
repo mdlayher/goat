@@ -273,6 +273,9 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 		// Mark client as UDP
 		query.Set("udp", "1")
 
+		// Capture client IP
+		query.Set("ip", strings.Split(addr.String(), ":")[0])
+
 		// Loop and iterate info_hash, up to 70 total (74 is said to be max by BEP15)
 		for i := 16; i < 16+(70*20); i += 20 {
 			// Validate that we are not appending nil bytes
