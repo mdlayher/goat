@@ -11,7 +11,7 @@ import (
 	bencode "code.google.com/p/bencode-go"
 )
 
-// trackerAnnounce nnounces a tracker request
+// trackerAnnounce announces a tracker request
 func trackerAnnounce(user userRecord, query url.Values, transID []byte) []byte {
 	// Store announce information in struct
 	announce := new(announceLog).FromValues(query)
@@ -451,7 +451,6 @@ func udpTrackerScrape(files []fileRecord, transID []byte) []byte {
 
 	return res.Bytes()
 }
-
 
 // udpTrackerError reports a []byte response packed datagram
 func udpTrackerError(msg string, transID []byte) []byte {

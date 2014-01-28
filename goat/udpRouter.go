@@ -269,7 +269,7 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 		query.Set("udp", "1")
 
 		// Loop and iterate info_hash, up to 70 total (74 is said to be max by BEP15)
-		for i := 16; i < 16 + (70 * 20); i += 20 {
+		for i := 16; i < 16+(70*20); i += 20 {
 			// Validate that we are not appending nil bytes
 			if buf[i+20] == byte(0) {
 				break
