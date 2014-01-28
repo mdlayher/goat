@@ -13,9 +13,6 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// MySQLDSN is set via command-line, and can be used to override all MySQL configuration
-var MySQLDSN *string
-
 // init performs startup routines for database_mysql
 func init() {
 	// dbConnectFunc connects to MySQL database

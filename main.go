@@ -17,6 +17,9 @@ var config = flag.String("config", "", "Override config file location with custo
 // mySQLDSN is a flag which allows manual override of MySQL DSN configuration
 var mySQLDSN = flag.String("mysqldsn", "", "Override config file with the following MySQL DSN configuration.")
 
+// qlDBPath is a flag which allows override of the default ql database file location
+var qlDBPath = flag.String("qldb", "", "Override ql database file location with custom path.")
+
 // test is a flag which causes goat to start, and exit shortly after
 var test = flag.Bool("test", false, "Make goat start, and exit shortly after. Used for testing.")
 
@@ -27,6 +30,7 @@ func main() {
 	// Pass command-line flags to override default configurations
 	goat.ConfigPath = config
 	goat.MySQLDSN = mySQLDSN
+	goat.QLDBPath = qlDBPath
 
 	// If test mode, trigger quit shortly after startup
 	// Used for CI tests, so that we ensure goat starts up and is able to stop gracefully
