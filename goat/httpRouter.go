@@ -258,7 +258,7 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if _, err := w.Write(trackerScrape(user, query)); err != nil {
+		if _, err := w.Write(trackerScrape(query, nil)); err != nil {
 			log.Println(err.Error())
 		}
 
