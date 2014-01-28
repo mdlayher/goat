@@ -7,18 +7,16 @@ import (
 	"github.com/garyburd/redigo/redis"
 )
 
-var RedisPass *string
-
 // redisConnect initiates a connection to Redis server
 func redisConnect() (c redis.Conn, err error) {
-	c, err = redis.Dial("tcp", "crestfish.redistogo.com:11107")
+	c, err = redis.Dial("tcp", static.Config.Redis.Host)
 	if err != nil {
 		return
 	}
 
 	// Authenticate with Redis database if necessary
-	if RedisPass != nil && *RedisPass != "" {
-		_, err = c.Do("AUTH", RedisPass)
+	if static.Config.Redis.Password != "" {
+		_, err = c.Do("AUTH", static.Config.Redis.Password)
 	}
 	return
 }

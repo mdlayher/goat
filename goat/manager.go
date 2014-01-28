@@ -33,38 +33,25 @@ func Manager(killChan chan bool, exitChan chan int) {
 	// Load configuration
 	config := loadConfig()
 	if config == (conf{}) {
-		log.Println("Cannot load configuration, exiting now.")
-		panic(err)
+		panic("Cannot load configuration, panicking")
 	}
 	static.Config = config
 
 	// Check for sane announce interval (10 minutes or more)
 	if static.Config.Interval <= 600 {
-		log.Println("Announce interval must be at least 600 seconds.")
-		panic(err)
+		panic("Announce interval must be at least 600 seconds, panicking")
 	}
 
 	// Attempt database connection
 	if !dbPing() {
-		panic(fmt.Errorf("Cannot connect to database %s; exiting now", dbName()))
+		panic(fmt.Errorf("cannot connect to database %s; panicking", dbName()))
 	}
 	log.Println("Database", dbName(), ": OK")
 
-	db, err := dbConnectFunc()
-	if err != nil {
-	}
-	for _, schema := range mysql_schemas {
-		_ = (db).(*dbw).Execf(schema)
-		if err != nil {
-			panic(err)
-		}
-	}
-
 	// If configured, attempt redis connection
-	if static.Config.Redis {
+	if static.Config.Redis.Enabled {
 		if !redisPing() {
-			log.Println("Cannot connect to Redis, exiting now.")
-			panic(err)
+			panic("Cannot connect to Redis, panicking")
 		}
 		log.Println("Redis : OK")
 	}
@@ -88,7 +75,7 @@ func Manager(killChan chan bool, exitChan chan int) {
 		go listenHTTP(httpSendChan, httpRecvChan)
 		log.Println("HTTP listener launched on port " + strconv.Itoa(static.Config.Port))
 	}
-	if static.Config.HTTPS {
+	if static.Config.SSL.Enabled {
 		go listenHTTPS(httpsSendChan, httpsRecvChan)
 		log.Println("HTTPS listener launched on port " + strconv.Itoa(static.Config.SSL.Port))
 	}
@@ -119,7 +106,7 @@ func Manager(killChan chan bool, exitChan chan int) {
 				httpSendChan <- true
 				<-httpRecvChan
 			}
-			if static.Config.HTTPS {
+			if static.Config.SSL.Enabled {
 				log.Println("Stopping HTTPS listener")
 				httpsSendChan <- true
 				<-httpsRecvChan

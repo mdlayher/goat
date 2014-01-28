@@ -4,18 +4,23 @@
 	"Whitelist": true,
 	"Interval": 3600,
 	"HTTP": true,
-	"HTTPS": false,
 	"API": true,
 	"UDP": false,
-	"Redis": true,
 	"SSL": {
+		"Enabled": false,
 		"Port": 8443,
 		"Certificate": "goat.crt",
 		"Key": "goat.key"
 	},
 	"DB": {
+		"Host": "localhost:3306",
 		"Database": "goat",
 		"Username": "goat",
 		"Password": "goat"
+	},
+	"Redis": {
+		"Enabled": false,
+		"Host": "localhost:6379",
+		"Password": ""
 	}
 }

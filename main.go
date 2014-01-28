@@ -8,20 +8,25 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ChimeraCoder/telescope/goat"
+	"github.com/mdlayher/goat/goat"
 )
 
+// config is a flag which allows override of the default configuration file location
+var config = flag.String("config", "", "Override config file location with custom path.")
+
+// mySQLDSN is a flag which allows manual override of MySQL DSN configuration
+var mySQLDSN = flag.String("mysqldsn", "", "Override config file with the following MySQL DSN configuration.")
+
+// test is a flag which causes goat to start, and exit shortly after
 var test = flag.Bool("test", false, "Make goat start, and exit shortly after. Used for testing.")
-var redisPass = flag.String("redispass", "", "password for the Redis database, if any")
-var mysqlDSN = flag.String("mysqldsn", "", "msql data source name")
 
 func main() {
 	// Set up command line options
 	flag.Parse()
 
-	// Set password for Redis database and DSN for MySQL database
-	goat.RedisPass = redisPass
-	goat.MysqlDSN = mysqlDSN
+	// Pass command-line flags to override default configurations
+	goat.ConfigPath = config
+	goat.MySQLDSN = mySQLDSN
 
 	// If test mode, trigger quit shortly after startup
 	// Used for CI tests, so that we ensure goat starts up and is able to stop gracefully

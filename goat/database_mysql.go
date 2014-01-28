@@ -13,21 +13,22 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-var MysqlDSN *string
+// MySQLDSN is set via command-line, and can be used to override all MySQL configuration
+var MySQLDSN *string
 
 // init performs startup routines for database_mysql
 func init() {
 	// dbConnectFunc connects to MySQL database
 	dbConnectFunc = func() (dbModel, error) {
 		var conn string
-		// Generate connection string using configuration
-		if MysqlDSN == nil || *MysqlDSN == "" {
+		// Generate connection string using configuration file
+		if MySQLDSN == nil || *MySQLDSN == "" {
 			conn = fmt.Sprintf("%s:%s@/%s", static.Config.DB.Username, static.Config.DB.Password, static.Config.DB.Database)
 		} else {
-			conn = *MysqlDSN
+			// Use connection string passed by command line flag
+			conn = *MySQLDSN
 		}
 
-		log.Printf("dialing %s", conn)
 		// Return connection and associated errors
 		db, err := sqlx.Connect("mysql", conn)
 		return &dbw{db}, err
