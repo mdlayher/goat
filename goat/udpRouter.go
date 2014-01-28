@@ -58,7 +58,12 @@ func handleUDP(l *net.UDPConn, sendChan chan bool, recvChan chan bool) {
 
 		// Triggered on graceful shutdown
 		if err != nil {
-			log.Println(err.Error())
+			// Ignore connection closing error, caused by stopping network listener
+			if !strings.Contains(err.Error(), "use of closed network connection") {
+				log.Println(err.Error())
+				panic(err)
+			}
+
 			return
 		}
 
