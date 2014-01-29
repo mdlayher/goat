@@ -1,27 +1,33 @@
 package goat
 
 import (
-	"bytes"
-	"encoding/binary"
 	"log"
 	"net/url"
-	"strconv"
-
-	// Import bencode library
-	bencode "code.google.com/p/bencode-go"
 )
+
+// torrentTracker defines the common interface for trackers to generate their responses
+type torrentTracker interface {
+	Announce(url.Values, fileRecord) []byte
+	Error(string) []byte
+	Protocol() string
+	Scrape([]fileRecord) []byte
+	SetInterval(int)
+}
 
 // trackerAnnounce announces a tracker request
 func trackerAnnounce(user userRecord, query url.Values, transID []byte) []byte {
+	// Create the appropriate torrentTracker to handle this client
+	var tracker torrentTracker
+	if query.Get("udp") == "1" && transID != nil {
+		tracker = udpTracker{TransID: transID}
+	} else {
+		tracker = httpTracker{}
+	}
+
 	// Store announce information in struct
 	announce := new(announceLog).FromValues(query)
 	if announce == (announceLog{}) {
-		// If a transaction ID is available, this must be a UDP announce
-		if transID == nil {
-			return httpTrackerError("Malformed announce")
-		}
-
-		return udpTrackerError("Malformed announce", transID)
+		return tracker.Error("Malformed announce")
 	}
 
 	// Request to store announce
@@ -33,15 +39,7 @@ func trackerAnnounce(user userRecord, query url.Values, transID []byte) []byte {
 		event = announce.Event + " "
 	}
 
-	// Report protocol
-	proto := ""
-	if announce.UDP {
-		proto = " udp"
-	} else {
-		proto = "http"
-	}
-
-	log.Printf("announce: [%s %s:%d] %s%s", proto, announce.IP, announce.Port, event, announce.InfoHash)
+	log.Printf("announce: [%s %s:%d] %s%s", tracker.Protocol(), announce.IP, announce.Port, event, announce.InfoHash)
 
 	// Check for a matching file via info_hash
 	file := new(fileRecord).Load(announce.InfoHash, "info_hash")
@@ -55,28 +53,20 @@ func trackerAnnounce(user userRecord, query url.Values, transID []byte) []byte {
 		go file.Save()
 
 		// Report error
-		if !announce.UDP {
-			return httpTrackerError("Unregistered torrent")
-		}
-
-		return udpTrackerError("Unregistered torrent", transID)
+		return tracker.Error("Unregistered torrent")
 	}
 
 	// Ensure file is verified, meaning we will permit tracking of it
 	if !file.Verified {
-		if !announce.UDP {
-			return httpTrackerError("Unverified torrent")
-		}
-
-		return udpTrackerError("Unverified torrent", transID)
+		return tracker.Error("Unverified torrent")
 	}
 
 	// Launch peer reaper to remove old peers from this file
 	go file.PeerReaper()
 
 	// If UDP tracker, we cannot reliably detect user, so we announce anonymously
-	if announce.UDP {
-		return udpTrackerAnnounce(query, file, transID)
+	if _, ok := tracker.(udpTracker); ok {
+		return tracker.Announce(query, file)
 	}
 
 	// Check existing record for this user with this file and this IP
@@ -142,15 +132,32 @@ func trackerAnnounce(user userRecord, query url.Values, transID []byte) []byte {
 		}
 	}
 
+	// If client has not yet completed torrent, ask them to announce more frequently, so they can gather
+	// more peers and quickly report their statistics
+	if fileUser.Completed == false {
+		tracker.SetInterval(600)
+	} else {
+		// Once a torrent has been completed, report statistics less frequently
+		tracker.SetInterval(static.Config.Interval)
+	}
+
 	// Update file/user relationship record
 	go fileUser.Save()
 
 	// Create announce
-	return httpTrackerAnnounce(query, file, fileUser)
+	return tracker.Announce(query, file)
 }
 
 // trackerScrape scrapes a tracker request
 func trackerScrape(query url.Values, transID []byte) []byte {
+	// Create the appropriate torrentTracker to handle this client
+	var tracker torrentTracker
+	if query.Get("udp") == "1" && transID != nil {
+		tracker = udpTracker{TransID: transID}
+	} else {
+		tracker = httpTracker{}
+	}
+
 	// List of files to be scraped
 	scrapeFiles := make([]fileRecord, 0)
 
@@ -163,45 +170,24 @@ func trackerScrape(query url.Values, transID []byte) []byte {
 		// Store scrape information in struct
 		scrape := new(scrapeLog).FromValues(localQuery)
 		if scrape == (scrapeLog{}) {
-			// If a transaction ID is available, this must be a UDP scrape
-			if transID == nil {
-				return httpTrackerError("Malformed scrape")
-			}
-
-			return udpTrackerError("Malformed scrape", transID)
+			return tracker.Error("Malformed scrape")
 		}
 
 		// Request to store scrape
 		go scrape.Save()
 
-		// Report protocol
-		proto := ""
-		if scrape.UDP {
-			proto = " udp"
-		} else {
-			proto = "http"
-		}
-
-		log.Printf("scrape: [%s %s] %s", proto, scrape.IP, scrape.InfoHash)
+		log.Printf("scrape: [%s %s] %s", tracker.Protocol(), scrape.IP, scrape.InfoHash)
 
 		// Check for a matching file via info_hash
 		file := new(fileRecord).Load(scrape.InfoHash, "info_hash")
 		if file == (fileRecord{}) {
 			// Torrent is not currently registered
-			if !scrape.UDP {
-				return httpTrackerError("Unregistered torrent")
-			}
-
-			return udpTrackerError("Unregistered torrent", transID)
+			return tracker.Error("Unregistered torrent")
 		}
 
 		// Ensure file is verified, meaning we will permit scraping of it
 		if !file.Verified {
-			if !scrape.UDP {
-				return httpTrackerError("Unverified torrent")
-			}
-
-			return udpTrackerError("Unverified torrent", transID)
+			return tracker.Error("Unverified torrent")
 		}
 
 		// Launch peer reaper to remove old peers from this file
@@ -212,271 +198,5 @@ func trackerScrape(query url.Values, transID []byte) []byte {
 	}
 
 	// Create scrape
-	if transID == nil {
-		return httpTrackerScrape(scrapeFiles)
-	}
-
-	return udpTrackerScrape(scrapeFiles, transID)
-}
-
-// announceResponse defines the response structure of an HTTP tracker announce
-type announceResponse struct {
-	Complete    int    "complete"
-	Incomplete  int    "incomplete"
-	Interval    int    "interval"
-	MinInterval int    "min interval"
-	Peers       string "peers"
-}
-
-// httpTrackerAnnounce announces using HTTP format
-func httpTrackerAnnounce(query url.Values, file fileRecord, fileUser fileUserRecord) []byte {
-	// Generate response struct
-	announce := announceResponse{
-		Complete:   file.Seeders(),
-		Incomplete: file.Leechers(),
-	}
-
-	// If client has not yet completed torrent, ask them to announce more frequently, so they can gather
-	// more peers and quickly report their statistics
-	if fileUser.Completed == false {
-		announce.Interval = 600
-		announce.MinInterval = 300
-	} else {
-		// Once a torrent has been completed, report statistics less frequently
-		announce.Interval = randRange(static.Config.Interval-600, static.Config.Interval)
-		announce.MinInterval = static.Config.Interval / 2
-	}
-
-	// Check for numwant parameter, return up to that number of peers
-	// Default is 50 per protocol
-	numwant := 50
-	if query.Get("numwant") != "" {
-		// Verify numwant is an integer
-		num, err := strconv.Atoi(query.Get("numwant"))
-		if err == nil {
-			numwant = num
-		}
-	}
-
-	// Marshal struct into bencode
-	buf := bytes.NewBuffer(make([]byte, 0))
-	if err := bencode.Marshal(buf, announce); err != nil {
-		log.Println(err.Error())
-		return httpTrackerError("Tracker error: failed to create announce response")
-	}
-
-	// Generate compact peer list of length numwant, exclude this user
-	peers := file.PeerList(query.Get("ip"), numwant)
-
-	// Because the bencode marshaler does not handle compact, binary peer list conversion,
-	// we handle it manually here.
-
-	// Get initial buffer, chop off 3 bytes: "0:e", append the actual list length with new colon
-	out := buf.Bytes()
-	out = append(out[0:len(out)-3], []byte(strconv.Itoa(len(peers))+":")...)
-
-	// Append peers list, terminate with an "e"
-	out = append(append(out, peers...), byte('e'))
-
-	// Return final announce message
-	return out
-}
-
-// scrapeResponse defines the top-level response structure of an HTTP tracker scrape
-type scrapeResponse struct {
-	Files map[string]scrapeFile "files"
-}
-
-// scrapeFile defines the fields of a scrape response for a single info_hash
-type scrapeFile struct {
-	Complete   int "complete"
-	Downloaded int "downloaded"
-	Incomplete int "incomplete"
-	// optional field: Name string "name"
-}
-
-// httpTrackerScrape reports scrape for one or more files, using HTTP format
-func httpTrackerScrape(files []fileRecord) []byte {
-	// Response struct
-	scrape := scrapeResponse{
-		Files: make(map[string]scrapeFile),
-	}
-
-	// Iterate all files
-	for _, file := range files {
-		// Generate scrapeFile struct
-		fileInfo := scrapeFile{
-			Complete:   file.Seeders(),
-			Downloaded: file.Completed(),
-			Incomplete: file.Leechers(),
-		}
-
-		// Add hash and file info to map
-		scrape.Files[file.InfoHash] = fileInfo
-	}
-
-	// Marshal struct into bencode
-	buf := bytes.NewBuffer(make([]byte, 0))
-	if err := bencode.Marshal(buf, scrape); err != nil {
-		log.Println(err.Error())
-		return httpTrackerError("Tracker error: failed to create scrape response")
-	}
-
-	return buf.Bytes()
-}
-
-// errorResponse defines the response structure of an HTTP tracker error
-type errorResponse struct {
-	FailureReason string "failure reason"
-	Interval      int    "interval"
-	MinInterval   int    "min interval"
-}
-
-// httpTrackerError reports a bencoded []byte response as specified by input string
-func httpTrackerError(err string) []byte {
-	res := errorResponse{
-		FailureReason: err,
-		Interval:      static.Config.Interval,
-		MinInterval:   static.Config.Interval / 2,
-	}
-
-	// Marshal struct into bencode
-	buf := bytes.NewBuffer(make([]byte, 0))
-	if err := bencode.Marshal(buf, res); err != nil {
-		log.Println(err.Error())
-		return nil
-	}
-
-	return buf.Bytes()
-}
-
-// udpTrackerAnnounce announces using UDP format
-func udpTrackerAnnounce(query url.Values, file fileRecord, transID []byte) []byte {
-	// Response buffer
-	res := bytes.NewBuffer(make([]byte, 0))
-
-	// Action (1 for announce)
-	err := binary.Write(res, binary.BigEndian, uint32(1))
-	if err != nil {
-		log.Println(err.Error())
-		return udpTrackerError("Could not create UDP announce response", transID)
-	}
-
-	// Transaction ID
-	err = binary.Write(res, binary.BigEndian, transID)
-	if err != nil {
-		log.Println(err.Error())
-		return udpTrackerError("Could not create UDP announce response", transID)
-	}
-
-	// Interval
-	err = binary.Write(res, binary.BigEndian, uint32(randRange(static.Config.Interval-600, static.Config.Interval)))
-	if err != nil {
-		log.Println(err.Error())
-		return udpTrackerError("Could not create UDP announce response", transID)
-	}
-
-	// Leechers
-	err = binary.Write(res, binary.BigEndian, uint32(file.Leechers()))
-	if err != nil {
-		log.Println(err.Error())
-		return udpTrackerError("Could not create UDP announce response", transID)
-	}
-
-	// Seeders
-	err = binary.Write(res, binary.BigEndian, uint32(file.Seeders()))
-	if err != nil {
-		log.Println(err.Error())
-		return udpTrackerError("Could not create UDP announce response", transID)
-	}
-
-	// Peer list
-	numwant, err := strconv.Atoi(query.Get("numwant"))
-	if err != nil {
-		log.Println(err.Error())
-		return udpTrackerError("Could not create UDP announce response", transID)
-	}
-
-	err = binary.Write(res, binary.BigEndian, file.PeerList(query.Get("ip"), numwant))
-	if err != nil {
-		log.Println(err.Error())
-		return udpTrackerError("Could not create UDP announce response", transID)
-	}
-
-	return res.Bytes()
-}
-
-// udpTrackerScrape scrapes using UDP format
-func udpTrackerScrape(files []fileRecord, transID []byte) []byte {
-	// Response buffer
-	res := bytes.NewBuffer(make([]byte, 0))
-
-	// Action (2 for scrape)
-	err := binary.Write(res, binary.BigEndian, uint32(2))
-	if err != nil {
-		log.Println(err.Error())
-		return udpTrackerError("Could not create UDP scrape response", transID)
-	}
-
-	// Transaction ID
-	err = binary.Write(res, binary.BigEndian, transID)
-	if err != nil {
-		log.Println(err.Error())
-		return udpTrackerError("Could not create UDP scrape response", transID)
-	}
-
-	// Iterate all files, writing their statistics into the buffer
-	for _, file := range files {
-		// Seeders
-		err = binary.Write(res, binary.BigEndian, uint32(file.Seeders()))
-		if err != nil {
-			log.Println(err.Error())
-			return udpTrackerError("Could not create UDP scrape response", transID)
-		}
-
-		// Completed
-		err = binary.Write(res, binary.BigEndian, uint32(file.Completed()))
-		if err != nil {
-			log.Println(err.Error())
-			return udpTrackerError("Could not create UDP scrape response", transID)
-		}
-
-		// Leechers
-		err = binary.Write(res, binary.BigEndian, uint32(file.Leechers()))
-		if err != nil {
-			log.Println(err.Error())
-			return udpTrackerError("Could not create UDP scrape response", transID)
-		}
-	}
-
-	return res.Bytes()
-}
-
-// udpTrackerError reports a []byte response packed datagram
-func udpTrackerError(msg string, transID []byte) []byte {
-	// Response buffer
-	res := bytes.NewBuffer(make([]byte, 0))
-
-	// Action (3 for error)
-	err := binary.Write(res, binary.BigEndian, uint32(3))
-	if err != nil {
-		log.Println(err.Error())
-		return nil
-	}
-
-	// Transaction ID
-	err = binary.Write(res, binary.BigEndian, transID)
-	if err != nil {
-		log.Println(err.Error())
-		return nil
-	}
-
-	// Error message
-	err = binary.Write(res, binary.BigEndian, []byte(msg))
-	if err != nil {
-		log.Println(err.Error())
-		return nil
-	}
-
-	return res.Bytes()
+	return tracker.Scrape(scrapeFiles)
 }
