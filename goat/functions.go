@@ -46,3 +46,23 @@ func randString() string {
 
 	return hex.EncodeToString(u)
 }
+
+// stringsEqual verifies that two strings are identical, using a timing-attack resistant approach
+// Thanks, PHP password API: https://github.com/ircmaxell/password_compat/blob/master/lib/password.php
+func stringsEqual(one string, two string) bool {
+	// Verify same length
+	if len(one) != len(two) {
+		return false
+	}
+
+	// Track status
+	status := 0
+
+	// Iterate and compare each character
+	for i := 0; i < len(one); i++ {
+		status |= int(one[i]) ^ int(two[i])
+	}
+
+	// Were all characters equal?
+	return status == 0
+}

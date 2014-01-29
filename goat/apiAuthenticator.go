@@ -66,7 +66,7 @@ func (a basicAPIAuthenticator) Auth(r *http.Request) bool {
 	hash := fmt.Sprintf("%x", sha.Sum(nil))
 
 	// Verify hashes match
-	if hash != key.Key {
+	if !stringsEqual(hash, key.Key) {
 		return false
 	}
 
