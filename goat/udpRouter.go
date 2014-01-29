@@ -6,7 +6,6 @@ import (
 	"errors"
 	"log"
 	"net"
-	"net/url"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -195,24 +194,17 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 
 	// Action 2: Scrape
 	if packet.Action == 2 {
-		// Generate connection query
-		query := url.Values{}
-
-		// Mark client as UDP
-		query.Set("udp", "1")
-
-		// Capture client IP
-		query.Set("ip", strings.Split(addr.String(), ":")[0])
-
-		// Loop and iterate info_hash, up to 70 total (74 is said to be max by BEP15)
-		for i := 16; i < 16+(70*20); i += 20 {
-			// Validate that we are not appending nil bytes
-			if buf[i] == byte(0) {
-				break
-			}
-
-			query["info_hash"] = append(query["info_hash"][:], string(buf[i:i+20]))
+		// Generate UDP scrape packet from byte buffer
+		scrape, err := new(udpScrapePacket).FromBytes(buf)
+		if err != nil {
+			return tracker.Error("Malformed UDP scrape"), errUDPHandshake
 		}
+
+		// Convert UDP scrape to query map
+		query := scrape.ToValues()
+
+		// Store IP in query map
+		query.Set("ip", strings.Split(addr.String(), ":")[0])
 
 		// Trigger a scrape
 		return trackerScrape(tracker, query), nil

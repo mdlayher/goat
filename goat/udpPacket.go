@@ -169,3 +169,48 @@ func (u udpAnnouncePacket) ToValues() url.Values {
 	// Return final query map
 	return query
 }
+
+// udpScrapePacket represents a tracker scrape in the UDP format
+type udpScrapePacket struct {
+	InfoHashes []string
+}
+
+// FromBytes creates a udpScrapePacket from a packed byte array
+func (u udpScrapePacket) FromBytes(buf []byte) (p udpScrapePacket, err error) {
+	// Set up recovery function to catch a panic as an error
+	// This will run if we attempt to access an out of bounds index
+	defer func() {
+		if r := recover(); r != nil {
+			p = udpScrapePacket{}
+			err = errors.New("failed to create udpScrapePacket from bytes")
+		}
+	}()
+
+	// Begin gathering info hashes
+	u.InfoHashes = make([]string, 0)
+
+	// Loop and iterate info_hash, up to 70 total (74 is said to be max by BEP15)
+	for i := 16; i < 16+(70*20); i += 20 {
+		// Validate that we are not appending nil bytes
+		if buf[i] == byte(0) {
+			break
+		}
+
+		u.InfoHashes = append(u.InfoHashes[:], string(buf[i:i+20]))
+	}
+
+	return u, nil
+}
+
+// ToValues creates a url.Values struct from a udpScrapePacket
+func (u udpScrapePacket) ToValues() url.Values {
+	// Initialize query map
+	query := url.Values{}
+	query.Set("udp", "1")
+
+	// Copy InfoHashes slice directly into query
+	query["info_hash"] = u.InfoHashes
+
+	// Return final query map
+	return query
+}
