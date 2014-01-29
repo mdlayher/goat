@@ -161,8 +161,7 @@ describing the settings available to the user.
 		// note: this setting is typically used only for private trackers
 		"Whitelist": true,
 
-		// Interval: approximately how often, in seconds, clients should announce
-		// note: this entropy is introduced to stagger time between client announces
+		// Interval: number of seconds clients should wait between announces
 		"Interval": 3600,
 
 		// HTTP: enable listening for client connections via HTTP
