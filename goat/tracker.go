@@ -14,15 +14,7 @@ type torrentTracker interface {
 }
 
 // trackerAnnounce announces a tracker request
-func trackerAnnounce(user userRecord, query url.Values, transID []byte) []byte {
-	// Create the appropriate torrentTracker to handle this client
-	var tracker torrentTracker
-	if query.Get("udp") == "1" && transID != nil {
-		tracker = udpTracker{TransID: transID}
-	} else {
-		tracker = httpTracker{}
-	}
-
+func trackerAnnounce(tracker torrentTracker, user userRecord, query url.Values) []byte {
 	// Store announce information in struct
 	announce := new(announceLog).FromValues(query)
 	if announce == (announceLog{}) {
@@ -139,15 +131,7 @@ func trackerAnnounce(user userRecord, query url.Values, transID []byte) []byte {
 }
 
 // trackerScrape scrapes a tracker request
-func trackerScrape(query url.Values, transID []byte) []byte {
-	// Create the appropriate torrentTracker to handle this client
-	var tracker torrentTracker
-	if query.Get("udp") == "1" && transID != nil {
-		tracker = udpTracker{TransID: transID}
-	} else {
-		tracker = httpTracker{}
-	}
-
+func trackerScrape(tracker torrentTracker, query url.Values) []byte {
 	// List of files to be scraped
 	scrapeFiles := make([]fileRecord, 0)
 

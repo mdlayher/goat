@@ -243,7 +243,7 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 		// 2) gzip may actually make announce response larger, as per testing in What.CD's ocelot
 
 		// Perform tracker announce
-		if _, err := w.Write(trackerAnnounce(user, query, nil)); err != nil {
+		if _, err := w.Write(trackerAnnounce(tracker, user, query)); err != nil {
 			log.Println(err.Error())
 		}
 
@@ -261,7 +261,7 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if _, err := w.Write(trackerScrape(query, nil)); err != nil {
+		if _, err := w.Write(trackerScrape(tracker, query)); err != nil {
 			log.Println(err.Error())
 		}
 

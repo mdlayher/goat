@@ -265,7 +265,7 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 		query.Set("port", strconv.FormatInt(t, 10))
 
 		// Trigger an anonymous announce
-		return trackerAnnounce(userRecord{}, query, transID), nil
+		return trackerAnnounce(tracker, userRecord{}, query), nil
 	}
 
 	// Action 2: Scrape
@@ -290,7 +290,7 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 		}
 
 		// Trigger a scrape
-		return trackerScrape(query, transID), nil
+		return trackerScrape(tracker, query), nil
 	}
 
 	// No action matched
