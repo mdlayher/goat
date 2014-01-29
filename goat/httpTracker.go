@@ -12,7 +12,6 @@ import (
 
 // httpTracker generates responses in the HTTP bencode format
 type httpTracker struct {
-	Interval int
 }
 
 // announceResponse defines the response structure of an HTTP tracker announce
@@ -28,8 +27,10 @@ type announceResponse struct {
 func (h httpTracker) Announce(query url.Values, file fileRecord) []byte {
 	// Generate response struct
 	announce := announceResponse{
-		Complete:   file.Seeders(),
-		Incomplete: file.Leechers(),
+		Complete:    file.Seeders(),
+		Incomplete:  file.Leechers(),
+		Interval:    static.Config.Interval,
+		MinInterval: static.Config.Interval / 2,
 	}
 
 	// Check for numwant parameter, return up to that number of peers
@@ -78,8 +79,8 @@ type errorResponse struct {
 func (h httpTracker) Error(err string) []byte {
 	res := errorResponse{
 		FailureReason: err,
-		Interval:      h.Interval,
-		MinInterval:   h.Interval / 2,
+		Interval:      static.Config.Interval,
+		MinInterval:   static.Config.Interval / 2,
 	}
 
 	// Marshal struct into bencode
@@ -138,9 +139,4 @@ func (h httpTracker) Scrape(files []fileRecord) []byte {
 	}
 
 	return buf.Bytes()
-}
-
-// SetInterval sets the announce interval to report to torrent clients
-func (h httpTracker) SetInterval(interval int) {
-	h.Interval = interval
 }

@@ -11,7 +11,6 @@ type torrentTracker interface {
 	Error(string) []byte
 	Protocol() string
 	Scrape([]fileRecord) []byte
-	SetInterval(int)
 }
 
 // trackerAnnounce announces a tracker request
@@ -130,15 +129,6 @@ func trackerAnnounce(user userRecord, query url.Values, transID []byte) []byte {
 		if announce.Left < fileUser.Left {
 			fileUser.Left = announce.Left
 		}
-	}
-
-	// If client has not yet completed torrent, ask them to announce more frequently, so they can gather
-	// more peers and quickly report their statistics
-	if fileUser.Completed == false {
-		tracker.SetInterval(600)
-	} else {
-		// Once a torrent has been completed, report statistics less frequently
-		tracker.SetInterval(static.Config.Interval)
 	}
 
 	// Update file/user relationship record

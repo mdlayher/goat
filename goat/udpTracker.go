@@ -10,8 +10,7 @@ import (
 
 // udpTracker generates responses in the UDP datagram format
 type udpTracker struct {
-	Interval int
-	TransID  []byte
+	TransID []byte
 }
 
 // Announce announces using UDP format
@@ -34,7 +33,7 @@ func (u udpTracker) Announce(query url.Values, file fileRecord) []byte {
 	}
 
 	// Interval
-	err = binary.Write(res, binary.BigEndian, uint32(u.Interval))
+	err = binary.Write(res, binary.BigEndian, uint32(static.Config.Interval))
 	if err != nil {
 		log.Println(err.Error())
 		return u.Error("Could not create UDP announce response")
@@ -148,9 +147,4 @@ func (u udpTracker) Scrape(files []fileRecord) []byte {
 	}
 
 	return res.Bytes()
-}
-
-// SetInterval sets the announce interval to report to torrent clients
-func (u udpTracker) SetInterval(interval int) {
-	u.Interval = interval
 }

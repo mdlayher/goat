@@ -45,7 +45,6 @@ func handleHTTP(l net.Listener, sendChan chan bool, recvChan chan bool) {
 func parseHTTP(w http.ResponseWriter, r *http.Request) {
 	// Create a tracker. to handle this client
 	tracker := httpTracker{}
-	tracker.SetInterval(static.Config.Interval)
 
 	// Count incoming connections
 	atomic.AddInt64(&static.HTTP.Current, 1)
