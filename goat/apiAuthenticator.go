@@ -67,12 +67,8 @@ func (a basicAPIAuthenticator) Auth(r *http.Request) bool {
 	hash := fmt.Sprintf("%x", sha.Sum(nil))
 
 	// Verify hashes match, using timing-attack resistant method
-	if subtle.ConstantTimeCompare([]byte(hash), []byte(key.Key)) == 1{
-		return true
-	}
-
-	// Authentication failed
-	return false
+	// If function returns 1, hashes match
+	return subtle.ConstantTimeCompare([]byte(hash), []byte(key.Key)) == 1
 }
 
 // hmacAPIAuthenticator uses the HMAC-SHA1 authentication scheme
