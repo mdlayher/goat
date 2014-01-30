@@ -15,6 +15,7 @@ before_script:
   - mysql goat < res/mysql/whitelist.sql
   - mysql -e "UPDATE mysql.user SET password=PASSWORD('travis') WHERE user='travis'; FLUSH PRIVILEGES"
 script:
+  - go get
   - go build -o bin/goat
   - ./bin/goat -test
   - go test github.com/mdlayher/goat/goat/
