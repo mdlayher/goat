@@ -27,6 +27,11 @@ func (a apiKey) Delete() bool {
 		return false
 	}
 
+	// Close database connection
+	if err := db.Close(); err != nil {
+		log.Println(err.Error())
+	}
+
 	return true
 }
 
@@ -45,6 +50,11 @@ func (a apiKey) Save() bool {
 		return false
 	}
 
+	// Close database connection
+	if err := db.Close(); err != nil {
+		log.Println(err.Error())
+	}
+
 	return true
 }
 
@@ -59,6 +69,11 @@ func (a apiKey) Load(id interface{}, col string) (key apiKey) {
 
 	// Load apiKey
 	if key, err = db.LoadAPIKey(id, col); err != nil {
+		log.Println(err.Error())
+	}
+
+	// Close database connection
+	if err := db.Close(); err != nil {
 		log.Println(err.Error())
 	}
 
