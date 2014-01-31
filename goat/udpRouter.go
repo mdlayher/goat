@@ -1,8 +1,6 @@
 package goat
 
 import (
-	"bytes"
-	"encoding/binary"
 	"errors"
 	"log"
 	"net"
@@ -101,7 +99,7 @@ func handleUDP(l *net.UDPConn, sendChan chan bool, recvChan chan bool) {
 
 // Parse a UDP byte buffer, return response from tracker
 func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
-	// Attempt to create UDP packet from buffer
+	// Attempt to grab generic UDP connection fields
 	packet, err := new(udpPacket).FromBytes(buf)
 	if err != nil {
 		// Because no transaction ID is present on failure, we must return nil
@@ -119,36 +117,27 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 			return tracker.Error("Invalid UDP tracker handshake"), errUDPHandshake
 		}
 
-		res := bytes.NewBuffer(make([]byte, 0))
-
-		// Action
-		err := binary.Write(res, binary.BigEndian, uint32(0))
-		if err != nil {
-			log.Println(err.Error())
-			return tracker.Error("Could not generate UDP tracker response"), errUDPWrite
-		}
-
-		// Transaction ID
-		err = binary.Write(res, binary.BigEndian, packet.TransID)
-		if err != nil {
-			log.Println(err.Error())
-			return tracker.Error("Could not generate UDP tracker response"), errUDPWrite
-		}
-
 		// Generate a connection ID, which will be expected for this client next call
 		expID := uint64(randRange(1, 1000000000))
 
 		// Store this client's address and ID in map
 		udpAddrToID[addr.String()] = expID
 
-		// Connection ID, generated for this session
-		err = binary.Write(res, binary.BigEndian, expID)
-		if err != nil {
-			log.Println(err.Error())
-			return tracker.Error("Could not generate UDP tracker response"), errUDPWrite
+		// Generate connect response
+		connect := udpConnectResponse{
+			Action: 0,
+			TransID: packet.TransID,
+			ConnID: expID,
 		}
 
-		return res.Bytes(), nil
+		// Grab bytes from connect response
+		connectBuf, err := connect.ToBytes()
+		if err != nil {
+			log.Println(err.Error())
+			return tracker.Error("Could not generate UDP connect response"), errUDPWrite
+		}
+
+		return connectBuf, nil
 	}
 
 	// For all tracker actions other than connect, we must validate the connection ID for this
