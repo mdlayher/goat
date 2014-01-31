@@ -225,6 +225,36 @@ func (u udpAnnounceResponsePacket) FromBytes(buf []byte) (p udpAnnounceResponseP
 	return u, nil
 }
 
+// udpErrorResponsePacket represents a tracker error response in the UDP format
+type udpErrorResponsePacket struct {
+	Action  uint32
+	TransID []byte
+	Error   string
+}
+
+// FromBytes creates a udpErrorResponsePacket from a packed byte array
+func (u udpErrorResponsePacket) FromBytes(buf []byte) (p udpErrorResponsePacket, err error) {
+	// Set up recovery function to catch a panic as an error
+	// This will run if we attempt to access an out of bounds index
+	defer func() {
+		if r := recover(); r != nil {
+			p = udpErrorResponsePacket{}
+			err = errors.New("failed to create udpErrorResponsePacket from bytes")
+		}
+	}()
+
+	// Action
+	u.Action = binary.BigEndian.Uint32(buf[0:4])
+
+	// Transaction ID
+	u.TransID = buf[4:8]
+
+	// Error
+	u.Error = string(buf[8:len(buf)])
+
+	return u, nil
+}
+
 // udpScrapePacket represents a tracker scrape in the UDP format
 type udpScrapePacket struct {
 	InfoHashes []string
