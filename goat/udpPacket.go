@@ -299,3 +299,67 @@ func (u udpScrapePacket) ToValues() url.Values {
 	// Return final query map
 	return query
 }
+
+// udpScrapeResponsePacket represents a tracker scrape response in the UDP format
+type udpScrapeResponsePacket struct {
+	Action   uint32
+	TransID  []byte
+	FileStats []udpScrapeStats
+}
+
+// udpScrapeStats represents one dictionary of stats about a file from a UDP scrape response
+type udpScrapeStats struct {
+	Seeders uint32
+	Completed uint32
+	Leechers uint32
+}
+
+// FromBytes creates a udpScrapeResponsePacket from a packed byte array
+func (u udpScrapeResponsePacket) FromBytes(buf []byte) (p udpScrapeResponsePacket, err error) {
+	// Set up recovery function to catch a panic as an error
+	// This will run if we attempt to access an out of bounds index
+	defer func() {
+		if r := recover(); r != nil {
+			p = udpScrapeResponsePacket{}
+			err = errors.New("failed to create udpScrapeResponsePacket from bytes")
+		}
+	}()
+
+	// Action
+	u.Action = binary.BigEndian.Uint32(buf[0:4])
+
+	// Transaction ID
+	u.TransID = buf[4:8]
+
+	// FileStats
+	u.FileStats = make([]udpScrapeStats, 0)
+
+	// Iterate file stats buffer
+	i := 8
+	for {
+		// Validate that we are not seeking beyond buffer
+		if i >= len(buf) {
+			break
+		}
+
+		// File stats
+		stats := udpScrapeStats{}
+
+		// Seeders
+		stats.Seeders = binary.BigEndian.Uint32(buf[i:i+4])
+		i += 4
+
+		// Completed
+		stats.Completed = binary.BigEndian.Uint32(buf[i:i+4])
+		i += 4
+
+		// Leechers
+		stats.Leechers = binary.BigEndian.Uint32(buf[i:i+4])
+		i += 4
+
+		// Append stats
+		u.FileStats = append(u.FileStats[:], stats)
+	}
+
+	return u, nil
+}
