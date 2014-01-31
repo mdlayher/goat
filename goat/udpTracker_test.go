@@ -32,11 +32,11 @@ func TestUDPTrackerAnnounce(t *testing.T) {
 	query.Set("numwant", "50")
 
 	// Create a UDP tracker, trigger an announce
-	tracker := udpTracker{TransID: []byte("0123")}
+	tracker := udpTracker{TransID: uint32(1234)}
 	res := tracker.Announce(query, file)
 
 	// Decode response
-	announce, err := new(udpAnnounceResponsePacket).FromBytes(res)
+	announce, err := new(udpAnnounceResponse).FromBytes(res)
 	if err != nil {
 		t.Fatalf("Failed to decode UDP announce response")
 	}
@@ -58,11 +58,11 @@ func TestUDPTrackerError(t *testing.T) {
 	log.Println("TestUDPTrackerError()")
 
 	// Create a UDP tracker, trigger an error
-	tracker := udpTracker{TransID: []byte("0123")}
+	tracker := udpTracker{TransID: uint32(1234)}
 	res := tracker.Error("Testing")
 
 	// Decode response
-	errRes, err := new(udpErrorResponsePacket).FromBytes(res)
+	errRes, err := new(udpErrorResponse).FromBytes(res)
 	if err != nil {
 		t.Fatalf("Failed to decode UDP error response")
 	}
@@ -99,12 +99,11 @@ func TestUDPTrackerScrape(t *testing.T) {
 	files = append(files[:], file)
 
 	// Create a UDP tracker, trigger a scrape
-	tracker := udpTracker{TransID: []byte("0123")}
+	tracker := udpTracker{TransID: uint32(1234)}
 	res := tracker.Scrape(files)
-	log.Println(string(res))
 
 	// Decode response
-	scrape, err := new(udpScrapeResponsePacket).FromBytes(res)
+	scrape, err := new(udpScrapeResponse).FromBytes(res)
 	if err != nil {
 		t.Fatalf("Failed to decode UDP scrape response")
 	}

@@ -1,8 +1,8 @@
 package goat
 
 import (
+	"bytes"
 	"encoding/binary"
-	"encoding/hex"
 	"errors"
 	"net/url"
 	"strconv"
@@ -12,7 +12,7 @@ import (
 type udpPacket struct {
 	ConnID  uint64
 	Action  uint32
-	TransID []byte
+	TransID uint32
 }
 
 // FromBytes creates a udpPacket from a packed byte array
@@ -31,116 +31,204 @@ func (u udpPacket) FromBytes(buf []byte) (p udpPacket, err error) {
 	// Action integer (connect: 0, announce: 1)
 	u.Action = binary.BigEndian.Uint32(buf[8:12])
 	// Transaction ID, to match between requests
-	u.TransID = buf[12:16]
+	u.TransID = binary.BigEndian.Uint32(buf[12:16])
 
 	return u, nil
 }
 
-// udpAnnouncePacket represents a tracker announce in the UDP format
-type udpAnnouncePacket struct {
-	InfoHash   string
-	PeerID     string
-	Downloaded int64
-	Left       int64
-	Uploaded   int64
-	Event      int64
-	IP         int64
-	Key        string
-	Numwant    int64
-	Port       int64
+// ToBytes creates a packed byte array from a udpPacket
+func (u udpPacket) ToBytes() ([]byte, error) {
+	res := bytes.NewBuffer(make([]byte, 0))
+
+	// ConnID
+	if err := binary.Write(res, binary.BigEndian, u.ConnID); err != nil {
+		return nil, err
+	}
+
+	// Action
+	if err := binary.Write(res, binary.BigEndian, u.Action); err != nil {
+		return nil, err
+	}
+
+	// TransID
+	if err := binary.Write(res, binary.BigEndian, u.TransID); err != nil {
+		return nil, err
+	}
+
+	return res.Bytes(), nil
 }
 
-// FromBytes creates a udpAnnouncePacket from a packed byte array
-func (u udpAnnouncePacket) FromBytes(buf []byte) (p udpAnnouncePacket, err error) {
+// udpAnnounceRequest represents a tracker announce in the UDP format
+type udpAnnounceRequest struct {
+	ConnID     uint64
+	Action     uint32
+	TransID    uint32
+	InfoHash   []byte
+	PeerID     []byte
+	Downloaded uint64
+	Left       uint64
+	Uploaded   uint64
+	Event      uint32
+	IP         uint32
+	Key        uint32
+	Numwant    uint32
+	Port       uint16
+}
+
+// FromBytes creates a udpAnnounceRequest from a packed byte array
+func (u udpAnnounceRequest) FromBytes(buf []byte) (p udpAnnounceRequest, err error) {
 	// Set up recovery function to catch a panic as an error
 	// This will run if we attempt to access an out of bounds index
 	defer func() {
 		if r := recover(); r != nil {
-			p = udpAnnouncePacket{}
-			err = errors.New("failed to create udpAnnouncePacket from bytes")
+			p = udpAnnounceRequest{}
+			err = errors.New("failed to create udpAnnounceRequest from bytes")
 		}
 	}()
 
-	// InfoHash
-	u.InfoHash = string(buf[16:36])
+	// ConnID (uint64)
+	u.ConnID = binary.BigEndian.Uint64(buf[0:8])
 
-	// PeerID
-	u.PeerID = string(buf[36:56])
-
-	// Downloaded
-	t, err := strconv.ParseInt(hex.EncodeToString(buf[56:64]), 16, 64)
-	if err != nil {
-		return udpAnnouncePacket{}, errUDPInteger
-	}
-	u.Downloaded = t
-
-	// Left
-	t, err = strconv.ParseInt(hex.EncodeToString(buf[64:72]), 16, 64)
-	if err != nil {
-		return udpAnnouncePacket{}, errUDPInteger
-	}
-	u.Left = t
-
-	// Uploaded
-	t, err = strconv.ParseInt(hex.EncodeToString(buf[72:80]), 16, 64)
-	if err != nil {
-		return udpAnnouncePacket{}, errUDPInteger
-	}
-	u.Uploaded = t
-
-	// Event
-	t, err = strconv.ParseInt(hex.EncodeToString(buf[80:84]), 16, 32)
-	if err != nil {
-		return udpAnnouncePacket{}, errUDPInteger
-	}
-	u.Event = t
-
-	// IP address
-	t, err = strconv.ParseInt(hex.EncodeToString(buf[84:88]), 16, 32)
-	if err != nil {
-		return udpAnnouncePacket{}, errUDPInteger
-	}
-	u.IP = t
-
-	// Key
-	u.Key = hex.EncodeToString(buf[88:92])
-
-	// Numwant
-	numwant := hex.EncodeToString(buf[92:96])
-	// If numwant is hex max value, default to 50
-	if numwant == "ffffffff" {
-		u.Numwant = 50
-	} else {
-		t, err = strconv.ParseInt(numwant, 16, 32)
-		if err != nil {
-			return udpAnnouncePacket{}, errUDPInteger
-		}
-		u.Numwant = t
+	// Action (uint32) (Announce = 1)
+	u.Action = binary.BigEndian.Uint32(buf[8:12])
+	if u.Action != uint32(1) {
+		return udpAnnounceRequest{}, errors.New("invalid action for udpAnnounceRequest")
 	}
 
-	// Port
-	t, err = strconv.ParseInt(hex.EncodeToString(buf[96:98]), 16, 32)
-	if err != nil {
-		return udpAnnouncePacket{}, errUDPInteger
+	// TransID (uint32)
+	u.TransID = binary.BigEndian.Uint32(buf[12:16])
+
+	// InfoHash (20 bytes)
+	u.InfoHash = buf[16:36]
+
+	// PeerID (20 bytes)
+	u.PeerID = buf[36:56]
+
+	// Downloaded (uint64)
+	u.Downloaded = binary.BigEndian.Uint64(buf[56:64])
+
+	// Left (uint64)
+	u.Left = binary.BigEndian.Uint64(buf[64:72])
+
+	// Uploaded (uint64)
+	u.Uploaded = binary.BigEndian.Uint64(buf[72:80])
+
+	// Event (uint32)
+	u.Event = binary.BigEndian.Uint32(buf[80:84])
+
+	// IP (uint32)
+	u.IP = binary.BigEndian.Uint32(buf[84:88])
+
+	// Key (uint32)
+	u.Key = binary.BigEndian.Uint32(buf[88:92])
+
+	// Numwant (uint32)
+	numwant := binary.BigEndian.Uint32(buf[92:96])
+	// If numwant is uint32 max, use protocol default of 50
+	if numwant == uint32(4294967295) {
+		numwant = 50
 	}
-	u.Port = t
+	u.Numwant = numwant
+
+	// Port (uint16)
+	u.Port = binary.BigEndian.Uint16(buf[96:98])
 
 	return u, nil
 }
 
-// ToValues creates a url.Values struct from a udpAnnouncePacket
-func (u udpAnnouncePacket) ToValues() url.Values {
+// ToBytes creates a packed byte array from a udpAnnounceRequest
+func (u udpAnnounceRequest) ToBytes() ([]byte, error) {
+	res := bytes.NewBuffer(make([]byte, 0))
+
+	// ConnID (uint64)
+	if err := binary.Write(res, binary.BigEndian, u.ConnID); err != nil {
+		return nil, err
+	}
+
+	// Action (uint32)
+	if err := binary.Write(res, binary.BigEndian, u.Action); err != nil {
+		return nil, err
+	}
+
+	// TransID (uint32)
+	if err := binary.Write(res, binary.BigEndian, u.TransID); err != nil {
+		return nil, err
+	}
+
+	// InfoHash (20 bytes)
+	if len(u.InfoHash) != 20 {
+		return nil, errors.New("info_hash must be exactly 20 bytes")
+	}
+
+	if err := binary.Write(res, binary.BigEndian, u.InfoHash); err != nil {
+		return nil, err
+	}
+
+	// PeerID (20 bytes)
+	if len(u.PeerID) != 20 {
+		return nil, errors.New("peer_id must be exactly 20 bytes")
+	}
+
+	if err := binary.Write(res, binary.BigEndian, u.PeerID); err != nil {
+		return nil, err
+	}
+
+	// Downloaded (uint64)
+	if err := binary.Write(res, binary.BigEndian, u.Downloaded); err != nil {
+		return nil, err
+	}
+
+	// Left (uint64)
+	if err := binary.Write(res, binary.BigEndian, u.Left); err != nil {
+		return nil, err
+	}
+
+	// Uploaded (uint64)
+	if err := binary.Write(res, binary.BigEndian, u.Uploaded); err != nil {
+		return nil, err
+	}
+
+	// Event (uint32)
+	if err := binary.Write(res, binary.BigEndian, u.Event); err != nil {
+		return nil, err
+	}
+
+	// IP (uint32)
+	if err := binary.Write(res, binary.BigEndian, u.IP); err != nil {
+		return nil, err
+	}
+
+	// Key (uint32)
+	if err := binary.Write(res, binary.BigEndian, u.Key); err != nil {
+		return nil, err
+	}
+
+	// Numwant (uint32)
+	if err := binary.Write(res, binary.BigEndian, u.Numwant); err != nil {
+		return nil, err
+	}
+
+	// Port (uint16)
+	if err := binary.Write(res, binary.BigEndian, u.Port); err != nil {
+		return nil, err
+	}
+
+	return res.Bytes(), nil
+}
+
+// ToValues creates a url.Values struct from a udpAnnounceRequest
+func (u udpAnnounceRequest) ToValues() url.Values {
 	// Initialize query map
 	query := url.Values{}
 	query.Set("udp", "1")
 
 	// Copy all fields into query map
-	query.Set("info_hash", u.InfoHash)
+	query.Set("info_hash", string(u.InfoHash))
 
 	// Integer fields
-	query.Set("downloaded", strconv.FormatInt(u.Downloaded, 10))
-	query.Set("left", strconv.FormatInt(u.Left, 10))
-	query.Set("uploaded", strconv.FormatInt(u.Uploaded, 10))
+	query.Set("downloaded", strconv.FormatUint(u.Downloaded, 10))
+	query.Set("left", strconv.FormatUint(u.Left, 10))
+	query.Set("uploaded", strconv.FormatUint(u.Uploaded, 10))
 
 	// Event, converted to actual string
 	switch u.Event {
@@ -155,23 +243,23 @@ func (u udpAnnouncePacket) ToValues() url.Values {
 	}
 
 	// IP
-	query.Set("ip", strconv.FormatInt(u.IP, 10))
+	query.Set("ip", strconv.FormatUint(uint64(u.IP), 10))
 
 	// Key
-	query.Set("key", u.Key)
+	query.Set("key", strconv.FormatUint(uint64(u.Key), 10))
 
 	// Numwant
-	query.Set("numwant", strconv.FormatInt(u.Numwant, 10))
+	query.Set("numwant", strconv.FormatUint(uint64(u.Numwant), 10))
 
 	// Port
-	query.Set("port", strconv.FormatInt(u.Port, 10))
+	query.Set("port", strconv.FormatUint(uint64(u.Port), 10))
 
 	// Return final query map
 	return query
 }
 
-// udpAnnounceResponsePacket represents a tracker announce response in the UDP format
-type udpAnnounceResponsePacket struct {
+// udpAnnounceResponse represents a tracker announce response in the UDP format
+type udpAnnounceResponse struct {
 	Action   uint32
 	TransID  []byte
 	Interval uint32
@@ -180,14 +268,14 @@ type udpAnnounceResponsePacket struct {
 	PeerList []compactPeer
 }
 
-// FromBytes creates a udpAnnounceResponsePacket from a packed byte array
-func (u udpAnnounceResponsePacket) FromBytes(buf []byte) (p udpAnnounceResponsePacket, err error) {
+// FromBytes creates a udpAnnounceResponse from a packed byte array
+func (u udpAnnounceResponse) FromBytes(buf []byte) (p udpAnnounceResponse, err error) {
 	// Set up recovery function to catch a panic as an error
 	// This will run if we attempt to access an out of bounds index
 	defer func() {
 		if r := recover(); r != nil {
-			p = udpAnnounceResponsePacket{}
-			err = errors.New("failed to create udpAnnounceResponsePacket from bytes")
+			p = udpAnnounceResponse{}
+			err = errors.New("failed to create udpAnnounceResponse from bytes")
 		}
 	}()
 
@@ -225,21 +313,21 @@ func (u udpAnnounceResponsePacket) FromBytes(buf []byte) (p udpAnnounceResponseP
 	return u, nil
 }
 
-// udpErrorResponsePacket represents a tracker error response in the UDP format
-type udpErrorResponsePacket struct {
+// udpErrorResponse represents a tracker error response in the UDP format
+type udpErrorResponse struct {
 	Action  uint32
 	TransID []byte
 	Error   string
 }
 
-// FromBytes creates a udpErrorResponsePacket from a packed byte array
-func (u udpErrorResponsePacket) FromBytes(buf []byte) (p udpErrorResponsePacket, err error) {
+// FromBytes creates a udpErrorResponse from a packed byte array
+func (u udpErrorResponse) FromBytes(buf []byte) (p udpErrorResponse, err error) {
 	// Set up recovery function to catch a panic as an error
 	// This will run if we attempt to access an out of bounds index
 	defer func() {
 		if r := recover(); r != nil {
-			p = udpErrorResponsePacket{}
-			err = errors.New("failed to create udpErrorResponsePacket from bytes")
+			p = udpErrorResponse{}
+			err = errors.New("failed to create udpErrorResponse from bytes")
 		}
 	}()
 
@@ -255,19 +343,19 @@ func (u udpErrorResponsePacket) FromBytes(buf []byte) (p udpErrorResponsePacket,
 	return u, nil
 }
 
-// udpScrapePacket represents a tracker scrape in the UDP format
-type udpScrapePacket struct {
+// udpScrapeRequest represents a tracker scrape in the UDP format
+type udpScrapeRequest struct {
 	InfoHashes []string
 }
 
-// FromBytes creates a udpScrapePacket from a packed byte array
-func (u udpScrapePacket) FromBytes(buf []byte) (p udpScrapePacket, err error) {
+// FromBytes creates a udpScrapeRequest from a packed byte array
+func (u udpScrapeRequest) FromBytes(buf []byte) (p udpScrapeRequest, err error) {
 	// Set up recovery function to catch a panic as an error
 	// This will run if we attempt to access an out of bounds index
 	defer func() {
 		if r := recover(); r != nil {
-			p = udpScrapePacket{}
-			err = errors.New("failed to create udpScrapePacket from bytes")
+			p = udpScrapeRequest{}
+			err = errors.New("failed to create udpScrapeRequest from bytes")
 		}
 	}()
 
@@ -287,8 +375,8 @@ func (u udpScrapePacket) FromBytes(buf []byte) (p udpScrapePacket, err error) {
 	return u, nil
 }
 
-// ToValues creates a url.Values struct from a udpScrapePacket
-func (u udpScrapePacket) ToValues() url.Values {
+// ToValues creates a url.Values struct from a udpScrapeRequest
+func (u udpScrapeRequest) ToValues() url.Values {
 	// Initialize query map
 	query := url.Values{}
 	query.Set("udp", "1")
@@ -300,8 +388,8 @@ func (u udpScrapePacket) ToValues() url.Values {
 	return query
 }
 
-// udpScrapeResponsePacket represents a tracker scrape response in the UDP format
-type udpScrapeResponsePacket struct {
+// udpScrapeResponse represents a tracker scrape response in the UDP format
+type udpScrapeResponse struct {
 	Action    uint32
 	TransID   []byte
 	FileStats []udpScrapeStats
@@ -314,14 +402,14 @@ type udpScrapeStats struct {
 	Leechers  uint32
 }
 
-// FromBytes creates a udpScrapeResponsePacket from a packed byte array
-func (u udpScrapeResponsePacket) FromBytes(buf []byte) (p udpScrapeResponsePacket, err error) {
+// FromBytes creates a udpScrapeResponse from a packed byte array
+func (u udpScrapeResponse) FromBytes(buf []byte) (p udpScrapeResponse, err error) {
 	// Set up recovery function to catch a panic as an error
 	// This will run if we attempt to access an out of bounds index
 	defer func() {
 		if r := recover(); r != nil {
-			p = udpScrapeResponsePacket{}
-			err = errors.New("failed to create udpScrapeResponsePacket from bytes")
+			p = udpScrapeResponse{}
+			err = errors.New("failed to create udpScrapeResponse from bytes")
 		}
 	}()
 

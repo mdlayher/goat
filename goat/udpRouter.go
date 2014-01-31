@@ -174,8 +174,8 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 
 	// Action 1: Announce
 	if packet.Action == 1 {
-		// Generate UDP announce packet from byte buffer
-		announce, err := new(udpAnnouncePacket).FromBytes(buf)
+		// Retrieve UDP announce request from byte buffer
+		announce, err := new(udpAnnounceRequest).FromBytes(buf)
 		if err != nil {
 			return tracker.Error("Malformed UDP announce"), errUDPInteger
 		}
@@ -195,7 +195,7 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 	// Action 2: Scrape
 	if packet.Action == 2 {
 		// Generate UDP scrape packet from byte buffer
-		scrape, err := new(udpScrapePacket).FromBytes(buf)
+		scrape, err := new(udpScrapeRequest).FromBytes(buf)
 		if err != nil {
 			return tracker.Error("Malformed UDP scrape"), errUDPHandshake
 		}

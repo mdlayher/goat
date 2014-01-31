@@ -10,7 +10,7 @@ import (
 
 // udpTracker generates responses in the UDP datagram format
 type udpTracker struct {
-	TransID []byte
+	TransID uint32
 }
 
 // Announce announces using UDP format
