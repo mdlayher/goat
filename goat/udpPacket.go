@@ -302,16 +302,16 @@ func (u udpScrapePacket) ToValues() url.Values {
 
 // udpScrapeResponsePacket represents a tracker scrape response in the UDP format
 type udpScrapeResponsePacket struct {
-	Action   uint32
-	TransID  []byte
+	Action    uint32
+	TransID   []byte
 	FileStats []udpScrapeStats
 }
 
 // udpScrapeStats represents one dictionary of stats about a file from a UDP scrape response
 type udpScrapeStats struct {
-	Seeders uint32
+	Seeders   uint32
 	Completed uint32
-	Leechers uint32
+	Leechers  uint32
 }
 
 // FromBytes creates a udpScrapeResponsePacket from a packed byte array
@@ -346,15 +346,15 @@ func (u udpScrapeResponsePacket) FromBytes(buf []byte) (p udpScrapeResponsePacke
 		stats := udpScrapeStats{}
 
 		// Seeders
-		stats.Seeders = binary.BigEndian.Uint32(buf[i:i+4])
+		stats.Seeders = binary.BigEndian.Uint32(buf[i : i+4])
 		i += 4
 
 		// Completed
-		stats.Completed = binary.BigEndian.Uint32(buf[i:i+4])
+		stats.Completed = binary.BigEndian.Uint32(buf[i : i+4])
 		i += 4
 
 		// Leechers
-		stats.Leechers = binary.BigEndian.Uint32(buf[i:i+4])
+		stats.Leechers = binary.BigEndian.Uint32(buf[i : i+4])
 		i += 4
 
 		// Append stats
