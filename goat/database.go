@@ -11,6 +11,12 @@ var (
 	dbPingFunc    = func() bool { return true }
 )
 
+// MySQLDSN is set via command-line, and can be used to override all MySQL configuration
+var MySQLDSN *string
+
+// QLDBPath is set via command-line, and can be used to override ql database location
+var QLDBPath *string
+
 // dbConnect connects to a database
 func dbConnect() (dbModel, error) {
 	return dbConnectFunc()

@@ -15,6 +15,7 @@ type scrapeLog struct {
 	Passkey  string
 	IP       string
 	Time     int64
+	UDP      bool
 }
 
 // Delete scrapeLog from storage
@@ -101,6 +102,13 @@ func (s scrapeLog) FromValues(query url.Values) scrapeLog {
 
 	// Current UNIX timestamp
 	s.Time = time.Now().Unix()
+
+	// udp
+	if query.Get("udp") == "1" {
+		s.UDP = true
+	} else {
+		s.UDP = false
+	}
 
 	// Return the created scrape
 	return s

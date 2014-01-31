@@ -1,6 +1,7 @@
 package goat
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -32,29 +33,25 @@ func Manager(killChan chan bool, exitChan chan int) {
 	// Load configuration
 	config := loadConfig()
 	if config == (conf{}) {
-		log.Println("Cannot load configuration, exiting now.")
-		os.Exit(1)
+		panic("Cannot load configuration, panicking")
 	}
 	static.Config = config
 
 	// Check for sane announce interval (10 minutes or more)
 	if static.Config.Interval <= 600 {
-		log.Println("Announce interval must be at least 600 seconds.")
-		os.Exit(1)
+		panic("Announce interval must be at least 600 seconds, panicking")
 	}
 
 	// Attempt database connection
 	if !dbPing() {
-		log.Println("Cannot connect to database", dbName(), ", exiting now.")
-		os.Exit(1)
+		panic(fmt.Errorf("cannot connect to database %s; panicking", dbName()))
 	}
 	log.Println("Database", dbName(), ": OK")
 
 	// If configured, attempt redis connection
-	if static.Config.Redis {
+	if static.Config.Redis.Enabled {
 		if !redisPing() {
-			log.Println("Cannot connect to Redis, exiting now.")
-			os.Exit(1)
+			panic("Cannot connect to Redis, panicking")
 		}
 		log.Println("Redis : OK")
 	}
@@ -78,7 +75,7 @@ func Manager(killChan chan bool, exitChan chan int) {
 		go listenHTTP(httpSendChan, httpRecvChan)
 		log.Println("HTTP listener launched on port " + strconv.Itoa(static.Config.Port))
 	}
-	if static.Config.HTTPS {
+	if static.Config.SSL.Enabled {
 		go listenHTTPS(httpsSendChan, httpsRecvChan)
 		log.Println("HTTPS listener launched on port " + strconv.Itoa(static.Config.SSL.Port))
 	}
@@ -96,7 +93,7 @@ func Manager(killChan chan bool, exitChan chan int) {
 
 			// If program hangs for more than 10 seconds, trigger a force halt
 			go func() {
-				time.Sleep(10 * time.Second)
+				<-time.After(10 * time.Second)
 				log.Println("Timeout reached, triggering force halt")
 				if err := syscall.Kill(os.Getpid(), syscall.SIGTERM); err != nil {
 					log.Println(err.Error())
@@ -109,7 +106,7 @@ func Manager(killChan chan bool, exitChan chan int) {
 				httpSendChan <- true
 				<-httpRecvChan
 			}
-			if static.Config.HTTPS {
+			if static.Config.SSL.Enabled {
 				log.Println("Stopping HTTPS listener")
 				httpsSendChan <- true
 				<-httpsRecvChan

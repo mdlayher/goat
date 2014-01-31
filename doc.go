@@ -161,15 +161,11 @@ describing the settings available to the user.
 		// note: this setting is typically used only for private trackers
 		"Whitelist": true,
 
-		// Interval: approximately how often, in seconds, clients should announce
-		// note: this entropy is introduced to stagger time between client announces
+		// Interval: number of seconds clients should wait between announces
 		"Interval": 3600,
 
 		// HTTP: enable listening for client connections via HTTP
 		"HTTP": true,
-
-		// HTTP: enable listening for client connections over HTTPS (SSL)
-		"HTTPS": true,
 
 		// API: enable a HTTP RESTful API, used to pull statistics from goat
 		// note: only enabled when HTTP/HTTPS is enabled
@@ -180,11 +176,11 @@ describing the settings available to the user.
 		// listener should only be used for public trackers
 		"UDP": false,
 
-		// Redis: enable caching and rate limiting features using Redis
-		"Redis": true,
-
 		// SSL: HTTPS configuration
 		"SSL": {
+			// Enabled: enable listening for client connections via HTTPS
+			"Enabled": false,
+
 			// Port: the port number on which goat will listen using HTTPS
 			"Port": 8443,
 
@@ -197,6 +193,9 @@ describing the settings available to the user.
 
 		// DB: MySQL database configuration
 		"DB": {
+			// Host: the host and port of the MySQL database server
+			"Host": "localhost:3306",
+
 			// Database: the database goat will use to store its tracker data
 			"Database": "goat",
 
@@ -205,6 +204,19 @@ describing the settings available to the user.
 
 			// Password: the password used to access goat's database
 			"Password": "goat"
+		},
+
+		// Redis: Redis cache configuration
+		"Redis": {
+			// Enabled: enable caching and rate limiting features using Redis
+			"Enabled": false,
+
+			// Host: the host and port of the Redis cache server
+			"Host": "localhost:6379",
+
+			// Password: optional, the password used to connect to Redis
+			// note: if left blank, goat will not attempt to authenticate to Redis
+			"Password": ""
 		}
 	}
 

@@ -2,6 +2,7 @@ package goat
 
 import (
 	"crypto/sha1"
+	"crypto/subtle"
 	"encoding/base64"
 	"fmt"
 	"log"
@@ -65,13 +66,9 @@ func (a basicAPIAuthenticator) Auth(r *http.Request) bool {
 
 	hash := fmt.Sprintf("%x", sha.Sum(nil))
 
-	// Verify hashes match
-	if hash != key.Key {
-		return false
-	}
-
-	// Authentication succeeded
-	return true
+	// Verify hashes match, using timing-attack resistant method
+	// If function returns 1, hashes match
+	return subtle.ConstantTimeCompare([]byte(hash), []byte(key.Key)) == 1
 }
 
 // hmacAPIAuthenticator uses the HMAC-SHA1 authentication scheme

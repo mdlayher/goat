@@ -6,10 +6,15 @@ import (
 	"log"
 	"os"
 	"os/user"
+	ospath "path"
 )
+
+// ConfigPath is set via command-line, and can be used to override config file path location
+var ConfigPath *string
 
 // dbConf represents database configuration
 type dbConf struct {
+	Host     string
 	Database string
 	Username string
 	Password string
@@ -17,9 +22,17 @@ type dbConf struct {
 
 // sslConf represents SSL configuration
 type sslConf struct {
+	Enabled     bool
 	Port        int
 	Certificate string
 	Key         string
+}
+
+// redisConf represents Redis configuration
+type redisConf struct {
+	Enabled  bool
+	Host     string
+	Password string
 }
 
 // Conf represents server configuration
@@ -29,12 +42,11 @@ type conf struct {
 	Whitelist bool
 	Interval  int
 	HTTP      bool
-	HTTPS     bool
 	API       bool
 	UDP       bool
-	Redis     bool
 	SSL       sslConf
 	DB        dbConf
+	Redis     redisConf
 }
 
 // LoadConfig loads configuration
@@ -56,6 +68,13 @@ func loadConfig() conf {
 	} else {
 		// Store config in standard location
 		path = user.HomeDir + "/.config/goat/"
+	}
+
+	// Allow manual override of config path, if flag is set
+	if ConfigPath != nil && *ConfigPath != "" {
+		// Split config path into path and filename
+		path = ospath.Dir(*ConfigPath) + "/"
+		config = ospath.Base(*ConfigPath)
 	}
 
 	log.Println("Loading configuration: " + path + config)

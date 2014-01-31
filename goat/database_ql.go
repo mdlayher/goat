@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/user"
+	ospath "path"
 	"time"
 
 	// Bring in the ql driver
@@ -120,6 +121,13 @@ func init() {
 			} else {
 				// Store config in standard location
 				path = user.HomeDir + "/.config/goat/"
+			}
+
+			// Allow manul override of db path, if flag is set
+			if QLDBPath != nil && *QLDBPath != "" {
+				// Split db path into path and filename
+				path = ospath.Dir(*QLDBPath) + "/"
+				name = ospath.Base(*QLDBPath)
 			}
 
 			log.Println("Loading ql database: " + path + name)

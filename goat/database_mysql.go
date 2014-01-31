@@ -17,8 +17,14 @@ import (
 func init() {
 	// dbConnectFunc connects to MySQL database
 	dbConnectFunc = func() (dbModel, error) {
-		// Generate connection string using configuration
-		conn := fmt.Sprintf("%s:%s@/%s", static.Config.DB.Username, static.Config.DB.Password, static.Config.DB.Database)
+		var conn string
+		// Generate connection string using configuration file
+		if MySQLDSN == nil || *MySQLDSN == "" {
+			conn = fmt.Sprintf("%s:%s@/%s", static.Config.DB.Username, static.Config.DB.Password, static.Config.DB.Database)
+		} else {
+			// Use connection string passed by command line flag
+			conn = *MySQLDSN
+		}
 
 		// Return connection and associated errors
 		db, err := sqlx.Connect("mysql", conn)

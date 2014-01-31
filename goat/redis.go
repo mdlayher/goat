@@ -8,8 +8,17 @@ import (
 )
 
 // redisConnect initiates a connection to Redis server
-func redisConnect() (redis.Conn, error) {
-	return redis.Dial("tcp", ":6379")
+func redisConnect() (c redis.Conn, err error) {
+	c, err = redis.Dial("tcp", static.Config.Redis.Host)
+	if err != nil {
+		return
+	}
+
+	// Authenticate with Redis database if necessary
+	if static.Config.Redis.Password != "" {
+		_, err = c.Do("AUTH", static.Config.Redis.Password)
+	}
+	return
 }
 
 // redisPing verifies that Redis server is available
