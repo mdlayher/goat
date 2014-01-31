@@ -170,6 +170,61 @@ func (u udpAnnouncePacket) ToValues() url.Values {
 	return query
 }
 
+// udpAnnounceResponsePacket represents a tracker announce response in the UDP format
+type udpAnnounceResponsePacket struct {
+	Action   uint32
+	TransID  []byte
+	Interval uint32
+	Leechers uint32
+	Seeders  uint32
+	PeerList []compactPeer
+}
+
+// FromBytes creates a udpAnnounceResponsePacket from a packed byte array
+func (u udpAnnounceResponsePacket) FromBytes(buf []byte) (p udpAnnounceResponsePacket, err error) {
+	// Set up recovery function to catch a panic as an error
+	// This will run if we attempt to access an out of bounds index
+	defer func() {
+		if r := recover(); r != nil {
+			p = udpAnnounceResponsePacket{}
+			err = errors.New("failed to create udpAnnounceResponsePacket from bytes")
+		}
+	}()
+
+	// Action
+	u.Action = binary.BigEndian.Uint32(buf[0:4])
+
+	// Transaction ID
+	u.TransID = buf[4:8]
+
+	// Interval
+	u.Interval = binary.BigEndian.Uint32(buf[8:12])
+
+	// Leechers
+	u.Leechers = binary.BigEndian.Uint32(buf[12:16])
+
+	// Seeders
+	u.Seeders = binary.BigEndian.Uint32(buf[16:20])
+
+	// Peer List
+	u.PeerList = make([]compactPeer, 0)
+
+	// Iterate peers buffer
+	i := 20
+	for {
+		// Validate that we are not seeking beyond buffer
+		if i >= len(buf) {
+			break
+		}
+
+		// Append peer
+		u.PeerList = append(u.PeerList[:], b2ip(buf[i:i+6]))
+		i += 6
+	}
+
+	return u, nil
+}
+
 // udpScrapePacket represents a tracker scrape in the UDP format
 type udpScrapePacket struct {
 	InfoHashes []string

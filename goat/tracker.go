@@ -13,6 +13,12 @@ type torrentTracker interface {
 	Scrape([]fileRecord) []byte
 }
 
+// compactPeer represents a compact peer response with IP and port
+type compactPeer struct {
+	IP   string
+	Port uint16
+}
+
 // trackerAnnounce announces a tracker request
 func trackerAnnounce(tracker torrentTracker, user userRecord, query url.Values) []byte {
 	// Store announce information in struct

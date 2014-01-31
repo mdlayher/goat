@@ -10,6 +10,20 @@ import (
 	"time"
 )
 
+// b2ip converts a packed byte buffer into a compactPeer
+func b2ip(buf []byte) compactPeer {
+	// Collect peer info
+	peer := compactPeer{}
+
+	// IP address
+	peer.IP = net.IPv4(buf[0], buf[1], buf[2], buf[3]).String()
+
+	// Port
+	peer.Port = binary.BigEndian.Uint16(buf[4:6])
+
+	return peer
+}
+
 // ip2b converts an IP and port into byte buffer
 func ip2b(ip string, port uint16) []byte {
 	// Empty buffers
