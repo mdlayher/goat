@@ -15,51 +15,30 @@ type udpTracker struct {
 
 // Announce announces using UDP format
 func (u udpTracker) Announce(query url.Values, file fileRecord) []byte {
-	// Response buffer
-	res := bytes.NewBuffer(make([]byte, 0))
+	// Create UDP announce response
+	announce := udpAnnounceResponse{
+		Action:   1,
+		TransID:  u.TransID,
+		Interval: uint32(static.Config.Interval),
+		Leechers: uint32(file.Leechers()),
+		Seeders:  uint32(file.Seeders()),
+	}
 
-	// Action (1 for announce)
-	err := binary.Write(res, binary.BigEndian, uint32(1))
+	// Convert to UDP byte buffer
+	announceBuf, err := announce.ToBytes()
 	if err != nil {
 		log.Println(err.Error())
 		return u.Error("Could not create UDP announce response")
 	}
 
-	// Transaction ID
-	err = binary.Write(res, binary.BigEndian, u.TransID)
-	if err != nil {
-		log.Println(err.Error())
-		return u.Error("Could not create UDP announce response")
-	}
-
-	// Interval
-	err = binary.Write(res, binary.BigEndian, uint32(static.Config.Interval))
-	if err != nil {
-		log.Println(err.Error())
-		return u.Error("Could not create UDP announce response")
-	}
-
-	// Leechers
-	err = binary.Write(res, binary.BigEndian, uint32(file.Leechers()))
-	if err != nil {
-		log.Println(err.Error())
-		return u.Error("Could not create UDP announce response")
-	}
-
-	// Seeders
-	err = binary.Write(res, binary.BigEndian, uint32(file.Seeders()))
-	if err != nil {
-		log.Println(err.Error())
-		return u.Error("Could not create UDP announce response")
-	}
-
-	// Peer list
+	// Numwant
 	numwant, err := strconv.Atoi(query.Get("numwant"))
 	if err != nil {
-		log.Println(err.Error())
-		return u.Error("Could not create UDP announce response")
+		numwant = 50
 	}
 
+	// Add compact peer list
+	res := bytes.NewBuffer(announceBuf)
 	err = binary.Write(res, binary.BigEndian, file.PeerList(query.Get("ip"), numwant))
 	if err != nil {
 		log.Println(err.Error())
@@ -71,31 +50,21 @@ func (u udpTracker) Announce(query url.Values, file fileRecord) []byte {
 
 // Error reports a UDP []byte response packed datagram
 func (u udpTracker) Error(msg string) []byte {
-	// Response buffer
-	res := bytes.NewBuffer(make([]byte, 0))
-
-	// Action (3 for error)
-	err := binary.Write(res, binary.BigEndian, uint32(3))
-	if err != nil {
-		log.Println(err.Error())
-		return nil
+	// Create UDP error response
+	errRes := udpErrorResponse{
+		Action:  3,
+		TransID: u.TransID,
+		Error:   msg,
 	}
 
-	// Transaction ID
-	err = binary.Write(res, binary.BigEndian, u.TransID)
+	// Convert to UDP byte buffer
+	buf, err := errRes.ToBytes()
 	if err != nil {
 		log.Println(err.Error())
-		return nil
+		return u.Error("Could not create UDP error response")
 	}
 
-	// Error message
-	err = binary.Write(res, binary.BigEndian, []byte(msg))
-	if err != nil {
-		log.Println(err.Error())
-		return nil
-	}
-
-	return res.Bytes()
+	return buf
 }
 
 // Protocol returns the protocol used by this tracker
@@ -105,46 +74,37 @@ func (u udpTracker) Protocol() string {
 
 // Scrape scrapes using UDP format
 func (u udpTracker) Scrape(files []fileRecord) []byte {
-	// Response buffer
-	res := bytes.NewBuffer(make([]byte, 0))
-
-	// Action (2 for scrape)
-	err := binary.Write(res, binary.BigEndian, uint32(2))
-	if err != nil {
-		log.Println(err.Error())
-		return u.Error("Could not create UDP scrape response")
-	}
-
-	// Transaction ID
-	err = binary.Write(res, binary.BigEndian, u.TransID)
-	if err != nil {
-		log.Println(err.Error())
-		return u.Error("Could not create UDP scrape response")
-	}
-
-	// Iterate all files, writing their statistics into the buffer
+	// Iterate all files, grabbing their statistics
+	stats := make([]udpScrapeStats, 0)
 	for _, file := range files {
+		stat := udpScrapeStats{}
+
 		// Seeders
-		err = binary.Write(res, binary.BigEndian, uint32(file.Seeders()))
-		if err != nil {
-			log.Println(err.Error())
-			return u.Error("Could not create UDP scrape response")
-		}
+		stat.Seeders = uint32(file.Seeders())
 
 		// Completed
-		err = binary.Write(res, binary.BigEndian, uint32(file.Completed()))
-		if err != nil {
-			log.Println(err.Error())
-			return u.Error("Could not create UDP scrape response")
-		}
+		stat.Completed = uint32(file.Completed())
 
 		// Leechers
-		err = binary.Write(res, binary.BigEndian, uint32(file.Leechers()))
-		if err != nil {
-			log.Println(err.Error())
-			return u.Error("Could not create UDP scrape response")
-		}
+		stat.Leechers = uint32(file.Leechers())
+
+		// Append to slice
+		stats = append(stats[:], stat)
 	}
 
-	return res.Bytes()
+	// Create UDP scrape response
+	scrape := udpScrapeResponse{
+		Action:    2,
+		TransID:   u.TransID,
+		FileStats: stats,
+	}
+
+	// Convert to UDP byte buffer
+	buf, err := scrape.ToBytes()
+	if err != nil {
+		log.Println(err.Error())
+		return u.Error("Could not create UDP scrape response")
+	}
+
+	return buf
 }
