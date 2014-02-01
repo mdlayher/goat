@@ -17,6 +17,8 @@ type ServerStatus struct {
 	NumCPU       int       `json:"numCpu"`
 	NumGoroutine int       `json:"numGoroutine"`
 	MemoryMB     float64   `json:"memoryMb"`
+	Maintenance  bool      `json:"maintenance"`
+	Status       string    `json:"status"`
 	Uptime       int64     `json:"uptime"`
 	HTTP         HTTPStats `json:"http"`
 	UDP          UDPStats  `json:"udp"`
@@ -63,6 +65,8 @@ func GetServerStatus() ServerStatus {
 		runtime.NumCPU(),
 		runtime.NumGoroutine(),
 		memMb,
+		Static.Maintenance,
+		Static.StatusMessage,
 		uptime,
 		httpStatus,
 		udpStatus,
