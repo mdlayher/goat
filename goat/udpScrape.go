@@ -44,7 +44,7 @@ func (u udpScrapeRequest) FromBytes(buf []byte) (p udpScrapeRequest, err error) 
 	// Loop and iterate info_hash, up to 70 total (74 is said to be max by BEP15)
 	for i := 16; i < 16+(70*20); i += 20 {
 		// Validate that we are not appending nil bytes
-		if i >= len(buf) {
+		if i >= len(buf) || buf[i] == byte(0) {
 			break
 		}
 
