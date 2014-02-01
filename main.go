@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/mdlayher/goat/goat"
+	"github.com/mdlayher/goat/goat/common"
+	"github.com/mdlayher/goat/goat/data"
 )
 
 // config is a flag which allows override of the default configuration file location
@@ -28,9 +30,9 @@ func main() {
 	flag.Parse()
 
 	// Pass command-line flags to override default configurations
-	goat.ConfigPath = config
-	goat.MySQLDSN = mySQLDSN
-	goat.QLDBPath = qlDBPath
+	common.ConfigPath = config
+	data.MySQLDSN = mySQLDSN
+	data.QLDBPath = qlDBPath
 
 	// If test mode, trigger quit shortly after startup
 	// Used for CI tests, so that we ensure goat starts up and is able to stop gracefully

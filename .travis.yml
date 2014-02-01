@@ -16,9 +16,9 @@ before_script:
   - mysql -e "UPDATE mysql.user SET password=PASSWORD('travis') WHERE user='travis'; FLUSH PRIVILEGES"
 script:
   - go get
-  - go build -o bin/goat
+  - make
   - ./bin/goat -test
-  - go test github.com/mdlayher/goat/goat/
+  - make test
   - go get github.com/cznic/ql
-  - go build -tags='ql' -o bin/goat
+  - make ql
   - ./bin/goat -test

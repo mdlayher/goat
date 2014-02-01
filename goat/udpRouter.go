@@ -1,29 +1,32 @@
 package goat
 
 import (
-	"bytes"
-	"encoding/binary"
 	"errors"
 	"log"
 	"net"
 	"strings"
 	"sync/atomic"
 	"time"
+
+	"github.com/mdlayher/goat/goat/common"
+	"github.com/mdlayher/goat/goat/data"
+	"github.com/mdlayher/goat/goat/data/udp"
+	"github.com/mdlayher/goat/goat/tracker"
 )
 
-// Handshake for UDP tracker protocol
+// Handshake for UDP udpTracker protocol
 const udpInitID = 4497486125440
 
 // UDP errors
 var (
-	// errUDPAction is returned when a client requests an invalid tracker action
-	errUDPAction = errors.New("udp: client did not send a valid UDP tracker action")
+	// errUDPAction is returned when a client requests an invalid udpTracker action
+	errUDPAction = errors.New("udp: client did not send a valid UDP udpTracker action")
 	// errUDPHandshake is returned when a client does not send the proper handshake ID
-	errUDPHandshake = errors.New("udp: client did not send proper UDP tracker handshake")
+	errUDPHandshake = errors.New("udp: client did not send proper UDP udpTracker handshake")
 	// errUDPInteger is returned when a client sends an invalid integer parameter
 	errUDPInteger = errors.New("udp: client sent an invalid integer parameter")
-	// errUDPWrite is returned when the tracker cannot generate a proper response
-	errUDPWrite = errors.New("udp: tracker cannot generate UDP tracker response")
+	// errUDPWrite is returned when the udpTracker cannot generate a proper response
+	errUDPWrite = errors.New("udp: udpTracker cannot generate UDP udpTracker response")
 )
 
 // UDP address to connection ID map
@@ -51,8 +54,8 @@ func handleUDP(l *net.UDPConn, sendChan chan bool, recvChan chan bool) {
 		rlen, addr, err := l.ReadFromUDP(buf)
 
 		// Count incoming connections
-		atomic.AddInt64(&static.UDP.Current, 1)
-		atomic.AddInt64(&static.UDP.Total, 1)
+		atomic.AddInt64(&common.Static.UDP.Current, 1)
+		atomic.AddInt64(&common.Static.UDP.Total, 1)
 
 		// Triggered on graceful shutdown
 		if err != nil {
@@ -99,70 +102,67 @@ func handleUDP(l *net.UDPConn, sendChan chan bool, recvChan chan bool) {
 	}
 }
 
-// Parse a UDP byte buffer, return response from tracker
+// Parse a UDP byte buffer, return response from udpTracker
 func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
-	// Attempt to create UDP packet from buffer
-	packet, err := new(udpPacket).FromBytes(buf)
+	// Attempt to grab generic UDP connection fields
+	packet, err := new(udp.Packet).FromBytes(buf)
 	if err != nil {
 		// Because no transaction ID is present on failure, we must return nil
 		return nil, errUDPHandshake
 	}
 
 	// Create a udpTracker to handle this client
-	tracker := udpTracker{TransID: packet.TransID}
+	udpTracker := tracker.UDPTracker{TransID: packet.TransID}
+
+	// Check for maintenance mode
+	if common.Static.Maintenance {
+		// Return tracker error with maintenance message
+		return udpTracker.Error("Maintenance: " + common.Static.StatusMessage), nil
+	}
 
 	// Action switch
 	// Action 0: Connect
 	if packet.Action == 0 {
-		// Validate UDP tracker handshake
+		// Validate UDP udpTracker handshake
 		if packet.ConnID != udpInitID {
-			return tracker.Error("Invalid UDP tracker handshake"), errUDPHandshake
-		}
-
-		res := bytes.NewBuffer(make([]byte, 0))
-
-		// Action
-		err := binary.Write(res, binary.BigEndian, uint32(0))
-		if err != nil {
-			log.Println(err.Error())
-			return tracker.Error("Could not generate UDP tracker response"), errUDPWrite
-		}
-
-		// Transaction ID
-		err = binary.Write(res, binary.BigEndian, packet.TransID)
-		if err != nil {
-			log.Println(err.Error())
-			return tracker.Error("Could not generate UDP tracker response"), errUDPWrite
+			return udpTracker.Error("Invalid UDP udpTracker handshake"), errUDPHandshake
 		}
 
 		// Generate a connection ID, which will be expected for this client next call
-		expID := uint64(randRange(1, 1000000000))
+		expID := uint64(common.RandRange(1, 1000000000))
 
 		// Store this client's address and ID in map
 		udpAddrToID[addr.String()] = expID
 
-		// Connection ID, generated for this session
-		err = binary.Write(res, binary.BigEndian, expID)
-		if err != nil {
-			log.Println(err.Error())
-			return tracker.Error("Could not generate UDP tracker response"), errUDPWrite
+		// Generate connect response
+		connect := udp.ConnectResponse{
+			Action:  0,
+			TransID: packet.TransID,
+			ConnID:  expID,
 		}
 
-		return res.Bytes(), nil
+		// Grab bytes from connect response
+		connectBuf, err := connect.ToBytes()
+		if err != nil {
+			log.Println(err.Error())
+			return udpTracker.Error("Could not generate UDP connect response"), errUDPWrite
+		}
+
+		return connectBuf, nil
 	}
 
-	// For all tracker actions other than connect, we must validate the connection ID for this
+	// For all udpTracker actions other than connect, we must validate the connection ID for this
 	// address, ensuring it matches the previously set value
 
 	// Ensure connection ID map contains this IP address
 	expID, ok := udpAddrToID[addr.String()]
 	if !ok {
-		return tracker.Error("Client must properly handshake before announce"), errUDPHandshake
+		return udpTracker.Error("Client must properly handshake before announce"), errUDPHandshake
 	}
 
 	// Validate expected connection ID using map
 	if packet.ConnID != expID {
-		return tracker.Error("Invalid UDP connection ID"), errUDPHandshake
+		return udpTracker.Error("Invalid UDP connection ID"), errUDPHandshake
 	}
 
 	// Clear this IP from the connection map after 2 minutes
@@ -174,10 +174,10 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 
 	// Action 1: Announce
 	if packet.Action == 1 {
-		// Generate UDP announce packet from byte buffer
-		announce, err := new(udpAnnouncePacket).FromBytes(buf)
+		// Retrieve UDP announce request from byte buffer
+		announce, err := new(udp.AnnounceRequest).FromBytes(buf)
 		if err != nil {
-			return tracker.Error("Malformed UDP announce"), errUDPInteger
+			return udpTracker.Error("Malformed UDP announce"), errUDPInteger
 		}
 
 		// Convert UDP announce to query map
@@ -189,15 +189,15 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 		}
 
 		// Trigger an anonymous announce
-		return trackerAnnounce(tracker, userRecord{}, query), nil
+		return tracker.Announce(udpTracker, data.UserRecord{}, query), nil
 	}
 
 	// Action 2: Scrape
 	if packet.Action == 2 {
 		// Generate UDP scrape packet from byte buffer
-		scrape, err := new(udpScrapePacket).FromBytes(buf)
+		scrape, err := new(udp.ScrapeRequest).FromBytes(buf)
 		if err != nil {
-			return tracker.Error("Malformed UDP scrape"), errUDPHandshake
+			return udpTracker.Error("Malformed UDP scrape"), errUDPHandshake
 		}
 
 		// Convert UDP scrape to query map
@@ -207,9 +207,9 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 		query.Set("ip", strings.Split(addr.String(), ":")[0])
 
 		// Trigger a scrape
-		return trackerScrape(tracker, query), nil
+		return tracker.Scrape(udpTracker, query), nil
 	}
 
 	// No action matched
-	return tracker.Error("Invalid action"), errUDPAction
+	return udpTracker.Error("Invalid action"), errUDPAction
 }

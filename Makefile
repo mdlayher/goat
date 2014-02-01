@@ -1,14 +1,32 @@
 make:
 	go build -o bin/goat
 
+ql:
+	go build -tags='ql' -o bin/goat
+
 fmt:
 	go fmt
 	go fmt github.com/mdlayher/goat/goat
+	go fmt github.com/mdlayher/goat/goat/api
+	go fmt github.com/mdlayher/goat/goat/common
+	go fmt github.com/mdlayher/goat/goat/data
+	go fmt github.com/mdlayher/goat/goat/data/udp
+	go fmt github.com/mdlayher/goat/goat/tracker
 	golint .
 	golint goat
+	golint goat/api
+	golint goat/common
+	golint goat/data
+	golint goat/data/udp
+	golint goat/tracker
 
 test:
 	go test github.com/mdlayher/goat/goat
+	go test github.com/mdlayher/goat/goat/api
+	go test github.com/mdlayher/goat/goat/common
+	go test github.com/mdlayher/goat/goat/data
+	go test github.com/mdlayher/goat/goat/data/udp
+	go test github.com/mdlayher/goat/goat/tracker
 
 darwin_386:
 	GOOS="darwin" GOARCH="386" go build -o bin/goat_darwin_386
