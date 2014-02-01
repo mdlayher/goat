@@ -125,9 +125,9 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 
 		// Generate connect response
 		connect := udpConnectResponse{
-			Action: 0,
+			Action:  0,
 			TransID: packet.TransID,
-			ConnID: expID,
+			ConnID:  expID,
 		}
 
 		// Grab bytes from connect response
