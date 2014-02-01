@@ -1,6 +1,7 @@
 package goat
 
 import (
+	"bytes"
 	"log"
 	"net/url"
 	"testing"
@@ -47,6 +48,16 @@ func TestUDPTrackerAnnounce(t *testing.T) {
 		t.Fatalf("Incorrect UDP action, expected 1")
 	}
 
+	// Encode response, verify same as before
+	announceBuf, err := announce.ToBytes()
+	if err != nil {
+		t.Fatalf("Failed to encode UDP announce response")
+	}
+
+	if !bytes.Equal(res, announceBuf) {
+		t.Fatalf("Byte slices are not identical")
+	}
+
 	// Delete mock file
 	if !file.Delete() {
 		t.Fatalf("Failed to delete mock file")
@@ -76,6 +87,16 @@ func TestUDPTrackerError(t *testing.T) {
 	// Verify correct error
 	if errRes.Error != "Testing" {
 		t.Fatalf("Incorrect UDP error, expected 'Testing'")
+	}
+
+	// Encode response, verify same as before
+	errResBuf, err := errRes.ToBytes()
+	if err != nil {
+		t.Fatalf("Failed to encode UDP error response")
+	}
+
+	if !bytes.Equal(res, errResBuf) {
+		t.Fatalf("Byte slices are not identical")
 	}
 }
 
@@ -112,6 +133,16 @@ func TestUDPTrackerScrape(t *testing.T) {
 	// Verify correct action
 	if scrape.Action != 2 {
 		t.Fatalf("Incorrect UDP action, expected 2")
+	}
+
+	// Encode response, verify same as before
+	scrapeBuf, err := scrape.ToBytes()
+	if err != nil {
+		t.Fatalf("Failed to encode UDP scrape response")
+	}
+
+	if !bytes.Equal(res, scrapeBuf) {
+		t.Fatalf("Byte slices are not identical")
 	}
 
 	// Delete mock file
