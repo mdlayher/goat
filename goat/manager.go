@@ -18,6 +18,9 @@ const Version = "git-master"
 
 // Manager is responsible for coordinating the application
 func Manager(killChan chan bool, exitChan chan int) {
+	// Capture startup time
+	static.StartTime = time.Now().Unix()
+
 	// Set up logging flags
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	log.Println("Starting " + App + " " + Version)

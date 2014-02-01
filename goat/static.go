@@ -8,6 +8,9 @@ var static struct {
 	// Stats about HTTP server
 	HTTP httpStats
 
+	// Startup time
+	StartTime int64
+
 	// Stats about UDP server
 	UDP udpStats
 }

@@ -6,6 +6,7 @@ import (
 	"os"
 	"runtime"
 	"sync/atomic"
+	"time"
 )
 
 // serverStatus represents a struct to be serialized, containing information about the system running goat
@@ -17,6 +18,7 @@ type serverStatus struct {
 	NumCPU       int       `json:"numCpu"`
 	NumGoroutine int       `json:"numGoroutine"`
 	MemoryMB     float64   `json:"memoryMb"`
+	Uptime       int64     `json:"uptime"`
 	HTTP         httpStats `json:"http"`
 	UDP          udpStats  `json:"udp"`
 }
@@ -50,6 +52,9 @@ func getServerStatus() serverStatus {
 	// Report memory usage in MB
 	memMb := float64((float64(mem.Alloc) / 1000) / 1000)
 
+	// Current uptime
+	uptime := time.Now().Unix() - static.StartTime
+
 	// HTTP status
 	httpStatus := httpStats{
 		atomic.LoadInt64(&static.HTTP.Current),
@@ -71,6 +76,7 @@ func getServerStatus() serverStatus {
 		runtime.NumCPU(),
 		runtime.NumGoroutine(),
 		memMb,
+		uptime,
 		httpStatus,
 		udpStatus,
 	}
