@@ -113,7 +113,7 @@ func (u udpScrapeRequest) ToValues() url.Values {
 // udpScrapeResponse represents a tracker scrape response in the UDP format
 type udpScrapeResponse struct {
 	Action    uint32
-	TransID   []byte
+	TransID   uint32
 	FileStats []udpScrapeStats
 }
 
@@ -135,11 +135,14 @@ func (u udpScrapeResponse) FromBytes(buf []byte) (p udpScrapeResponse, err error
 		}
 	}()
 
-	// Action
+	// Action (must be 2 for scrape)
 	u.Action = binary.BigEndian.Uint32(buf[0:4])
+	if u.Action != uint32(2) {
+		return udpScrapeResponse{}, errors.New("invalid action for udpScrapeResponse")
+	}
 
 	// Transaction ID
-	u.TransID = buf[4:8]
+	u.TransID = binary.BigEndian.Uint32(buf[4:8])
 
 	// FileStats
 	u.FileStats = make([]udpScrapeStats, 0)
