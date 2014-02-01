@@ -10,6 +10,8 @@ import (
 	ospath "path"
 	"time"
 
+	"github.com/mdlayher/goat/goat/common"
+
 	// Bring in the ql driver
 	"github.com/cznic/ql"
 )
@@ -42,7 +44,7 @@ var (
 		"announcelog_load_time":       "SELECT id(),info_hash,passkey,key,ip,port,udp,uploaded,downloaded,left,event,client,ts FROM announce_log WHERE time==$1 ORDER BY id()",
 		"announcelog_save":            "INSERT INTO announce_log VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,now());",
 
-		// ApiKey
+		// APIKey
 		"apikey_delete_id":    "DELETE FROM api_keys WHERE id()==$1",
 		"apikey_delete_key":   "DELETE FROM api_keys WHERE key==$1",
 		"apikey_load_id":      "SELECT id(),user_id,key,salt FROM api_keys WHERE id()==$1",
@@ -180,7 +182,7 @@ func init() {
 	}
 
 	// Generate connection string using configuration
-	dbCloseFunc = func() {
+	DBCloseFunc = func() {
 		if nil != qlwdb {
 			log.Println("Closing ql database")
 			qlwdb.Close()
@@ -263,7 +265,7 @@ func (db *qlw) SaveAnnounceLog(a AnnounceLog) (err error) {
 	return
 }
 
-// --- ApiKey.go ---
+// --- APIKey.go ---
 
 // DeleteAPIKey deletes an AnnounceLog using a defined ID and column for query
 func (db *qlw) DeleteAPIKey(id interface{}, col string) (err error) {
@@ -271,17 +273,17 @@ func (db *qlw) DeleteAPIKey(id interface{}, col string) (err error) {
 	return
 }
 
-// LoadAPIKey loads an ApiKey using a defined ID and column for query
-func (db *qlw) LoadAPIKey(id interface{}, col string) (ApiKey, error) {
+// LoadAPIKey loads an APIKey using a defined ID and column for query
+func (db *qlw) LoadAPIKey(id interface{}, col string) (APIKey, error) {
 	rs, _, err := qlQuery(db, "apikey_load_"+col, true, id)
 
-	result := ApiKey{}
+	result := APIKey{}
 	if err != nil || len(rs) < 1 {
 		return result, err
 	}
 
 	err = rs[len(rs)-1].Do(false, func(data []interface{}) (bool, error) {
-		result = ApiKey{
+		result = APIKey{
 			ID:     int(data[0].(int64)),
 			UserID: int(data[1].(int64)),
 			Key:    data[2].(string),
@@ -294,9 +296,9 @@ func (db *qlw) LoadAPIKey(id interface{}, col string) (ApiKey, error) {
 	return result, err
 }
 
-// SaveAPIKey saves an ApiKey to the database
-func (db *qlw) SaveAPIKey(key ApiKey) (err error) {
-	if k, err := db.LoadAPIKey(key.ID, "id"); (k == ApiKey{}) && err == nil {
+// SaveAPIKey saves an APIKey to the database
+func (db *qlw) SaveAPIKey(key APIKey) (err error) {
+	if k, err := db.LoadAPIKey(key.ID, "id"); (k == APIKey{}) && err == nil {
 		_, _, err = qlQuery(db, "apikey_insert", true, int64(key.UserID), key.Key, key.Salt)
 	} else {
 		_, _, err = qlQuery(db, "apikey_update", true, k.ID, key.Key, key.Salt)
@@ -377,7 +379,7 @@ func (db *qlw) GetFileRecordPeerList(infohash, exclude string, limit int) ([]byt
 
 	if err == nil && len(rs) > 0 {
 		err = rs[0].Do(false, func(data []interface{}) (bool, error) {
-			buf = append(buf, ip2b(data[0].(string), uint16(data[1].(int32)))...)
+			buf = append(buf, common.IP2B(data[0].(string), uint16(data[1].(int32)))...)
 
 			return len(buf)/6 < limit, nil
 		})

@@ -1,6 +1,9 @@
 make:
 	go build -o bin/goat
 
+ql:
+	go build -tags='ql' -o bin/goat
+
 fmt:
 	go fmt
 	go fmt github.com/mdlayher/goat/goat
