@@ -97,7 +97,7 @@ func ErrorResponse(msg string) string {
 	out, err := json.Marshal(res)
 	if err != nil {
 		log.Println(err.Error())
-		return `{"error":"`+msg+`"}`
+		return `{"error":"` + msg + `"}`
 	}
 
 	return string(out)
