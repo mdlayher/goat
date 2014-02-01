@@ -4,7 +4,6 @@ CREATE TABLE IF NOT EXISTS api_keys (
 	, `key` char(40) NOT NULL
 	, `salt` char(20) NOT NULL
 	, PRIMARY KEY (`id`)
-	, UNIQUE KEY (`user_id`)
 	, UNIQUE KEY (`key`)
 	, UNIQUE KEY (`salt`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin

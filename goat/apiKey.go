@@ -22,7 +22,7 @@ func (a apiKey) Delete() bool {
 	}
 
 	// Delete apiKey
-	if err = db.DeleteAPIKey(a.ID, "id"); err != nil {
+	if err = db.DeleteAPIKey(a.Key, "key"); err != nil {
 		log.Println(err.Error())
 		return false
 	}

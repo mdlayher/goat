@@ -44,6 +44,7 @@ var (
 
 		// apiKey
 		"apikey_delete_id":    "DELETE FROM api_keys WHERE id()==$1",
+		"apikey_delete_key":   "DELETE FROM api_keys WHERE key==$1",
 		"apikey_load_id":      "SELECT id(),user_id,key,salt FROM api_keys WHERE id()==$1",
 		"apikey_load_user_id": "SELECT id(),user_id,key,salt FROM api_keys WHERE user_id==$1",
 		"apikey_load_key":     "SELECT id(),user_id,key,salt FROM api_keys WHERE key==$1",
