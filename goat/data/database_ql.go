@@ -209,7 +209,7 @@ func (db *qlw) Close() error {
 // NewTransaction starts a new ql transaction
 func (db *qlw) NewTransaction() qltx {
 	tx := qltx{ql.NewRWCtx(), db}
-	tx.Run("BEGIN TRANSACTION;")
+	tx.Execute(qlBeginTransaction)
 
 	return tx
 }
@@ -712,6 +712,13 @@ func qlCompile(key string, wraptx bool) (list ql.List, err error) {
 	return
 }
 
+// Pre-compiled begin transaction, commit and rollback statements
+var (
+	qlBeginTransaction, _ = ql.Compile("BEGIN TRANSACTION;")
+	qlCommit, _           = ql.Compile("COMMIT;")
+	qlRollback, _         = ql.Compile("ROLLBACK;")
+)
+
 // qltx contains a ql context and database connection
 type qltx struct {
 	ctx *ql.TCtx
@@ -730,12 +737,12 @@ func (t *qltx) Run(src string, arg ...interface{}) ([]ql.Recordset, int, error) 
 
 // Commit performs a database commit at the end of a transaction
 func (t *qltx) Commit() (err error) {
-	_, _, err = t.Run("COMMIT;")
+	_, _, err = t.Execute(qlCommit)
 	return
 }
 
 // Rollback performs a database rollback on failed end of transaction
 func (t *qltx) Rollback() (err error) {
-	_, _, err = t.Run("ROLLBACK;")
+	_, _, err = t.Execute(qlRollback)
 	return
 }
