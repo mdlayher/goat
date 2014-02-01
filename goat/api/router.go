@@ -18,7 +18,7 @@ type Error struct {
 func Router(w http.ResponseWriter, r *http.Request) {
 	// API is read-only, at least for the time being
 	if r.Method != "GET" {
-		http.Error(w, string(ErrorResponse("Method not allowed")), 405)
+		http.Error(w, ErrorResponse("Method not allowed"), 405)
 		return
 	}
 
@@ -30,7 +30,7 @@ func Router(w http.ResponseWriter, r *http.Request) {
 
 	// Verify API method set
 	if len(urlArr) < 3 {
-		http.Error(w, string(ErrorResponse("No API call")), 404)
+		http.Error(w, ErrorResponse("No API call"), 404)
 		return
 	}
 
@@ -39,7 +39,7 @@ func Router(w http.ResponseWriter, r *http.Request) {
 	if len(urlArr) == 4 {
 		i, err := strconv.Atoi(urlArr[3])
 		if err != nil || i < 1 {
-			http.Error(w, string(ErrorResponse("Invalid integer ID")), 400)
+			http.Error(w, ErrorResponse("Invalid integer ID"), 400)
 			return
 		}
 
@@ -59,7 +59,7 @@ func Router(w http.ResponseWriter, r *http.Request) {
 		res = getStatusJSON()
 	// Return error response
 	default:
-		http.Error(w, string(ErrorResponse("Undefined API call")), 404)
+		http.Error(w, ErrorResponse("Undefined API call"), 404)
 		return
 	}
 
@@ -89,7 +89,7 @@ func Router(w http.ResponseWriter, r *http.Request) {
 }
 
 // ErrorResponse returns an Error as JSON
-func ErrorResponse(msg string) []byte {
+func ErrorResponse(msg string) string {
 	res := Error{
 		msg,
 	}
@@ -97,8 +97,8 @@ func ErrorResponse(msg string) []byte {
 	out, err := json.Marshal(res)
 	if err != nil {
 		log.Println(err.Error())
-		return nil
+		return `{"error":"`+msg+`"}`
 	}
 
-	return out
+	return string(out)
 }

@@ -75,7 +75,7 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 			// API authentication
 			auth := new(api.BasicAuthenticator).Auth(r)
 			if !auth {
-				http.Error(w, string(api.ErrorResponse("Authentication failed")), 401)
+				http.Error(w, api.ErrorResponse("Authentication failed"), 401)
 				return
 			}
 
@@ -84,7 +84,7 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		http.Error(w, string(api.ErrorResponse("API is currently disabled")), 503)
+		http.Error(w, api.ErrorResponse("API is currently disabled"), 503)
 		return
 	}
 
