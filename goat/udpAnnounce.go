@@ -306,7 +306,7 @@ func (u udpAnnounceResponse) ToBytes() ([]byte, error) {
 	}
 
 	// PeerList, []compactPeer, iterated and compressed to compact format
-	for _, peer := range u.PeerList{
+	for _, peer := range u.PeerList {
 		// Compact and write
 		if err := binary.Write(res, binary.BigEndian, ip2b(peer.IP, peer.Port)); err != nil {
 			return nil, err
