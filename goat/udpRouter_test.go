@@ -4,14 +4,22 @@ import (
 	"log"
 	"net"
 	"testing"
+
+	"github.com/mdlayher/goat/goat/common"
+	"github.com/mdlayher/goat/goat/data"
+	"github.com/mdlayher/goat/goat/data/udp"
 )
 
 // TestUDPRouter verifies that the main UDP router is working properly
 func TestUDPRouter(t *testing.T) {
 	log.Println("TestUDPRouter()")
 
-	// Generate mock fileRecord
-	file := fileRecord{
+	// Load config
+	config := common.LoadConfig()
+	common.Static.Config = config
+
+	// Generate mock data.FileRecord
+	file := data.FileRecord{
 		InfoHash: "6465616462656566303030303030303030303030",
 		Verified: true,
 	}
@@ -28,7 +36,7 @@ func TestUDPRouter(t *testing.T) {
 	}
 
 	// Connect packet with handshake
-	connect, err := udpPacket{udpInitID, 0, 1234}.ToBytes()
+	connect, err := udp.Packet{udpInitID, 0, 1234}.ToBytes()
 	if err != nil {
 		t.Fatalf("Failed to create UDP connect packet")
 	}
@@ -36,7 +44,7 @@ func TestUDPRouter(t *testing.T) {
 	// Perform connection handshake
 	res, err := parseUDP(connect, addr)
 	if err != nil {
-		errRes, err2 := new(udpErrorResponse).FromBytes(res)
+		errRes, err2 := new(udp.ErrorResponse).FromBytes(res)
 		if err2 != nil {
 			t.Fatalf(err.Error())
 		}
@@ -46,13 +54,13 @@ func TestUDPRouter(t *testing.T) {
 	}
 
 	// Retrieve response, get new connection ID, which will be expected by router
-	connRes, err := new(udpConnectResponse).FromBytes(res)
+	connRes, err := new(udp.ConnectResponse).FromBytes(res)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
 
 	// Create announce request
-	announce := udpAnnounceRequest{
+	announce := udp.AnnounceRequest{
 		ConnID:     connRes.ConnID,
 		Action:     1,
 		TransID:    connRes.TransID,
@@ -75,7 +83,7 @@ func TestUDPRouter(t *testing.T) {
 	// Send announce to UDP router
 	res, err = parseUDP(announceBuf, addr)
 	if err != nil {
-		errRes, err2 := new(udpErrorResponse).FromBytes(res)
+		errRes, err2 := new(udp.ErrorResponse).FromBytes(res)
 		if err2 != nil {
 			t.Fatalf(err.Error())
 		}
@@ -85,14 +93,14 @@ func TestUDPRouter(t *testing.T) {
 	}
 
 	// Get UDP announce response
-	announceRes, err := new(udpAnnounceResponse).FromBytes(res)
+	announceRes, err := new(udp.AnnounceResponse).FromBytes(res)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
 	log.Println(announceRes)
 
 	// Create scrape request
-	scrape := udpScrapeRequest{
+	scrape := udp.ScrapeRequest{
 		ConnID:     connRes.ConnID,
 		Action:     2,
 		TransID:    connRes.TransID,
@@ -108,7 +116,7 @@ func TestUDPRouter(t *testing.T) {
 	// Send scrape to UDP router
 	res, err = parseUDP(scrapeBuf, addr)
 	if err != nil {
-		errRes, err2 := new(udpErrorResponse).FromBytes(res)
+		errRes, err2 := new(udp.ErrorResponse).FromBytes(res)
 		if err2 != nil {
 			t.Fatalf(err.Error())
 		}
@@ -118,7 +126,7 @@ func TestUDPRouter(t *testing.T) {
 	}
 
 	// Get UDP scrape response
-	scrapeRes, err := new(udpScrapeResponse).FromBytes(res)
+	scrapeRes, err := new(udp.ScrapeResponse).FromBytes(res)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}

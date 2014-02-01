@@ -5,6 +5,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/mdlayher/goat/goat/common"
+	"github.com/mdlayher/goat/goat/data"
 )
 
 // Table driven tests to iterate over and test the main HTTP router
@@ -25,8 +28,12 @@ var httpTests = []struct {
 func TestHTTPRouter(t *testing.T) {
 	log.Println("TestHTTPRouter()")
 
-	// Generate mock fileRecord
-	file := fileRecord{
+	// Load config
+	config := common.LoadConfig()
+	common.Static.Config = config
+
+	// Generate mock data.FileRecord
+	file := data.FileRecord{
 		InfoHash: "6465616462656566",
 		Verified: true,
 	}
@@ -36,8 +43,8 @@ func TestHTTPRouter(t *testing.T) {
 		t.Fatalf("Failed to save mock file")
 	}
 
-	// Generate mock fileRecord
-	file2 := fileRecord{
+	// Generate mock data.FileRecord
+	file2 := data.FileRecord{
 		InfoHash: "6265656664656164",
 		Verified: true,
 	}

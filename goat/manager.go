@@ -8,6 +8,9 @@ import (
 	"strconv"
 	"syscall"
 	"time"
+
+	"github.com/mdlayher/goat/goat/common"
+	"github.com/mdlayher/goat/goat/data"
 )
 
 // Application name
@@ -19,41 +22,41 @@ const Version = "git-master"
 // Manager is responsible for coordinating the application
 func Manager(killChan chan bool, exitChan chan int) {
 	// Capture startup time
-	static.StartTime = time.Now().Unix()
+	common.Static.StartTime = time.Now().Unix()
 
 	// Set up logging flags
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	log.Println("Starting " + App + " " + Version)
 
 	// Grab initial server status
-	stat := getServerStatus()
-	if stat == (serverStatus{}) {
+	stat := common.GetServerStatus()
+	if stat == (common.ServerStatus{}) {
 		log.Println("Could not print get startup status")
 	} else {
 		log.Printf("%s - %s_%s (%d CPU) [pid: %d]", stat.Hostname, stat.Platform, stat.Architecture, stat.NumCPU, stat.PID)
 	}
 
 	// Load configuration
-	config := loadConfig()
-	if config == (conf{}) {
+	config := common.LoadConfig()
+	if config == (common.Conf{}) {
 		panic("Cannot load configuration, panicking")
 	}
-	static.Config = config
+	common.Static.Config = config
 
 	// Check for sane announce interval (10 minutes or more)
-	if static.Config.Interval <= 600 {
+	if common.Static.Config.Interval <= 600 {
 		panic("Announce interval must be at least 600 seconds, panicking")
 	}
 
 	// Attempt database connection
-	if !dbPing() {
-		panic(fmt.Errorf("cannot connect to database %s; panicking", dbName()))
+	if !data.DBPing() {
+		panic(fmt.Errorf("cannot connect to database %s; panicking", data.DBName()))
 	}
-	log.Println("Database", dbName(), ": OK")
+	log.Println("Database", data.DBName(), ": OK")
 
 	// If configured, attempt redis connection
-	if static.Config.Redis.Enabled {
-		if !redisPing() {
+	if common.Static.Config.Redis.Enabled {
+		if !data.RedisPing() {
 			panic("Cannot connect to Redis, panicking")
 		}
 		log.Println("Redis : OK")
@@ -74,17 +77,17 @@ func Manager(killChan chan bool, exitChan chan int) {
 	http.HandleFunc("/", parseHTTP)
 
 	// Launch listeners as configured
-	if static.Config.HTTP {
+	if common.Static.Config.HTTP {
 		go listenHTTP(httpSendChan, httpRecvChan)
-		log.Println("HTTP listener launched on port " + strconv.Itoa(static.Config.Port))
+		log.Println("HTTP listener launched on port " + strconv.Itoa(common.Static.Config.Port))
 	}
-	if static.Config.SSL.Enabled {
+	if common.Static.Config.SSL.Enabled {
 		go listenHTTPS(httpsSendChan, httpsRecvChan)
-		log.Println("HTTPS listener launched on port " + strconv.Itoa(static.Config.SSL.Port))
+		log.Println("HTTPS listener launched on port " + strconv.Itoa(common.Static.Config.SSL.Port))
 	}
-	if static.Config.UDP {
+	if common.Static.Config.UDP {
 		go listenUDP(udpSendChan, udpRecvChan)
-		log.Println("UDP listener launched on port " + strconv.Itoa(static.Config.Port))
+		log.Println("UDP listener launched on port " + strconv.Itoa(common.Static.Config.Port))
 	}
 
 	// Wait for shutdown signal
@@ -104,24 +107,24 @@ func Manager(killChan chan bool, exitChan chan int) {
 			}()
 
 			// Stop listeners
-			if static.Config.HTTP {
+			if common.Static.Config.HTTP {
 				log.Println("Stopping HTTP listener")
 				httpSendChan <- true
 				<-httpRecvChan
 			}
-			if static.Config.SSL.Enabled {
+			if common.Static.Config.SSL.Enabled {
 				log.Println("Stopping HTTPS listener")
 				httpsSendChan <- true
 				<-httpsRecvChan
 			}
-			if static.Config.UDP {
+			if common.Static.Config.UDP {
 				log.Println("Stopping UDP listener")
 				udpSendChan <- true
 				<-udpRecvChan
 			}
 
 			log.Println("Closing database connection")
-			dbCloseFunc()
+			data.DBCloseFunc()
 
 			// Report that program should exit gracefully
 			exitChan <- 0
