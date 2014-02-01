@@ -23,6 +23,7 @@ var (
 	qlOptions = ql.Options{CanCreate: true}
 	qlwdb     *qlw
 
+	// Map of compiled ql queries
 	qlc = map[string]ql.List{}
 
 	// Map of all queries available to ql
@@ -703,6 +704,7 @@ func qlCompile(key string, wraptx bool) (list ql.List, err error) {
 		} else {
 			list = l
 		}
+		qlc[key] = list
 	} else {
 		list = l
 	}
