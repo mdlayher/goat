@@ -114,6 +114,12 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 	// Create a udpTracker to handle this client
 	udpTracker := tracker.UDPTracker{TransID: packet.TransID}
 
+	// Check for maintenance mode
+	if common.Static.Maintenance {
+		// Return tracker error with maintenance message
+		return udpTracker.Error("Maintenance: " + common.Static.StatusMessage), nil
+	}
+
 	// Action switch
 	// Action 0: Connect
 	if packet.Action == 0 {

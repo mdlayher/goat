@@ -88,6 +88,16 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check for maintenance mode
+	if common.Static.Maintenance {
+		// Return tracker error with maintenance message
+		if _, err := w.Write(httpTracker.Error("Maintenance: " + common.Static.StatusMessage)); err != nil {
+			log.Println(err.Error())
+		}
+
+		return
+	}
+
 	// Detect if passkey present in URL
 	var passkey string
 	if len(urlArr) == 3 {

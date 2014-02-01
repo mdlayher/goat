@@ -8,8 +8,14 @@ var Static struct {
 	// Stats about HTTP server
 	HTTP HTTPStats
 
+	// Maintenance
+	Maintenance bool
+
 	// Startup time
 	StartTime int64
+
+	// Status message
+	StatusMessage string
 
 	// Stats about UDP server
 	UDP UDPStats
