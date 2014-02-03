@@ -198,7 +198,8 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 	// Action 2: Scrape
 	if packet.Action == 2 {
 		// Generate UDP scrape packet from byte buffer
-		scrape, err := new(udp.ScrapeRequest).FromBytes(buf)
+		scrape := new(udp.ScrapeRequest)
+		err := scrape.UnmarshalBinary(buf)
 		if err != nil {
 			return udpTracker.Error("Malformed UDP scrape"), errUDPHandshake
 		}

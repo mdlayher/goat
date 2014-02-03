@@ -134,7 +134,8 @@ func TestUDPTrackerScrape(t *testing.T) {
 	res := tracker.Scrape(files)
 
 	// Decode response
-	scrape, err := new(udp.ScrapeResponse).FromBytes(res)
+	scrape := new(udp.ScrapeResponse)
+	err := scrape.UnmarshalBinary(res)
 	if err != nil {
 		t.Fatalf("Failed to decode UDP scrape response")
 	}
@@ -146,7 +147,7 @@ func TestUDPTrackerScrape(t *testing.T) {
 	}
 
 	// Encode response, verify same as before
-	scrapeBuf, err := scrape.ToBytes()
+	scrapeBuf, err := scrape.MarshalBinary()
 	if err != nil {
 		t.Fatalf("Failed to encode UDP scrape response")
 	}

@@ -120,7 +120,7 @@ func TestUDPRouter(t *testing.T) {
 	}
 
 	// Get scrape bytes
-	scrapeBuf, err := scrape.ToBytes()
+	scrapeBuf, err := scrape.MarshalBinary()
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -139,7 +139,8 @@ func TestUDPRouter(t *testing.T) {
 	}
 
 	// Get UDP scrape response
-	scrapeRes, err := new(udp.ScrapeResponse).FromBytes(res)
+	scrapeRes := new(udp.ScrapeResponse)
+	err = scrapeRes.UnmarshalBinary(res)
 	if err != nil {
 		errRes := new(udp.ErrorResponse)
 		err2 := errRes.UnmarshalBinary(res)

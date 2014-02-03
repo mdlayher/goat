@@ -104,7 +104,7 @@ func (u UDPTracker) Scrape(files []data.FileRecord) []byte {
 	}
 
 	// Convert to UDP byte buffer
-	buf, err := scrape.ToBytes()
+	buf, err := scrape.MarshalBinary()
 	if err != nil {
 		log.Println(err.Error())
 		return u.Error("Could not create UDP scrape response")
