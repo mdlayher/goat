@@ -144,13 +144,7 @@ func Announce(tracker TorrentTracker, user data.UserRecord, query url.Values) []
 	go fileUser.Save()
 
 	// Create announce
-	//return tracker.Announce(query, file)
-	annc := tracker.Announce(query, file)
-
-	log.Println(annc)
-	log.Println(string(annc))
-
-	return annc
+	return tracker.Announce(query, file)
 }
 
 // Scrape generates and triggers a tracker scrape request

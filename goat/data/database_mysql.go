@@ -212,20 +212,22 @@ func (db *dbw) CountFileRecordLeechers(id int) (int, error) {
 
 // GetFileRecordPeerList returns a list of Peers, containing IP/port pairs
 func (db *dbw) GetFileRecordPeerList(infoHash string, limit int) ([]Peer, error) {
-	// Get IP and port of all peers who are active and seeding this file
+	// Get IP and port of all peers who have recently announced on this file
+	// Note: this previously checked to verify the peer was marked as active in files_users,
+	// but because UDP announces are anonymous, this would break UDP clients.  We must
+	// give the client a "best guess" of peers who have been active in the current
+	// announce period.
 	query := `SELECT DISTINCT announce_log.ip,announce_log.port FROM announce_log
 		JOIN files ON announce_log.info_hash = files.info_hash
-		JOIN files_users ON files.id = files_users.file_id
-		AND announce_log.ip = files_users.ip
-		WHERE files_users.active=1
-		AND files.info_hash=?
+		WHERE files.info_hash=?
+		AND (UNIX_TIMESTAMP() - ?) <= announce_log.time
 		LIMIT ?;`
 
 	// Create output list
 	peers := make([]Peer, 0)
 
 	// Perform query
-	rows, err := db.Queryx(query, infoHash, limit)
+	rows, err := db.Queryx(query, infoHash, common.Static.Config.Interval, limit)
 	if err != nil && err != sql.ErrNoRows {
 		return peers, err
 	}
@@ -237,8 +239,6 @@ func (db *dbw) GetFileRecordPeerList(infoHash string, limit int) ([]Peer, error)
 		if err = rows.StructScan(&peer); err != nil {
 			return peers, nil
 		}
-
-		log.Println(peer)
 
 		// Append peer to list
 		peers = append(peers[:], peer)
