@@ -75,7 +75,7 @@ func TestUDPRouter(t *testing.T) {
 	}
 
 	// Get announce bytes
-	announceBuf, err := announce.ToBytes()
+	announceBuf, err := announce.MarshalBinary()
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -93,8 +93,15 @@ func TestUDPRouter(t *testing.T) {
 	}
 
 	// Get UDP announce response
-	announceRes, err := new(udp.AnnounceResponse).FromBytes(res)
+	announceRes := new(udp.AnnounceResponse)
+	err = announceRes.UnmarshalBinary(res)
 	if err != nil {
+		errRes, err2 := new(udp.ErrorResponse).FromBytes(res)
+		if err2 != nil {
+			t.Fatalf(err.Error())
+		}
+
+		log.Println("ERROR:", errRes.Error)
 		t.Fatalf(err.Error())
 	}
 	log.Println(announceRes)
@@ -128,6 +135,12 @@ func TestUDPRouter(t *testing.T) {
 	// Get UDP scrape response
 	scrapeRes, err := new(udp.ScrapeResponse).FromBytes(res)
 	if err != nil {
+		errRes, err2 := new(udp.ErrorResponse).FromBytes(res)
+		if err2 != nil {
+			t.Fatalf(err.Error())
+		}
+
+		log.Println("ERROR:", errRes.Error)
 		t.Fatalf(err.Error())
 	}
 	log.Println(scrapeRes)

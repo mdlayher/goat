@@ -29,7 +29,7 @@ func (u UDPTracker) Announce(query url.Values, file data.FileRecord) []byte {
 	}
 
 	// Convert to UDP byte buffer
-	announceBuf, err := announce.ToBytes()
+	announceBuf, err := announce.MarshalBinary()
 	if err != nil {
 		log.Println(err.Error())
 		return u.Error("Could not create UDP announce response")

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"net/url"
 	"strconv"
 
@@ -33,13 +34,12 @@ type AnnounceRequest struct {
 	Port       uint16
 }
 
-// FromBytes creates a AnnounceRequest from a packed byte array
-func (u AnnounceRequest) FromBytes(buf []byte) (p AnnounceRequest, err error) {
+// UnmarshalBinary creates a AnnounceRequest from a packed byte array
+func (u *AnnounceRequest) UnmarshalBinary(buf []byte) (err error) {
 	// Set up recovery function to catch a panic as an error
 	// This will run if we attempt to access an out of bounds index
 	defer func() {
 		if r := recover(); r != nil {
-			p = AnnounceRequest{}
 			err = errors.New("failed to create AnnounceRequest from bytes")
 		}
 	}()
@@ -50,7 +50,7 @@ func (u AnnounceRequest) FromBytes(buf []byte) (p AnnounceRequest, err error) {
 	// Action (uint32) (Announce = 1)
 	u.Action = binary.BigEndian.Uint32(buf[8:12])
 	if u.Action != uint32(1) {
-		return AnnounceRequest{}, errors.New("invalid action for AnnounceRequest")
+		return fmt.Errorf("invalid action '%d' for AnnounceRequest", u.Action)
 	}
 
 	// TransID (uint32)
@@ -59,13 +59,13 @@ func (u AnnounceRequest) FromBytes(buf []byte) (p AnnounceRequest, err error) {
 	// InfoHash (20 bytes)
 	u.InfoHash = buf[16:36]
 	if len(u.InfoHash) != 20 {
-		return AnnounceRequest{}, errors.New("info_hash must be exactly 20 bytes")
+		return errors.New("info_hash must be exactly 20 bytes")
 	}
 
 	// PeerID (20 bytes)
 	u.PeerID = buf[36:56]
 	if len(u.PeerID) != 20 {
-		return AnnounceRequest{}, errors.New("peer_id must be exactly 20 bytes")
+		return errors.New("peer_id must be exactly 20 bytes")
 	}
 
 	// Downloaded (uint64)
@@ -97,11 +97,11 @@ func (u AnnounceRequest) FromBytes(buf []byte) (p AnnounceRequest, err error) {
 	// Port (uint16)
 	u.Port = binary.BigEndian.Uint16(buf[96:98])
 
-	return u, nil
+	return nil
 }
 
-// ToBytes creates a packed byte array from a AnnounceRequest
-func (u AnnounceRequest) ToBytes() ([]byte, error) {
+// MarshalBinary creates a packed byte array from a AnnounceRequest
+func (u AnnounceRequest) MarshalBinary() ([]byte, error) {
 	res := bytes.NewBuffer(make([]byte, 0))
 
 	// ConnID (uint64)
@@ -232,13 +232,12 @@ type AnnounceResponse struct {
 	PeerList []compactPeer
 }
 
-// FromBytes creates a AnnounceResponse from a packed byte array
-func (u AnnounceResponse) FromBytes(buf []byte) (p AnnounceResponse, err error) {
+// UnmarshalBinary creates a AnnounceResponse from a packed byte array
+func (u *AnnounceResponse) UnmarshalBinary(buf []byte) (err error) {
 	// Set up recovery function to catch a panic as an error
 	// This will run if we attempt to access an out of bounds index
 	defer func() {
 		if r := recover(); r != nil {
-			p = AnnounceResponse{}
 			err = errors.New("failed to create AnnounceResponse from bytes")
 		}
 	}()
@@ -246,7 +245,7 @@ func (u AnnounceResponse) FromBytes(buf []byte) (p AnnounceResponse, err error) 
 	// Action (uint32) (Announce = 1)
 	u.Action = binary.BigEndian.Uint32(buf[0:4])
 	if u.Action != uint32(1) {
-		return AnnounceResponse{}, errors.New("invalid action for AnnounceResponse")
+		return fmt.Errorf("invalid action '%d' for AnnounceResponse", u.Action)
 	}
 
 	// Transaction ID
@@ -286,16 +285,17 @@ func (u AnnounceResponse) FromBytes(buf []byte) (p AnnounceResponse, err error) 
 		i += 6
 	}
 
-	return u, nil
+	return nil
 }
 
-// ToBytes creates a packed byte array from a AnnounceResponse
-func (u AnnounceResponse) ToBytes() ([]byte, error) {
+// MarshalBinary creates a packed byte array from a AnnounceResponse
+func (u AnnounceResponse) MarshalBinary() ([]byte, error) {
 	res := bytes.NewBuffer(make([]byte, 0))
 
 	// Action (uint32, must be 1 for announce)
 	if u.Action != uint32(1) {
-		return nil, errors.New("invalid action for AnnounceResponse")
+		return nil, fmt.Errorf("invalid action '%d' for AnnounceResponse", u.Action)
+
 	}
 
 	if err := binary.Write(res, binary.BigEndian, u.Action); err != nil {

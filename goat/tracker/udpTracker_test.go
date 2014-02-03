@@ -45,7 +45,8 @@ func TestUDPAnnounce(t *testing.T) {
 	res := tracker.Announce(query, file)
 
 	// Decode response
-	announce, err := new(udp.AnnounceResponse).FromBytes(res)
+	announce := new(udp.AnnounceResponse)
+	err := announce.UnmarshalBinary(res)
 	if err != nil {
 		t.Fatalf("Failed to decode UDP announce response")
 	}
@@ -57,7 +58,7 @@ func TestUDPAnnounce(t *testing.T) {
 	}
 
 	// Encode response, verify same as before
-	announceBuf, err := announce.ToBytes()
+	announceBuf, err := announce.MarshalBinary()
 	if err != nil {
 		t.Fatalf("Failed to encode UDP announce response")
 	}
