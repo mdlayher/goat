@@ -70,17 +70,17 @@ func cronPrintCurrentStatus() {
 
 	// API stats
 	if common.Static.Config.API {
-		log.Printf("   api - [1 min: %d, 30 min: %d, 60 min: %d] [total: %d]", stat.API.Minute, stat.API.HalfHour, stat.API.Hour, stat.API.Total)
+		log.Printf("   api - [1 min: %03d | 30 min: %03d | 60 min: %03d] [total: %03d]", stat.API.Minute, stat.API.HalfHour, stat.API.Hour, stat.API.Total)
 	}
 
 	// HTTP stats
 	if common.Static.Config.HTTP {
-		log.Printf("  http - [1 min: %d, 30 min: %d, 60 min: %d] [total: %d]", stat.HTTP.Minute, stat.HTTP.HalfHour, stat.HTTP.Hour, stat.HTTP.Total)
+		log.Printf("  http - [1 min: %03d | 30 min: %03d | 60 min: %03d] [total: %03d]", stat.HTTP.Minute, stat.HTTP.HalfHour, stat.HTTP.Hour, stat.HTTP.Total)
 	}
 
 	// UDP stats
 	if common.Static.Config.UDP {
-		log.Printf("   udp - [1 min: %d, 30 min: %d, 60 min: %d] [total: %d]", stat.UDP.Minute, stat.UDP.HalfHour, stat.UDP.Hour, stat.UDP.Total)
+		log.Printf("   udp - [1 min: %03d | 30 min: %03d | 60 min: %03d] [total: %03d]", stat.UDP.Minute, stat.UDP.HalfHour, stat.UDP.Hour, stat.UDP.Total)
 	}
 }
 
