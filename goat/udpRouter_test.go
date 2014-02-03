@@ -36,13 +36,14 @@ func TestUDPRouter(t *testing.T) {
 	}
 
 	// Connect packet with handshake
-	connect, err := udp.Packet{udpInitID, 0, 1234}.ToBytes()
+	connect := udp.Packet{udpInitID, 0, 1234}
+	connectBuf, err := connect.MarshalBinary()
 	if err != nil {
 		t.Fatalf("Failed to create UDP connect packet")
 	}
 
 	// Perform connection handshake
-	res, err := parseUDP(connect, addr)
+	res, err := parseUDP(connectBuf, addr)
 	if err != nil {
 		errRes := new(udp.ErrorResponse)
 		err2 := errRes.UnmarshalBinary(res)

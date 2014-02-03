@@ -13,13 +13,12 @@ type Packet struct {
 	TransID uint32
 }
 
-// FromBytes creates a Packet from a packed byte array
-func (u Packet) FromBytes(buf []byte) (p Packet, err error) {
+// UnmarshalBinary creates a Packet from a packed byte array
+func (u *Packet) UnmarshalBinary(buf []byte) (err error) {
 	// Set up recovery function to catch a panic as an error
 	// This will run if we attempt to access an out of bounds index
 	defer func() {
 		if r := recover(); r != nil {
-			p = Packet{}
 			err = errors.New("failed to create Packet from bytes")
 		}
 	}()
@@ -33,11 +32,11 @@ func (u Packet) FromBytes(buf []byte) (p Packet, err error) {
 	// TransID (uint32)
 	u.TransID = binary.BigEndian.Uint32(buf[12:16])
 
-	return u, nil
+	return nil
 }
 
-// ToBytes creates a packed byte array from a Packet
-func (u Packet) ToBytes() ([]byte, error) {
+// MarshalBinary creates a packed byte array from a Packet
+func (u Packet) MarshalBinary() ([]byte, error) {
 	res := bytes.NewBuffer(make([]byte, 0))
 
 	// ConnID (uint64)

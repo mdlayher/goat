@@ -105,7 +105,8 @@ func handleUDP(l *net.UDPConn, sendChan chan bool, recvChan chan bool) {
 // Parse a UDP byte buffer, return response from udpTracker
 func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 	// Attempt to grab generic UDP connection fields
-	packet, err := new(udp.Packet).FromBytes(buf)
+	packet := new(udp.Packet)
+	err := packet.UnmarshalBinary(buf)
 	if err != nil {
 		// Because no transaction ID is present on failure, we must return nil
 		return nil, errUDPHandshake
