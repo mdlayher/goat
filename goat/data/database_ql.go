@@ -56,6 +56,7 @@ var (
 
 		// FileRecord
 		"filerecord_delete_id":        "DELETE FROM files WHERE id()==$1",
+		"filerecord_delete_info_hash": "DELETE FROM files WHERE info_hash==$1",
 		"filerecord_load_all":         "SELECT id(),info_hash,verified,create_time,update_time FROM files",
 		"filerecord_load_id":          "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE id()==$1 ORDER BY id()",
 		"filerecord_load_info_hash":   "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE info_hash==$1 ORDER BY id()",

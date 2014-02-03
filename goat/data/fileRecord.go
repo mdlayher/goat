@@ -78,7 +78,7 @@ func (f FileRecord) Delete() bool {
 	}
 
 	// Delete FileRecord
-	if err = db.DeleteFileRecord(f.ID, "id"); err != nil {
+	if err = db.DeleteFileRecord(f.InfoHash, "info_hash"); err != nil {
 		log.Println(err.Error())
 		return false
 	}
