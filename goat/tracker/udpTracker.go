@@ -29,7 +29,7 @@ func (u UDPTracker) Announce(query url.Values, file data.FileRecord) []byte {
 	}
 
 	// Convert to UDP byte buffer
-	announceBuf, err := announce.ToBytes()
+	announceBuf, err := announce.MarshalBinary()
 	if err != nil {
 		log.Println(err.Error())
 		return u.Error("Could not create UDP announce response")
@@ -62,7 +62,7 @@ func (u UDPTracker) Error(msg string) []byte {
 	}
 
 	// Convert to UDP byte buffer
-	buf, err := errRes.ToBytes()
+	buf, err := errRes.MarshalBinary()
 	if err != nil {
 		log.Println(err.Error())
 		return u.Error("Could not create UDP error response")
@@ -104,7 +104,7 @@ func (u UDPTracker) Scrape(files []data.FileRecord) []byte {
 	}
 
 	// Convert to UDP byte buffer
-	buf, err := scrape.ToBytes()
+	buf, err := scrape.MarshalBinary()
 	if err != nil {
 		log.Println(err.Error())
 		return u.Error("Could not create UDP scrape response")

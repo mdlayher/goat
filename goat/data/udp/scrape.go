@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"net/url"
 )
 
@@ -15,13 +16,12 @@ type ScrapeRequest struct {
 	InfoHashes [][]byte
 }
 
-// FromBytes creates a ScrapeRequest from a packed byte array
-func (u ScrapeRequest) FromBytes(buf []byte) (p ScrapeRequest, err error) {
+// UnmarshalBinary creates a ScrapeRequest from a packed byte array
+func (u *ScrapeRequest) UnmarshalBinary(buf []byte) (err error) {
 	// Set up recovery function to catch a panic as an error
 	// This will run if we attempt to access an out of bounds index
 	defer func() {
 		if r := recover(); r != nil {
-			p = ScrapeRequest{}
 			err = errors.New("failed to create ScrapeRequest from bytes")
 		}
 	}()
@@ -32,7 +32,7 @@ func (u ScrapeRequest) FromBytes(buf []byte) (p ScrapeRequest, err error) {
 	// Action (uint32, must be 2 for scrape)
 	u.Action = binary.BigEndian.Uint32(buf[8:12])
 	if u.Action != uint32(2) {
-		return ScrapeRequest{}, errors.New("invalid action for ScrapeRequest")
+		return fmt.Errorf("invalid action '%d' for ScrapeRequest", u.Action)
 	}
 
 	// TransID (uint32)
@@ -51,11 +51,11 @@ func (u ScrapeRequest) FromBytes(buf []byte) (p ScrapeRequest, err error) {
 		u.InfoHashes = append(u.InfoHashes[:], buf[i:i+20])
 	}
 
-	return u, nil
+	return nil
 }
 
-// ToBytes creates a packed byte array from a ScrapeRequest
-func (u ScrapeRequest) ToBytes() ([]byte, error) {
+// MarshalBinary creates a packed byte array from a ScrapeRequest
+func (u ScrapeRequest) MarshalBinary() ([]byte, error) {
 	res := bytes.NewBuffer(make([]byte, 0))
 
 	// ConnID (uint64)
@@ -65,7 +65,7 @@ func (u ScrapeRequest) ToBytes() ([]byte, error) {
 
 	// Action (uint32, must be 2 for scrape)
 	if u.Action != uint32(2) {
-		return nil, errors.New("invalid action for ScrapeRequest")
+		return nil, fmt.Errorf("invalid action '%d' for ScrapeRequest", u.Action)
 	}
 
 	if err := binary.Write(res, binary.BigEndian, u.Action); err != nil {
@@ -124,13 +124,12 @@ type ScrapeStats struct {
 	Leechers  uint32
 }
 
-// FromBytes creates a ScrapeResponse from a packed byte array
-func (u ScrapeResponse) FromBytes(buf []byte) (p ScrapeResponse, err error) {
+// UnmarshalBinary creates a ScrapeResponse from a packed byte array
+func (u *ScrapeResponse) UnmarshalBinary(buf []byte) (err error) {
 	// Set up recovery function to catch a panic as an error
 	// This will run if we attempt to access an out of bounds index
 	defer func() {
 		if r := recover(); r != nil {
-			p = ScrapeResponse{}
 			err = errors.New("failed to create ScrapeResponse from bytes")
 		}
 	}()
@@ -138,7 +137,7 @@ func (u ScrapeResponse) FromBytes(buf []byte) (p ScrapeResponse, err error) {
 	// Action (must be 2 for scrape)
 	u.Action = binary.BigEndian.Uint32(buf[0:4])
 	if u.Action != uint32(2) {
-		return ScrapeResponse{}, errors.New("invalid action for ScrapeResponse")
+		return fmt.Errorf("invalid action '%d' for ScrapeResponse", u.Action)
 	}
 
 	// Transaction ID
@@ -174,16 +173,16 @@ func (u ScrapeResponse) FromBytes(buf []byte) (p ScrapeResponse, err error) {
 		u.FileStats = append(u.FileStats[:], stats)
 	}
 
-	return u, nil
+	return nil
 }
 
-// ToBytes creates a packed byte array from a ScrapeResponse
-func (u ScrapeResponse) ToBytes() ([]byte, error) {
+// MarshalBinary creates a packed byte array from a ScrapeResponse
+func (u ScrapeResponse) MarshalBinary() ([]byte, error) {
 	res := bytes.NewBuffer(make([]byte, 0))
 
 	// Action (uint32, must be 2 for scrape)
 	if u.Action != uint32(2) {
-		return nil, errors.New("invalid action for ScrapeResponse")
+		return nil, fmt.Errorf("invalid action '%d' for ScrapeResponse", u.Action)
 	}
 
 	if err := binary.Write(res, binary.BigEndian, u.Action); err != nil {

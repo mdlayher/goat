@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 )
 
 // ErrorResponse represents a tracker error response in the UDP format
@@ -13,13 +14,12 @@ type ErrorResponse struct {
 	Error   string
 }
 
-// FromBytes creates a ErrorResponse from a packed byte array
-func (u ErrorResponse) FromBytes(buf []byte) (p ErrorResponse, err error) {
+// UnmarshalBinary creates a ErrorResponse from a packed byte array
+func (u *ErrorResponse) UnmarshalBinary(buf []byte) (err error) {
 	// Set up recovery function to catch a panic as an error
 	// This will run if we attempt to access an out of bounds index
 	defer func() {
 		if r := recover(); r != nil {
-			p = ErrorResponse{}
 			err = errors.New("failed to create ErrorResponse from bytes")
 		}
 	}()
@@ -27,7 +27,7 @@ func (u ErrorResponse) FromBytes(buf []byte) (p ErrorResponse, err error) {
 	// Action (uint32, must be 3 for error)
 	u.Action = binary.BigEndian.Uint32(buf[0:4])
 	if u.Action != uint32(3) {
-		return ErrorResponse{}, errors.New("invalid action for ErrorResponse")
+		return fmt.Errorf("invalid action '%d' for ErrorResponse", u.Action)
 	}
 
 	// TransID (uint32)
@@ -36,16 +36,16 @@ func (u ErrorResponse) FromBytes(buf []byte) (p ErrorResponse, err error) {
 	// Error (string)
 	u.Error = string(buf[8:len(buf)])
 
-	return u, nil
+	return nil
 }
 
-// ToBytes creates a packed byte array from a ErrorResponse
-func (u ErrorResponse) ToBytes() ([]byte, error) {
+// MarshalBinary creates a packed byte array from a ErrorResponse
+func (u ErrorResponse) MarshalBinary() ([]byte, error) {
 	res := bytes.NewBuffer(make([]byte, 0))
 
 	// Action (uint32, must be 3 for error)
 	if u.Action != uint32(3) {
-		return nil, errors.New("invalid action for ErrorResponse")
+		return nil, fmt.Errorf("invalid action '%d' for ErrorResponse", u.Action)
 	}
 
 	if err := binary.Write(res, binary.BigEndian, u.Action); err != nil {

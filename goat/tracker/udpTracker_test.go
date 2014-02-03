@@ -45,7 +45,8 @@ func TestUDPAnnounce(t *testing.T) {
 	res := tracker.Announce(query, file)
 
 	// Decode response
-	announce, err := new(udp.AnnounceResponse).FromBytes(res)
+	announce := new(udp.AnnounceResponse)
+	err := announce.UnmarshalBinary(res)
 	if err != nil {
 		t.Fatalf("Failed to decode UDP announce response")
 	}
@@ -57,7 +58,7 @@ func TestUDPAnnounce(t *testing.T) {
 	}
 
 	// Encode response, verify same as before
-	announceBuf, err := announce.ToBytes()
+	announceBuf, err := announce.MarshalBinary()
 	if err != nil {
 		t.Fatalf("Failed to encode UDP announce response")
 	}
@@ -81,7 +82,8 @@ func TestUDPTrackerError(t *testing.T) {
 	res := tracker.Error("Testing")
 
 	// Decode response
-	errRes, err := new(udp.ErrorResponse).FromBytes(res)
+	errRes := new(udp.ErrorResponse)
+	err := errRes.UnmarshalBinary(res)
 	if err != nil {
 		t.Fatalf("Failed to decode UDP error response")
 	}
@@ -98,7 +100,7 @@ func TestUDPTrackerError(t *testing.T) {
 	}
 
 	// Encode response, verify same as before
-	errResBuf, err := errRes.ToBytes()
+	errResBuf, err := errRes.MarshalBinary()
 	if err != nil {
 		t.Fatalf("Failed to encode UDP error response")
 	}
@@ -132,7 +134,8 @@ func TestUDPTrackerScrape(t *testing.T) {
 	res := tracker.Scrape(files)
 
 	// Decode response
-	scrape, err := new(udp.ScrapeResponse).FromBytes(res)
+	scrape := new(udp.ScrapeResponse)
+	err := scrape.UnmarshalBinary(res)
 	if err != nil {
 		t.Fatalf("Failed to decode UDP scrape response")
 	}
@@ -144,7 +147,7 @@ func TestUDPTrackerScrape(t *testing.T) {
 	}
 
 	// Encode response, verify same as before
-	scrapeBuf, err := scrape.ToBytes()
+	scrapeBuf, err := scrape.MarshalBinary()
 	if err != nil {
 		t.Fatalf("Failed to encode UDP scrape response")
 	}
