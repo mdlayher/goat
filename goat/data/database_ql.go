@@ -23,6 +23,7 @@ var (
 	qlOptions = ql.Options{CanCreate: true}
 	qlwdb     *qlw
 
+	// Map of compiled ql queries
 	qlc = map[string]ql.List{}
 
 	// Map of all queries available to ql
@@ -208,7 +209,7 @@ func (db *qlw) Close() error {
 // NewTransaction starts a new ql transaction
 func (db *qlw) NewTransaction() qltx {
 	tx := qltx{ql.NewRWCtx(), db}
-	tx.Run("BEGIN TRANSACTION;")
+	tx.Execute(qlBeginTransaction)
 
 	return tx
 }
@@ -217,6 +218,10 @@ func (db *qlw) NewTransaction() qltx {
 
 // DeleteAnnounceLog deletes an AnnounceLog using a defined ID and column for query
 func (db *qlw) DeleteAnnounceLog(id interface{}, col string) (err error) {
+	// Prevent error cannot convert 1 (type int) to type int64
+	if value, ok := id.(int); ok {
+		id = int64(value)
+	}
 	_, _, err = qlQuery(db, "announcelog_delete_"+col, true, id)
 	return
 }
@@ -232,12 +237,12 @@ func (db *qlw) LoadAnnounceLog(id interface{}, col string) (AnnounceLog, error) 
 
 	err = rs[len(rs)-1].Do(false, func(data []interface{}) (bool, error) {
 		result = AnnounceLog{
-			ID:         data[0].(int),
+			ID:         int(data[0].(int64)),
 			InfoHash:   data[1].(string),
 			Passkey:    data[2].(string),
 			Key:        data[3].(string),
 			IP:         data[4].(string),
-			Port:       data[5].(int),
+			Port:       int(data[5].(int32)),
 			UDP:        data[6].(bool),
 			Uploaded:   data[7].(int64),
 			Downloaded: data[8].(int64),
@@ -269,6 +274,10 @@ func (db *qlw) SaveAnnounceLog(a AnnounceLog) (err error) {
 
 // DeleteAPIKey deletes an AnnounceLog using a defined ID and column for query
 func (db *qlw) DeleteAPIKey(id interface{}, col string) (err error) {
+	// Prevent error cannot convert 1 (type int) to type int64
+	if value, ok := id.(int); ok && col == "id" {
+		id = int64(value)
+	}
 	_, _, err = qlQuery(db, "apikey_delete_"+col, true, id)
 	return
 }
@@ -296,12 +305,12 @@ func (db *qlw) LoadAPIKey(id interface{}, col string) (APIKey, error) {
 	return result, err
 }
 
-// SaveAPIKey saves an APIKey to the database
+// SaveApiKey saves an apiKey to the database
 func (db *qlw) SaveAPIKey(key APIKey) (err error) {
-	if k, err := db.LoadAPIKey(key.ID, "id"); (k == APIKey{}) && err == nil {
+	if k, _ := db.LoadAPIKey(key.ID, "id"); (k == APIKey{}) && err == nil {
 		_, _, err = qlQuery(db, "apikey_insert", true, int64(key.UserID), key.Key, key.Salt)
 	} else {
-		_, _, err = qlQuery(db, "apikey_update", true, k.ID, key.Key, key.Salt)
+		_, _, err = qlQuery(db, "apikey_update", true, int64(k.ID), key.Key, key.Salt)
 	}
 
 	return
@@ -311,6 +320,10 @@ func (db *qlw) SaveAPIKey(key APIKey) (err error) {
 
 // DeleteFileRecord deletes an AnnounceLog using a defined ID and column for query
 func (db *qlw) DeleteFileRecord(id interface{}, col string) (err error) {
+	// Prevent error cannot convert 1 (type int) to type int64
+	if value, ok := id.(int); ok && col == "id" {
+		id = int64(value)
+	}
 	_, _, err = qlQuery(db, "filerecord_delete_"+col, true, id)
 	return
 }
@@ -318,7 +331,7 @@ func (db *qlw) DeleteFileRecord(id interface{}, col string) (err error) {
 // LoadFileRecord loads a FileRecord using a defined ID and column for query
 func (db *qlw) LoadFileRecord(id interface{}, col string) (FileRecord, error) {
 	// Prevent error cannot convert 1 (type int) to type int64
-	if value, ok := id.(int); ok {
+	if value, ok := id.(int); ok && col == "id" {
 		id = int64(value)
 	}
 	rs, _, err := qlQuery(db, "filerecord_load_"+col, true, id)
@@ -343,12 +356,12 @@ func (db *qlw) LoadFileRecord(id interface{}, col string) (FileRecord, error) {
 	return result, err
 }
 
-// SaveFileRecord saves a FileRecord to the database
+// SaveFileRecord saves a fileRecord to the database
 func (db *qlw) SaveFileRecord(f FileRecord) (err error) {
-	if fr, err := db.LoadFileRecord(f.ID, "id"); (fr == FileRecord{}) && err == nil {
+	if fr, _ := db.LoadFileRecord(f.ID, "id"); (fr == FileRecord{}) && err == nil {
 		_, _, err = qlQuery(db, "filerecord_insert", true, f.InfoHash, f.Verified)
 	} else {
-		_, _, err = qlQuery(db, "filerecord_update", true, f.ID, f.Verified)
+		_, _, err = qlQuery(db, "filerecord_update", true, int64(f.ID), f.Verified)
 	}
 
 	return
@@ -525,6 +538,10 @@ func (db *qlw) LoadFileUserRepository(id interface{}, col string) (files []FileU
 
 // DeleteScrapeLog deletes an ScrapeLog using a defined ID and column for query
 func (db *qlw) DeleteScrapeLog(id interface{}, col string) (err error) {
+	// Prevent error cannot convert 1 (type int) to type int64
+	if value, ok := id.(int); ok {
+		id = int64(value)
+	}
 	_, _, err = qlQuery(db, "scrapelog_delete_"+col, true, id)
 	return
 }
@@ -585,18 +602,18 @@ func (db *qlw) LoadUserRecord(id interface{}, col string) (UserRecord, error) {
 	return result, err
 }
 
-// SaveUserRecord saves a UserRecord to the database
+// SaveUserRecord saves a userRecord to the database
 func (db *qlw) SaveUserRecord(u UserRecord) (err error) {
-	if user, e := db.LoadUserRecord(u.ID, "id"); (user == UserRecord{}) {
+	if user, e := db.LoadUserRecord(int64(u.ID), "id"); (user == UserRecord{}) {
 		if nil == e {
 			_, _, err = qlQuery(db, "user_insert", true,
-				u.Username, u.Passkey, u.TorrentLimit)
+				u.Username, u.Passkey, int64(u.TorrentLimit))
 		} else {
 			err = e
 		}
 	} else {
 		_, _, err = qlQuery(db, "user_update", true,
-			user.ID, u.Username, u.Passkey, u.TorrentLimit)
+			int64(user.ID), u.Username, u.Passkey, int64(u.TorrentLimit))
 	}
 
 	return
@@ -703,12 +720,20 @@ func qlCompile(key string, wraptx bool) (list ql.List, err error) {
 		} else {
 			list = l
 		}
+		qlc[key] = list
 	} else {
 		list = l
 	}
 
 	return
 }
+
+// Pre-compiled begin transaction, commit and rollback statements
+var (
+	qlBeginTransaction, _ = ql.Compile("BEGIN TRANSACTION;")
+	qlCommit, _           = ql.Compile("COMMIT;")
+	qlRollback, _         = ql.Compile("ROLLBACK;")
+)
 
 // qltx contains a ql context and database connection
 type qltx struct {
@@ -728,12 +753,12 @@ func (t *qltx) Run(src string, arg ...interface{}) ([]ql.Recordset, int, error) 
 
 // Commit performs a database commit at the end of a transaction
 func (t *qltx) Commit() (err error) {
-	_, _, err = t.Run("COMMIT;")
+	_, _, err = t.Execute(qlCommit)
 	return
 }
 
 // Rollback performs a database rollback on failed end of transaction
 func (t *qltx) Rollback() (err error) {
-	_, _, err = t.Run("ROLLBACK;")
+	_, _, err = t.Execute(qlRollback)
 	return
 }
