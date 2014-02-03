@@ -42,7 +42,9 @@ func (u UDPTracker) Announce(query url.Values, file data.FileRecord) []byte {
 	}
 
 	// Retrieve compact peer list
-	peers, err := file.CompactPeerList(numwant)
+	// Note: because we are UDP, we send the second parameter 'false' to get
+	// a "best guess" peer list, due to anonymous announces
+	peers, err := file.CompactPeerList(numwant, false)
 	if err != nil {
 		log.Println(err.Error())
 		return u.Error(ErrPeerListFailure.Error())

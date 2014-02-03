@@ -57,7 +57,7 @@ type dbModel interface {
 	CountFileRecordCompleted(int) (int, error)
 	CountFileRecordSeeders(int) (int, error)
 	CountFileRecordLeechers(int) (int, error)
-	GetFileRecordPeerList(string, int) ([]Peer, error)
+	GetFileRecordPeerList(string, int, bool) ([]Peer, error)
 	GetInactiveUserInfo(int, time.Duration) ([]peerInfo, error)
 	MarkFileUsersInactive(int, []peerInfo) error
 	GetAllFileRecords() ([]FileRecord, error)

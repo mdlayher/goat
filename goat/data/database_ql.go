@@ -55,17 +55,18 @@ var (
 		"apikey_update":       "UPDATE api_keys key=$2,salt=$3 WHERE id()==$1",
 
 		// FileRecord
-		"filerecord_delete_id":        "DELETE FROM files WHERE id()==$1",
-		"filerecord_delete_info_hash": "DELETE FROM files WHERE info_hash==$1",
-		"filerecord_find_peerlist":    "SELECT DISTINCT a.ip, a.port FROM announce_log AS a, (SELECT id() AS id, info_hash FROM files) AS f, WHERE (now()-$1) <= a.time && f.info_hash==$2",
-		"filerecord_load_all":         "SELECT id(),info_hash,verified,create_time,update_time FROM files",
-		"filerecord_load_id":          "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE id()==$1 ORDER BY id()",
-		"filerecord_load_info_hash":   "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE info_hash==$1 ORDER BY id()",
-		"filerecord_load_verified":    "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE verified==$1 ORDER BY id()",
-		"filerecord_load_create_time": "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE create_time==$1 ORDER BY id()",
-		"filerecord_load_update_time": "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE update_time==$1 ORDER BY id()",
-		"filerecord_insert":           "INSERT INTO files VALUES ($1,$2,now(),now())",
-		"filerecord_update":           "UPDATE files verified=$2,update_time=now() WHERE id()==$1",
+		"filerecord_delete_id":          "DELETE FROM files WHERE id()==$1",
+		"filerecord_delete_info_hash":   "DELETE FROM files WHERE info_hash==$1",
+		"filerecord_find_peerlist_http": "SELECT DISTINCT a.ip, a.port FROM announce_log AS a, (SELECT id() AS id, info_hash FROM files) AS f, (SELECT file_id, ip FROM files_users) AS u WHERE a.ip==u.ip && (now()-$1) <= a.time && f.info_hash==$2",
+		"filerecord_find_peerlist_udp":  "SELECT DISTINCT a.ip, a.port FROM announce_log AS a, (SELECT id() AS id, info_hash FROM files) AS f, WHERE (now()-$1) <= a.time && f.info_hash==$2",
+		"filerecord_load_all":           "SELECT id(),info_hash,verified,create_time,update_time FROM files",
+		"filerecord_load_id":            "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE id()==$1 ORDER BY id()",
+		"filerecord_load_info_hash":     "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE info_hash==$1 ORDER BY id()",
+		"filerecord_load_verified":      "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE verified==$1 ORDER BY id()",
+		"filerecord_load_create_time":   "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE create_time==$1 ORDER BY id()",
+		"filerecord_load_update_time":   "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE update_time==$1 ORDER BY id()",
+		"filerecord_insert":             "INSERT INTO files VALUES ($1,$2,now(),now())",
+		"filerecord_update":             "UPDATE files verified=$2,update_time=now() WHERE id()==$1",
 
 		// fileUser
 		"fileuser_delete":          "DELETE FROM files_users WHERE file_id==$1 && user_id==$2 && ip==$3",
@@ -387,8 +388,16 @@ func (db *qlw) CountFileRecordLeechers(id int) (int, error) {
 }
 
 // GetFileRecordPeerList returns a list of Peers
-func (db *qlw) GetFileRecordPeerList(infoHash string, limit int) ([]Peer, error) {
-	rs, _, err := qlQuery(db, "filerecord_find_peerlist", true, common.Static.Config.Interval, infoHash)
+func (db *qlw) GetFileRecordPeerList(infoHash string, limit int, http bool) ([]Peer, error) {
+	// Select query using HTTP bool
+	var query string
+	if http {
+		query = "filerecord_find_peerlist_http"
+	} else {
+		query = "filerecord_find_peerlist_udp"
+	}
+
+	rs, _, err := qlQuery(db, query, true, common.Static.Config.Interval, infoHash)
 
 	// Generate peer list
 	peers := make([]Peer, 0)

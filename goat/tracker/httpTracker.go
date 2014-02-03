@@ -55,7 +55,9 @@ func (h HTTPTracker) Announce(query url.Values, file data.FileRecord) []byte {
 	}
 
 	// Generate compact peer list of length numwant
-	compactPeers, err := file.CompactPeerList(numwant)
+	// Note: because we are HTTP, we can mark second parameter as 'true' to get a
+	// more accurate peer list
+	compactPeers, err := file.CompactPeerList(numwant, true)
 	if err != nil {
 		log.Println(err.Error())
 		return h.Error(ErrPeerListFailure.Error())

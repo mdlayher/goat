@@ -135,9 +135,9 @@ func (f FileRecord) Load(id interface{}, col string) FileRecord {
 }
 
 // CompactPeerList returns a packed byte array of peers who are active on this file
-func (f FileRecord) CompactPeerList(numwant int) ([]byte, error) {
+func (f FileRecord) CompactPeerList(numwant int, http bool) ([]byte, error) {
 	// Retrieve list of peers
-	peers, err := f.PeerList(numwant)
+	peers, err := f.PeerList(numwant, http)
 	if err != nil {
 		return nil, err
 	}
@@ -228,7 +228,7 @@ func (f FileRecord) Leechers() (leechers int) {
 }
 
 // PeerList returns a list of peers on this torrent, for tracker announce
-func (f FileRecord) PeerList(numwant int) ([]Peer, error) {
+func (f FileRecord) PeerList(numwant int, http bool) ([]Peer, error) {
 	// List of peers
 	peers := make([]Peer, 0)
 
@@ -239,7 +239,7 @@ func (f FileRecord) PeerList(numwant int) ([]Peer, error) {
 	}
 
 	// Return list of peers, up to numwant
-	if peers, err = db.GetFileRecordPeerList(f.InfoHash, numwant); err != nil {
+	if peers, err = db.GetFileRecordPeerList(f.InfoHash, numwant, http); err != nil {
 		return peers, err
 	}
 
