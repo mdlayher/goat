@@ -142,7 +142,7 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 		}
 
 		// Grab bytes from connect response
-		connectBuf, err := connect.ToBytes()
+		connectBuf, err := connect.MarshalBinary()
 		if err != nil {
 			log.Println(err.Error())
 			return udpTracker.Error("Could not generate UDP connect response"), errUDPWrite

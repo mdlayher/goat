@@ -54,7 +54,8 @@ func TestUDPRouter(t *testing.T) {
 	}
 
 	// Retrieve response, get new connection ID, which will be expected by router
-	connRes, err := new(udp.ConnectResponse).FromBytes(res)
+	connRes := new(udp.ConnectResponse)
+	err = connRes.UnmarshalBinary(res)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
