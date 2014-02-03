@@ -36,15 +36,17 @@ func TestUDPRouter(t *testing.T) {
 	}
 
 	// Connect packet with handshake
-	connect, err := udp.Packet{udpInitID, 0, 1234}.ToBytes()
+	connect := udp.Packet{udpInitID, 0, 1234}
+	connectBuf, err := connect.MarshalBinary()
 	if err != nil {
 		t.Fatalf("Failed to create UDP connect packet")
 	}
 
 	// Perform connection handshake
-	res, err := parseUDP(connect, addr)
+	res, err := parseUDP(connectBuf, addr)
 	if err != nil {
-		errRes, err2 := new(udp.ErrorResponse).FromBytes(res)
+		errRes := new(udp.ErrorResponse)
+		err2 := errRes.UnmarshalBinary(res)
 		if err2 != nil {
 			t.Fatalf(err.Error())
 		}
@@ -54,7 +56,8 @@ func TestUDPRouter(t *testing.T) {
 	}
 
 	// Retrieve response, get new connection ID, which will be expected by router
-	connRes, err := new(udp.ConnectResponse).FromBytes(res)
+	connRes := new(udp.ConnectResponse)
+	err = connRes.UnmarshalBinary(res)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -75,7 +78,7 @@ func TestUDPRouter(t *testing.T) {
 	}
 
 	// Get announce bytes
-	announceBuf, err := announce.ToBytes()
+	announceBuf, err := announce.MarshalBinary()
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -83,7 +86,8 @@ func TestUDPRouter(t *testing.T) {
 	// Send announce to UDP router
 	res, err = parseUDP(announceBuf, addr)
 	if err != nil {
-		errRes, err2 := new(udp.ErrorResponse).FromBytes(res)
+		errRes := new(udp.ErrorResponse)
+		err2 := errRes.UnmarshalBinary(res)
 		if err2 != nil {
 			t.Fatalf(err.Error())
 		}
@@ -93,8 +97,16 @@ func TestUDPRouter(t *testing.T) {
 	}
 
 	// Get UDP announce response
-	announceRes, err := new(udp.AnnounceResponse).FromBytes(res)
+	announceRes := new(udp.AnnounceResponse)
+	err = announceRes.UnmarshalBinary(res)
 	if err != nil {
+		errRes := new(udp.ErrorResponse)
+		err2 := errRes.UnmarshalBinary(res)
+		if err2 != nil {
+			t.Fatalf(err.Error())
+		}
+
+		log.Println("ERROR:", errRes.Error)
 		t.Fatalf(err.Error())
 	}
 	log.Println(announceRes)
@@ -108,7 +120,7 @@ func TestUDPRouter(t *testing.T) {
 	}
 
 	// Get scrape bytes
-	scrapeBuf, err := scrape.ToBytes()
+	scrapeBuf, err := scrape.MarshalBinary()
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -116,7 +128,8 @@ func TestUDPRouter(t *testing.T) {
 	// Send scrape to UDP router
 	res, err = parseUDP(scrapeBuf, addr)
 	if err != nil {
-		errRes, err2 := new(udp.ErrorResponse).FromBytes(res)
+		errRes := new(udp.ErrorResponse)
+		err2 := errRes.UnmarshalBinary(res)
 		if err2 != nil {
 			t.Fatalf(err.Error())
 		}
@@ -126,8 +139,16 @@ func TestUDPRouter(t *testing.T) {
 	}
 
 	// Get UDP scrape response
-	scrapeRes, err := new(udp.ScrapeResponse).FromBytes(res)
+	scrapeRes := new(udp.ScrapeResponse)
+	err = scrapeRes.UnmarshalBinary(res)
 	if err != nil {
+		errRes := new(udp.ErrorResponse)
+		err2 := errRes.UnmarshalBinary(res)
+		if err2 != nil {
+			t.Fatalf(err.Error())
+		}
+
+		log.Println("ERROR:", errRes.Error)
 		t.Fatalf(err.Error())
 	}
 	log.Println(scrapeRes)

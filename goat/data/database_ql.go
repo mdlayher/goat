@@ -218,6 +218,10 @@ func (db *qlw) NewTransaction() qltx {
 
 // DeleteAnnounceLog deletes an AnnounceLog using a defined ID and column for query
 func (db *qlw) DeleteAnnounceLog(id interface{}, col string) (err error) {
+	// Prevent error cannot convert 1 (type int) to type int64
+	if value, ok := id.(int); ok {
+		id = int64(value)
+	}
 	_, _, err = qlQuery(db, "announcelog_delete_"+col, true, id)
 	return
 }
@@ -233,12 +237,12 @@ func (db *qlw) LoadAnnounceLog(id interface{}, col string) (AnnounceLog, error) 
 
 	err = rs[len(rs)-1].Do(false, func(data []interface{}) (bool, error) {
 		result = AnnounceLog{
-			ID:         data[0].(int),
+			ID:         int(data[0].(int64)),
 			InfoHash:   data[1].(string),
 			Passkey:    data[2].(string),
 			Key:        data[3].(string),
 			IP:         data[4].(string),
-			Port:       data[5].(int),
+			Port:       int(data[5].(int32)),
 			UDP:        data[6].(bool),
 			Uploaded:   data[7].(int64),
 			Downloaded: data[8].(int64),
@@ -270,6 +274,10 @@ func (db *qlw) SaveAnnounceLog(a AnnounceLog) (err error) {
 
 // DeleteAPIKey deletes an AnnounceLog using a defined ID and column for query
 func (db *qlw) DeleteAPIKey(id interface{}, col string) (err error) {
+	// Prevent error cannot convert 1 (type int) to type int64
+	if value, ok := id.(int); ok && col == "id" {
+		id = int64(value)
+	}
 	_, _, err = qlQuery(db, "apikey_delete_"+col, true, id)
 	return
 }
@@ -312,6 +320,10 @@ func (db *qlw) SaveAPIKey(key APIKey) (err error) {
 
 // DeleteFileRecord deletes an AnnounceLog using a defined ID and column for query
 func (db *qlw) DeleteFileRecord(id interface{}, col string) (err error) {
+	// Prevent error cannot convert 1 (type int) to type int64
+	if value, ok := id.(int); ok && col == "id" {
+		id = int64(value)
+	}
 	_, _, err = qlQuery(db, "filerecord_delete_"+col, true, id)
 	return
 }
@@ -319,7 +331,7 @@ func (db *qlw) DeleteFileRecord(id interface{}, col string) (err error) {
 // LoadFileRecord loads a FileRecord using a defined ID and column for query
 func (db *qlw) LoadFileRecord(id interface{}, col string) (FileRecord, error) {
 	// Prevent error cannot convert 1 (type int) to type int64
-	if value, ok := id.(int); ok {
+	if value, ok := id.(int); ok && col == "id" {
 		id = int64(value)
 	}
 	rs, _, err := qlQuery(db, "filerecord_load_"+col, true, id)
@@ -526,6 +538,10 @@ func (db *qlw) LoadFileUserRepository(id interface{}, col string) (files []FileU
 
 // DeleteScrapeLog deletes an ScrapeLog using a defined ID and column for query
 func (db *qlw) DeleteScrapeLog(id interface{}, col string) (err error) {
+	// Prevent error cannot convert 1 (type int) to type int64
+	if value, ok := id.(int); ok {
+		id = int64(value)
+	}
 	_, _, err = qlQuery(db, "scrapelog_delete_"+col, true, id)
 	return
 }

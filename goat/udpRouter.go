@@ -105,7 +105,8 @@ func handleUDP(l *net.UDPConn, sendChan chan bool, recvChan chan bool) {
 // Parse a UDP byte buffer, return response from udpTracker
 func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 	// Attempt to grab generic UDP connection fields
-	packet, err := new(udp.Packet).FromBytes(buf)
+	packet := new(udp.Packet)
+	err := packet.UnmarshalBinary(buf)
 	if err != nil {
 		// Because no transaction ID is present on failure, we must return nil
 		return nil, errUDPHandshake
@@ -142,7 +143,7 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 		}
 
 		// Grab bytes from connect response
-		connectBuf, err := connect.ToBytes()
+		connectBuf, err := connect.MarshalBinary()
 		if err != nil {
 			log.Println(err.Error())
 			return udpTracker.Error("Could not generate UDP connect response"), errUDPWrite
@@ -175,7 +176,9 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 	// Action 1: Announce
 	if packet.Action == 1 {
 		// Retrieve UDP announce request from byte buffer
-		announce, err := new(udp.AnnounceRequest).FromBytes(buf)
+		announce := new(udp.AnnounceRequest)
+		err := announce.UnmarshalBinary(buf)
+		log.Println(announce)
 		if err != nil {
 			return udpTracker.Error("Malformed UDP announce"), errUDPInteger
 		}
@@ -195,7 +198,8 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 	// Action 2: Scrape
 	if packet.Action == 2 {
 		// Generate UDP scrape packet from byte buffer
-		scrape, err := new(udp.ScrapeRequest).FromBytes(buf)
+		scrape := new(udp.ScrapeRequest)
+		err := scrape.UnmarshalBinary(buf)
 		if err != nil {
 			return udpTracker.Error("Malformed UDP scrape"), errUDPHandshake
 		}
