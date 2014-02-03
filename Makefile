@@ -31,6 +31,7 @@ test:
 	go test github.com/mdlayher/goat/goat/api
 	go test github.com/mdlayher/goat/goat/common
 	go test github.com/mdlayher/goat/goat/data
+	go test -tags='ql' github.com/mdlayher/goat/goat/data
 	go test github.com/mdlayher/goat/goat/data/udp
 	go test github.com/mdlayher/goat/goat/tracker
 
