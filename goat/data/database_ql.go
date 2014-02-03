@@ -10,6 +10,8 @@ import (
 	ospath "path"
 	"time"
 
+	"github.com/mdlayher/goat/goat/common"
+
 	// Bring in the ql driver
 	"github.com/cznic/ql"
 )
@@ -55,6 +57,7 @@ var (
 		// FileRecord
 		"filerecord_delete_id":        "DELETE FROM files WHERE id()==$1",
 		"filerecord_delete_info_hash": "DELETE FROM files WHERE info_hash==$1",
+		"filerecord_find_peerlist":    "SELECT DISTINCT a.ip, a.port FROM announce_log AS a, (SELECT id() AS id, info_hash FROM files) AS f, WHERE (now()-$1) <= a.time && f.info_hash==$2",
 		"filerecord_load_all":         "SELECT id(),info_hash,verified,create_time,update_time FROM files",
 		"filerecord_load_id":          "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE id()==$1 ORDER BY id()",
 		"filerecord_load_info_hash":   "SELECT id(),info_hash,verified,create_time,update_time FROM files WHERE info_hash==$1 ORDER BY id()",
@@ -71,7 +74,6 @@ var (
 		"fileuser_count_completed": "SELECT count(user_id) FROM files_users WHERE file_id==$1 && completed==true && left==0",
 		"fileuser_count_seeders":   "SELECT count(user_id) FROM files_users WHERE file_id==$1 && active==true && completed==true && left==0",
 		"fileuser_count_leechers":  "SELECT count(user_id) FROM files_users WHERE file_id==$1 && active==true && completed==false && left>0",
-		"fileuser_find_peerlist":   "SELECT DISTINCT a.ip, a.port FROM announce_log AS a, (SELECT id() AS id, info_hash FROM files) AS f, (SELECT file_id, ip FROM files_users) AS u WHERE a.ip==u.ip && f.info_hash==$1",
 		"fileuser_find_inactive":   "SELECT user_id, ip FROM files_users WHERE (ts<(now()-$2)) && active==true && file_id==$1",
 		"fileuser_mark_inactive":   "UPDATE files_users active=false WHERE file_id==$1 && user_id==$2 && ip==$3",
 		"fileuser_insert":          "INSERT INTO files_users VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,now())",
@@ -386,7 +388,7 @@ func (db *qlw) CountFileRecordLeechers(id int) (int, error) {
 
 // GetFileRecordPeerList returns a list of Peers
 func (db *qlw) GetFileRecordPeerList(infoHash string, limit int) ([]Peer, error) {
-	rs, _, err := qlQuery(db, "fileuser_find_peerlist", true, infoHash)
+	rs, _, err := qlQuery(db, "filerecord_find_peerlist", true, common.Static.Config.Interval, infoHash)
 
 	// Generate peer list
 	peers := make([]Peer, 0)
