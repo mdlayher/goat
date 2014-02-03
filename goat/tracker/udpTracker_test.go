@@ -82,7 +82,8 @@ func TestUDPTrackerError(t *testing.T) {
 	res := tracker.Error("Testing")
 
 	// Decode response
-	errRes, err := new(udp.ErrorResponse).FromBytes(res)
+	errRes := new(udp.ErrorResponse)
+	err := errRes.UnmarshalBinary(res)
 	if err != nil {
 		t.Fatalf("Failed to decode UDP error response")
 	}
@@ -99,7 +100,7 @@ func TestUDPTrackerError(t *testing.T) {
 	}
 
 	// Encode response, verify same as before
-	errResBuf, err := errRes.ToBytes()
+	errResBuf, err := errRes.MarshalBinary()
 	if err != nil {
 		t.Fatalf("Failed to encode UDP error response")
 	}

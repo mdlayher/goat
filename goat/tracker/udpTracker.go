@@ -62,7 +62,7 @@ func (u UDPTracker) Error(msg string) []byte {
 	}
 
 	// Convert to UDP byte buffer
-	buf, err := errRes.ToBytes()
+	buf, err := errRes.MarshalBinary()
 	if err != nil {
 		log.Println(err.Error())
 		return u.Error("Could not create UDP error response")
