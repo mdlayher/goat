@@ -13,11 +13,14 @@ func TestGetStatusJSON(t *testing.T) {
 	log.Println("TestGetStatusJSON()")
 
 	// Get status directly
-	status := common.GetServerStatus()
+	status, err := common.GetServerStatus()
+	if err != nil {
+		t.Fatalf("Failed to fetch server status")
+	}
 
 	// Request output JSON from API for this status
 	var status2 common.ServerStatus
-	err := json.Unmarshal(getStatusJSON(), &status2)
+	err = json.Unmarshal(getStatusJSON(), &status2)
 	if err != nil {
 		t.Fatalf("Failed to unmarshal result JSON")
 	}

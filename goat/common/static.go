@@ -2,11 +2,14 @@ package common
 
 // static is a struct containing values which should be shared globally
 var Static struct {
+	// Stats about API server
+	API TimedStats
+
 	// Configuration object
 	Config Conf
 
 	// Stats about HTTP server
-	HTTP HTTPStats
+	HTTP TimedStats
 
 	// Maintenance
 	Maintenance bool
@@ -18,17 +21,13 @@ var Static struct {
 	StatusMessage string
 
 	// Stats about UDP server
-	UDP UDPStats
+	UDP TimedStats
 }
 
-// HTTPStats represents statistics regarding HTTP server
-type HTTPStats struct {
-	Current int64 `json:"current"`
-	Total   int64 `json:"total"`
-}
-
-// UDPStats represents statistics regarding UDP server
-type UDPStats struct {
-	Current int64 `json:"current"`
-	Total   int64 `json:"total"`
+// TimedStats represents statistics over a period of time for a given listener
+type TimedStats struct {
+	Minute   int64 `json:"minute"`
+	HalfHour int64 `json:"halfHour"`
+	Hour     int64 `json:"hour"`
+	Total    int64 `json:"total"`
 }

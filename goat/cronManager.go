@@ -20,6 +20,9 @@ func cronManager() {
 	// cronPrintCurrentStatus - run every 5 minutes
 	status := time.NewTicker(5 * time.Minute)
 
+	// Start cronStatsReset, which maintains its own timers
+	go cronStatsReset()
+
 	// Trigger events via ticker
 	for {
 		select {
@@ -56,28 +59,59 @@ func cronPeerReaper() {
 // cronPrintCurrentStatus logs the regular status check banner
 func cronPrintCurrentStatus() {
 	// Grab server status
-	stat := common.GetServerStatus()
-	if stat == (common.ServerStatus{}) {
-		log.Println("Could not print current status")
+	stat, err := common.GetServerStatus()
+	if err != nil {
+		log.Println(err.Error())
 		return
 	}
 
 	// Regular status banner
 	log.Printf("status - [goroutines: %d] [memory: %02.3f MB]", stat.NumGoroutine, stat.MemoryMB)
 
+	// API stats
+	if common.Static.Config.API {
+		log.Printf("   api - [1 min: %d, 30 min: %d, 60 min: %d] [total: %d]", stat.API.Minute, stat.API.HalfHour, stat.API.Hour, stat.API.Total)
+	}
+
 	// HTTP stats
 	if common.Static.Config.HTTP {
-		log.Printf("  http - [current: %d] [total: %d]", stat.HTTP.Current, stat.HTTP.Total)
-
-		// Reset current HTTP counter
-		atomic.StoreInt64(&common.Static.HTTP.Current, 0)
+		log.Printf("  http - [1 min: %d, 30 min: %d, 60 min: %d] [total: %d]", stat.HTTP.Minute, stat.HTTP.HalfHour, stat.HTTP.Hour, stat.HTTP.Total)
 	}
 
 	// UDP stats
 	if common.Static.Config.UDP {
-		log.Printf("   udp - [current: %d] [total: %d]", stat.UDP.Current, stat.UDP.Total)
+		log.Printf("   udp - [1 min: %d, 30 min: %d, 60 min: %d] [total: %d]", stat.UDP.Minute, stat.UDP.HalfHour, stat.UDP.Hour, stat.UDP.Total)
+	}
+}
 
-		// Reset current UDP counter
-		atomic.StoreInt64(&common.Static.UDP.Current, 0)
+// cronStatsReset triggers a reset of certain statistic counters at regular intervals
+func cronStatsReset() {
+	// Trigger events every hour
+	hour := time.NewTicker(1 * time.Hour)
+
+	// Trigger events every half hour
+	halfHour := time.NewTicker(30 * time.Minute)
+
+	// Trigger events every minute
+	minute := time.NewTicker(1 * time.Minute)
+
+	for {
+		select {
+		case <-hour.C:
+			// Reset hourly stats counters
+			atomic.StoreInt64(&common.Static.API.Hour, 0)
+			atomic.StoreInt64(&common.Static.HTTP.Hour, 0)
+			atomic.StoreInt64(&common.Static.UDP.Hour, 0)
+		case <-halfHour.C:
+			// Reset half-hourly stats counters
+			atomic.StoreInt64(&common.Static.API.HalfHour, 0)
+			atomic.StoreInt64(&common.Static.HTTP.HalfHour, 0)
+			atomic.StoreInt64(&common.Static.UDP.HalfHour, 0)
+		case <-minute.C:
+			// Reset minute stats counters
+			atomic.StoreInt64(&common.Static.API.Minute, 0)
+			atomic.StoreInt64(&common.Static.HTTP.Minute, 0)
+			atomic.StoreInt64(&common.Static.UDP.Minute, 0)
+		}
 	}
 }

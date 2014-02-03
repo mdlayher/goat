@@ -54,7 +54,9 @@ func handleUDP(l *net.UDPConn, sendChan chan bool, recvChan chan bool) {
 		rlen, addr, err := l.ReadFromUDP(buf)
 
 		// Count incoming connections
-		atomic.AddInt64(&common.Static.UDP.Current, 1)
+		atomic.AddInt64(&common.Static.UDP.Minute, 1)
+		atomic.AddInt64(&common.Static.UDP.HalfHour, 1)
+		atomic.AddInt64(&common.Static.UDP.Hour, 1)
 		atomic.AddInt64(&common.Static.UDP.Total, 1)
 
 		// Triggered on graceful shutdown

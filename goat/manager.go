@@ -29,9 +29,9 @@ func Manager(killChan chan bool, exitChan chan int) {
 	log.Println("Starting " + App + " " + Version)
 
 	// Grab initial server status
-	stat := common.GetServerStatus()
-	if stat == (common.ServerStatus{}) {
-		log.Println("Could not print get startup status")
+	stat, err := common.GetServerStatus()
+	if err != nil {
+		log.Println(err.Error())
 	} else {
 		log.Printf("%s - %s_%s (%d CPU) [pid: %d]", stat.Hostname, stat.Platform, stat.Architecture, stat.NumCPU, stat.PID)
 	}

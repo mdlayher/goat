@@ -51,10 +51,6 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 	// Create a tracker to handle this client
 	httpTracker := tracker.HTTPTracker{}
 
-	// Count incoming connections
-	atomic.AddInt64(&common.Static.HTTP.Current, 1)
-	atomic.AddInt64(&common.Static.HTTP.Total, 1)
-
 	// Add header to identify goat
 	w.Header().Add("Server", fmt.Sprintf("%s/%s", App, Version))
 
@@ -72,6 +68,12 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// API enabled
 		if common.Static.Config.API {
+			// Count incoming connections
+			atomic.AddInt64(&common.Static.API.Minute, 1)
+			atomic.AddInt64(&common.Static.API.HalfHour, 1)
+			atomic.AddInt64(&common.Static.API.Hour, 1)
+			atomic.AddInt64(&common.Static.API.Total, 1)
+
 			// API authentication
 			auth := new(api.BasicAuthenticator).Auth(r)
 			if !auth {
@@ -87,6 +89,12 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, api.ErrorResponse("API is currently disabled"), 503)
 		return
 	}
+
+	// Count incoming connections
+	atomic.AddInt64(&common.Static.HTTP.Minute, 1)
+	atomic.AddInt64(&common.Static.HTTP.HalfHour, 1)
+	atomic.AddInt64(&common.Static.HTTP.Hour, 1)
+	atomic.AddInt64(&common.Static.HTTP.Total, 1)
 
 	// Check for maintenance mode
 	if common.Static.Maintenance {
