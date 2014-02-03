@@ -8,14 +8,8 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/mdlayher/goat/goat/common"
+	"github.com/mdlayher/goat/goat/data"
 )
-
-// compactPeer represents a compact peer response with IP and port
-type compactPeer struct {
-	IP   string
-	Port uint16
-}
 
 // AnnounceRequest represents a tracker announce in the UDP format
 type AnnounceRequest struct {
@@ -233,7 +227,7 @@ type AnnounceResponse struct {
 	Interval uint32
 	Leechers uint32
 	Seeders  uint32
-	PeerList []compactPeer
+	PeerList []data.Peer
 }
 
 // UnmarshalBinary creates a AnnounceResponse from a packed byte array
@@ -265,7 +259,7 @@ func (u *AnnounceResponse) UnmarshalBinary(buf []byte) (err error) {
 	u.Seeders = binary.BigEndian.Uint32(buf[16:20])
 
 	// Peer List
-	u.PeerList = make([]compactPeer, 0)
+	u.PeerList = make([]data.Peer, 0)
 
 	// Iterate peers buffer
 	i := 20
@@ -275,17 +269,14 @@ func (u *AnnounceResponse) UnmarshalBinary(buf []byte) (err error) {
 			break
 		}
 
-		// Get peer IP and port
-		ip, port := common.B2IP(buf[i : i+6])
-
-		// Create compact peer
-		peer := compactPeer{
-			IP:   ip,
-			Port: port,
+		// Parse peer
+		peer := new(data.Peer)
+		if err := peer.UnmarshalBinary(buf[i : i+6]); err != nil {
+			return err
 		}
 
 		// Append peer
-		u.PeerList = append(u.PeerList[:], peer)
+		u.PeerList = append(u.PeerList[:], *peer)
 		i += 6
 	}
 
@@ -299,7 +290,6 @@ func (u AnnounceResponse) MarshalBinary() ([]byte, error) {
 	// Action (uint32, must be 1 for announce)
 	if u.Action != uint32(1) {
 		return nil, fmt.Errorf("invalid action '%d' for AnnounceResponse", u.Action)
-
 	}
 
 	if err := binary.Write(res, binary.BigEndian, u.Action); err != nil {
@@ -326,10 +316,16 @@ func (u AnnounceResponse) MarshalBinary() ([]byte, error) {
 		return nil, err
 	}
 
-	// PeerList, []compactPeer, iterated and compressed to compact format
+	// PeerList, []Peer, iterated and compressed to compact format
 	for _, peer := range u.PeerList {
-		// Compact and write
-		if err := binary.Write(res, binary.BigEndian, common.IP2B(peer.IP, peer.Port)); err != nil {
+		// Marshal peer to binary
+		buf, err := peer.MarshalBinary()
+		if err != nil {
+			return nil, err
+		}
+
+		// Write to buffer
+		if err := binary.Write(res, binary.BigEndian, buf); err != nil {
 			return nil, err
 		}
 	}

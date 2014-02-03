@@ -1,22 +1,37 @@
 package tracker
 
 import (
+	"errors"
 	"log"
 	"net/url"
 
 	"github.com/mdlayher/goat/goat/data"
 )
 
-// torrentTracker defines the common interface for trackers to generate their responses
-type torrentTracker interface {
+var (
+	// ErrAnnounceFailure - caused when the tracker fails to generate a valid announce response
+	ErrAnnounceFailure = errors.New("tracker: failed to create announce response")
+
+	// ErrErrorFailure - caused when the tracker fails to generate a valid error response
+	ErrErrorFailure = errors.New("tracker: failed to create error response")
+
+	// ErrPeerListFailure - caused when the tracker fails to generate a compact peer list
+	ErrPeerListFailure = errors.New("tracker: failed to generate compact peer list")
+
+	// ErrScrapeFailure - caused when the tracker fails to generate a valid scrape response
+	ErrScrapeFailure = errors.New("tracker: failed to create scrape response")
+)
+
+// TorrentTracker defines the common interface for trackers to generate their responses
+type TorrentTracker interface {
 	Announce(url.Values, data.FileRecord) []byte
 	Error(string) []byte
 	Protocol() string
 	Scrape([]data.FileRecord) []byte
 }
 
-// Announce announces a tracker request
-func Announce(tracker torrentTracker, user data.UserRecord, query url.Values) []byte {
+// Announce generates and triggers a tracker announces request
+func Announce(tracker TorrentTracker, user data.UserRecord, query url.Values) []byte {
 	// Store announce information in struct
 	announce := new(data.AnnounceLog).FromValues(query)
 	if announce == (data.AnnounceLog{}) {
@@ -129,11 +144,17 @@ func Announce(tracker torrentTracker, user data.UserRecord, query url.Values) []
 	go fileUser.Save()
 
 	// Create announce
-	return tracker.Announce(query, file)
+	//return tracker.Announce(query, file)
+	annc := tracker.Announce(query, file)
+
+	log.Println(annc)
+	log.Println(string(annc))
+
+	return annc
 }
 
-// Scrape scrapes a tracker request
-func Scrape(tracker torrentTracker, query url.Values) []byte {
+// Scrape generates and triggers a tracker scrape request
+func Scrape(tracker TorrentTracker, query url.Values) []byte {
 	// List of files to be scraped
 	scrapeFiles := make([]data.FileRecord, 0)
 

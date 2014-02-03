@@ -180,7 +180,6 @@ func parseUDP(buf []byte, addr *net.UDPAddr) ([]byte, error) {
 		// Retrieve UDP announce request from byte buffer
 		announce := new(udp.AnnounceRequest)
 		err := announce.UnmarshalBinary(buf)
-		log.Println(announce)
 		if err != nil {
 			return udpTracker.Error("Malformed UDP announce"), errUDPInteger
 		}

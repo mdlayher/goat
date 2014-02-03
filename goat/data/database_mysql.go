@@ -210,8 +210,8 @@ func (db *dbw) CountFileRecordLeechers(id int) (int, error) {
 	return result.Leechers, nil
 }
 
-// GetFileRecordPeerList returns a compact peer list containing IP/port pairs
-func (db *dbw) GetFileRecordPeerList(infohash, exclude string, limit int) ([]byte, error) {
+// GetFileRecordPeerList returns a list of Peers, containing IP/port pairs
+func (db *dbw) GetFileRecordPeerList(infoHash string, limit int) ([]Peer, error) {
 	// Get IP and port of all peers who are active and seeding this file
 	query := `SELECT DISTINCT announce_log.ip,announce_log.port FROM announce_log
 		JOIN files ON announce_log.info_hash = files.info_hash
@@ -219,32 +219,32 @@ func (db *dbw) GetFileRecordPeerList(infohash, exclude string, limit int) ([]byt
 		AND announce_log.ip = files_users.ip
 		WHERE files_users.active=1
 		AND files.info_hash=?
-		AND announce_log.ip != ?
 		LIMIT ?;`
 
-	result := struct {
-		IP   string
-		Port uint16
-	}{"", 0}
+	// Create output list
+	peers := make([]Peer, 0)
 
-	rows, err := db.Queryx(query, infohash, exclude, limit)
+	// Perform query
+	rows, err := db.Queryx(query, infoHash, limit)
 	if err != nil && err != sql.ErrNoRows {
-		return nil, err
+		return peers, err
 	}
 
-	// Buffer for compact list
-	buf := make([]byte, 0)
-
+	// Scan each peer from database
+	peer := Peer{}
 	for rows.Next() {
-		if err = rows.StructScan(&result); err != nil {
-			log.Println(err.Error())
-			break
+		// Check for error
+		if err = rows.StructScan(&peer); err != nil {
+			return peers, nil
 		}
 
-		buf = append(buf, common.IP2B(result.IP, result.Port)...)
+		log.Println(peer)
+
+		// Append peer to list
+		peers = append(peers[:], peer)
 	}
 
-	return buf, nil
+	return peers, nil
 }
 
 // GetInactiveUserInfo returns a list of users who have not been active for the specified time interval

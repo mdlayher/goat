@@ -10,8 +10,6 @@ import (
 	ospath "path"
 	"time"
 
-	"github.com/mdlayher/goat/goat/common"
-
 	// Bring in the ql driver
 	"github.com/cznic/ql"
 )
@@ -73,7 +71,7 @@ var (
 		"fileuser_count_completed": "SELECT count(user_id) FROM files_users WHERE file_id==$1 && completed==true && left==0",
 		"fileuser_count_seeders":   "SELECT count(user_id) FROM files_users WHERE file_id==$1 && active==true && completed==true && left==0",
 		"fileuser_count_leechers":  "SELECT count(user_id) FROM files_users WHERE file_id==$1 && active==true && completed==false && left>0",
-		"fileuser_find_peerlist":   "SELECT DISTINCT a.ip, a.port FROM announce_log AS a, (SELECT id() AS id, info_hash FROM files) AS f, (SELECT file_id, ip FROM files_users) AS u WHERE a.ip==u.ip && a.ip!=$2 && f.info_hash==$1",
+		"fileuser_find_peerlist":   "SELECT DISTINCT a.ip, a.port FROM announce_log AS a, (SELECT id() AS id, info_hash FROM files) AS f, (SELECT file_id, ip FROM files_users) AS u WHERE a.ip==u.ip && f.info_hash==$1",
 		"fileuser_find_inactive":   "SELECT user_id, ip FROM files_users WHERE (ts<(now()-$2)) && active==true && file_id==$1",
 		"fileuser_mark_inactive":   "UPDATE files_users active=false WHERE file_id==$1 && user_id==$2 && ip==$3",
 		"fileuser_insert":          "INSERT INTO files_users VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,now())",
@@ -386,20 +384,27 @@ func (db *qlw) CountFileRecordLeechers(id int) (int, error) {
 	return int(leechers), err
 }
 
-// GetFileRecordPeerList returns a compact peer list containing IP/port pairs
-func (db *qlw) GetFileRecordPeerList(infohash, exclude string, limit int) ([]byte, error) {
-	rs, _, err := qlQuery(db, "fileuser_find_peerlist", true, infohash, exclude)
-	buf := []byte{}
+// GetFileRecordPeerList returns a list of Peers
+func (db *qlw) GetFileRecordPeerList(infoHash string, limit int) ([]Peer, error) {
+	rs, _, err := qlQuery(db, "fileuser_find_peerlist", true, infoHash)
+
+	// Generate peer list
+	peers := make([]Peer, 0)
 
 	if err == nil && len(rs) > 0 {
 		err = rs[0].Do(false, func(data []interface{}) (bool, error) {
-			buf = append(buf, common.IP2B(data[0].(string), uint16(data[1].(int32)))...)
+			peer := Peer{
+				IP:   data[0].(string),
+				Port: uint16(data[1].(int32)),
+			}
 
-			return len(buf)/6 < limit, nil
+			peers = append(peers[:], peer)
+
+			return len(peers) < limit, nil
 		})
 	}
 
-	return buf, err
+	return peers, err
 }
 
 // GetInactiveUserInfo returns a list of users who have not been active for the specified time interval

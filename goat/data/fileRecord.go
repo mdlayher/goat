@@ -134,6 +134,33 @@ func (f FileRecord) Load(id interface{}, col string) FileRecord {
 	return f
 }
 
+// CompactPeerList returns a packed byte array of peers who are active on this file
+func (f FileRecord) CompactPeerList(numwant int) ([]byte, error) {
+	// Retrieve list of peers
+	peers, err := f.PeerList(numwant)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create buffer to store compact peers
+	compactPeers := make([]byte, 0)
+
+	// Iterate peers
+	for _, peer := range peers {
+		// Marshal each peer to binary
+		peerBuf, err := peer.MarshalBinary()
+		if err != nil {
+			return nil, err
+		}
+
+		// Append peer to compact list
+		compactPeers = append(compactPeers[:], peerBuf...)
+	}
+
+	// Return compact peer list
+	return compactPeers, nil
+}
+
 // Completed returns the number of completions, active or not, on this file
 func (f FileRecord) Completed() (completed int) {
 	// Open database connection
@@ -200,26 +227,27 @@ func (f FileRecord) Leechers() (leechers int) {
 	return
 }
 
-// PeerList returns the compact peer buffer for tracker announce, excluding self
-func (f FileRecord) PeerList(exclude string, numwant int) (peers []byte) {
+// PeerList returns a list of peers on this torrent, for tracker announce
+func (f FileRecord) PeerList(numwant int) ([]Peer, error) {
+	// List of peers
+	peers := make([]Peer, 0)
+
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		log.Println(err.Error())
-		return
+		return peers, err
 	}
 
-	// Return compact peer list, excluding this IP
-	if peers, err = db.GetFileRecordPeerList(f.InfoHash, exclude, numwant); err != nil {
-		log.Println(err.Error())
-		return nil
+	// Return list of peers, up to numwant
+	if peers, err = db.GetFileRecordPeerList(f.InfoHash, numwant); err != nil {
+		return peers, err
 	}
 
 	if err := db.Close(); err != nil {
 		log.Println(err.Error())
 	}
 
-	return
+	return peers, nil
 }
 
 // PeerReaper reaps peers who have not recently announced on this torrent, and mark them inactive

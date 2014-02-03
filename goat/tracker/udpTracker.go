@@ -32,7 +32,7 @@ func (u UDPTracker) Announce(query url.Values, file data.FileRecord) []byte {
 	announceBuf, err := announce.MarshalBinary()
 	if err != nil {
 		log.Println(err.Error())
-		return u.Error("Could not create UDP announce response")
+		return u.Error(ErrAnnounceFailure.Error())
 	}
 
 	// Numwant
@@ -41,12 +41,19 @@ func (u UDPTracker) Announce(query url.Values, file data.FileRecord) []byte {
 		numwant = 50
 	}
 
-	// Add compact peer list
-	res := bytes.NewBuffer(announceBuf)
-	err = binary.Write(res, binary.BigEndian, file.PeerList(query.Get("ip"), numwant))
+	// Retrieve compact peer list
+	peers, err := file.CompactPeerList(numwant)
 	if err != nil {
 		log.Println(err.Error())
-		return u.Error("Could not create UDP announce response")
+		return u.Error(ErrPeerListFailure.Error())
+	}
+
+	// Add compact peer list
+	res := bytes.NewBuffer(announceBuf)
+	err = binary.Write(res, binary.BigEndian, peers)
+	if err != nil {
+		log.Println(err.Error())
+		return u.Error(ErrPeerListFailure.Error())
 	}
 
 	return res.Bytes()
@@ -65,7 +72,7 @@ func (u UDPTracker) Error(msg string) []byte {
 	buf, err := errRes.MarshalBinary()
 	if err != nil {
 		log.Println(err.Error())
-		return u.Error("Could not create UDP error response")
+		return u.Error(ErrErrorFailure.Error())
 	}
 
 	return buf
@@ -107,7 +114,7 @@ func (u UDPTracker) Scrape(files []data.FileRecord) []byte {
 	buf, err := scrape.MarshalBinary()
 	if err != nil {
 		log.Println(err.Error())
-		return u.Error("Could not create UDP scrape response")
+		return u.Error(ErrScrapeFailure.Error())
 	}
 
 	return buf

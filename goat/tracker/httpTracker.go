@@ -51,24 +51,25 @@ func (h HTTPTracker) Announce(query url.Values, file data.FileRecord) []byte {
 	buf := bytes.NewBuffer(make([]byte, 0))
 	if err := bencode.Marshal(buf, announce); err != nil {
 		log.Println(err.Error())
-		return h.Error("Tracker error: failed to create announce response")
+		return h.Error(ErrAnnounceFailure.Error())
 	}
 
-	// Generate compact peer list of length numwant, exclude this user
-	peers := file.PeerList(query.Get("ip"), numwant)
+	// Generate compact peer list of length numwant
+	compactPeers, err := file.CompactPeerList(numwant)
+	if err != nil {
+		log.Println(err.Error())
+		return h.Error(ErrPeerListFailure.Error())
+	}
 
 	// Because the bencode marshaler does not handle compact, binary peer list conversion,
 	// we handle it manually here.
 
 	// Get initial buffer, chop off 3 bytes: "0:e", append the actual list length with new colon
 	out := buf.Bytes()
-	out = append(out[0:len(out)-3], []byte(strconv.Itoa(len(peers))+":")...)
+	out = append(out[0:len(out)-3], []byte(strconv.Itoa(len(compactPeers))+":")...)
 
 	// Append peers list, terminate with an "e"
-	out = append(append(out, peers...), byte('e'))
-
-	// Return final announce message
-	return out
+	return append(append(out, compactPeers...), byte('e'))
 }
 
 // errorResponse defines the response structure of an HTTP tracker error
@@ -138,7 +139,7 @@ func (h HTTPTracker) Scrape(files []data.FileRecord) []byte {
 	buf := bytes.NewBuffer(make([]byte, 0))
 	if err := bencode.Marshal(buf, scrape); err != nil {
 		log.Println(err.Error())
-		return h.Error("Tracker error: failed to create scrape response")
+		return h.Error(ErrScrapeFailure.Error())
 	}
 
 	return buf.Bytes()
