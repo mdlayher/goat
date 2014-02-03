@@ -110,6 +110,10 @@ func (u AnnounceRequest) MarshalBinary() ([]byte, error) {
 	}
 
 	// Action (uint32)
+	if u.Action != uint32(1) {
+		return nil, fmt.Errorf("invalid action '%d' for AnnounceRequest", u.Action)
+	}
+
 	if err := binary.Write(res, binary.BigEndian, u.Action); err != nil {
 		return nil, err
 	}
