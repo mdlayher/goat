@@ -19,6 +19,6 @@ script:
   - go get github.com/cznic/ql
   - make
   - ./bin/goat -test
-  - make test
   - make ql
   - ./bin/goat -test
+  - make test
