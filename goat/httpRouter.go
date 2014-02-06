@@ -197,10 +197,10 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 	// Mark client as HTTP
 	query.Set("udp", "0")
 
-	// Get user's total number of active torrents
-	seeding := user.Seeding()
-	leeching := user.Leeching()
-	if seeding == -1 || leeching == -1 {
+	// Get user's number of active torrents
+	seeding, err := user.Seeding()
+	leeching, err2 := user.Leeching()
+	if err != nil || err2 != nil {
 		if _, err := w.Write(httpTracker.Error("Failed to calculate active torrents")); err != nil {
 			log.Println(err.Error())
 		}

@@ -100,93 +100,85 @@ func (u UserRecord) Load(id interface{}, col string) UserRecord {
 }
 
 // Uploaded loads this user's total upload
-func (u UserRecord) Uploaded() int64 {
+func (u UserRecord) Uploaded() (int64, error) {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		log.Println(err.Error())
-		return -1
+		return 0, err
 	}
 
 	// Retrieve total bytes user has uploaded
 	uploaded, err := db.GetUserUploaded(u.ID)
 	if err != nil {
-		log.Println(err.Error())
-		return -1
+		return 0, err
 	}
 
 	if err := db.Close(); err != nil {
 		log.Println(err.Error())
 	}
 
-	return uploaded
+	return uploaded, nil
 }
 
 // Downloaded loads this user's total download
-func (u UserRecord) Downloaded() int64 {
+func (u UserRecord) Downloaded() (int64, error) {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		log.Println(err.Error())
-		return 0
+		return 0, err
 	}
 
 	// Retrieve total bytes user has downloaded
 	downloaded, err := db.GetUserDownloaded(u.ID)
 	if err != nil {
-		log.Println(err.Error())
-		return -1
+		return 0, err
 	}
 
 	if err := db.Close(); err != nil {
 		log.Println(err.Error())
 	}
 
-	return downloaded
+	return downloaded, nil
 }
 
 // Seeding counts the number of torrents this user is seeding
-func (u UserRecord) Seeding() int {
+func (u UserRecord) Seeding() (int, error) {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		log.Println(err.Error())
-		return 0
+		return 0, err
 	}
 
 	// Retrieve total number of torrents user is actively seeding
 	seeding, err := db.GetUserSeeding(u.ID)
 	if err != nil {
-		log.Println(err.Error())
-		return -1
+		return 0, err
 	}
 
 	if err := db.Close(); err != nil {
 		log.Println(err.Error())
 	}
 
-	return seeding
+	return seeding, nil
 }
 
 // Leeching counts the number of torrents this user is leeching
-func (u UserRecord) Leeching() int {
+func (u UserRecord) Leeching() (int, error) {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		log.Println(err.Error())
-		return 0
+		return 0, err
 	}
 
 	// Retrieve total number of torrents user is actively leeching
 	leeching, err := db.GetUserSeeding(u.ID)
 	if err != nil {
-		log.Println(err.Error())
-		return -1
+		return 0, err
 	}
 
 	if err := db.Close(); err != nil {
 		log.Println(err.Error())
 	}
 
-	return leeching
+	return leeching, nil
 }
