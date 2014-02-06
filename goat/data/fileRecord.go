@@ -50,9 +50,21 @@ func (f FileRecord) ToJSON() []byte {
 	j.FileUsers = f.Users()
 
 	// Load counts for completions, seeding, leeching
-	j.Completed = f.Completed()
-	j.Seeders = f.Seeders()
-	j.Leechers = f.Leechers()
+	var err error
+	j.Completed, err = f.Completed()
+	if err != nil {
+		j.Completed = 0
+	}
+
+	j.Seeders, err = f.Seeders()
+	if err != nil {
+		j.Seeders = 0
+	}
+
+	j.Leechers, err = f.Leechers()
+	if err != nil {
+		j.Leechers = 0
+	}
 
 	// Marshal into JSON
 	out, err := json.Marshal(j)
@@ -162,69 +174,63 @@ func (f FileRecord) CompactPeerList(numwant int, http bool) ([]byte, error) {
 }
 
 // Completed returns the number of completions, active or not, on this file
-func (f FileRecord) Completed() (completed int) {
+func (f FileRecord) Completed() (completed int, err error) {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		log.Println(err.Error())
-		return 0
+		return
 	}
 
 	// Retrieve number of file completions
 	if completed, err = db.CountFileRecordCompleted(f.ID); err != nil {
-		log.Println(err.Error())
-		return -1
+		return
 	}
 
 	if err := db.Close(); err != nil {
 		log.Println(err.Error())
 	}
 
-	return
+	return completed, nil
 }
 
 // Seeders returns the number of seeders on this file
-func (f FileRecord) Seeders() (seeders int) {
+func (f FileRecord) Seeders() (seeders int, err error) {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		log.Println(err.Error())
-		return 0
+		return
 	}
 
 	// Return number of active seeders
 	if seeders, err = db.CountFileRecordSeeders(f.ID); err != nil {
-		log.Println(err.Error())
-		return -1
+		return
 	}
 
 	if err := db.Close(); err != nil {
 		log.Println(err.Error())
 	}
 
-	return
+	return seeders, nil
 }
 
 // Leechers returns the number of leechers on this file
-func (f FileRecord) Leechers() (leechers int) {
+func (f FileRecord) Leechers() (leechers int, err error) {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		log.Println(err.Error())
-		return 0
+		return
 	}
 
 	// Return number of active leechers
 	if leechers, err = db.CountFileRecordLeechers(f.ID); err != nil {
-		log.Println(err.Error())
-		return -1
+		return
 	}
 
 	if err := db.Close(); err != nil {
 		log.Println(err.Error())
 	}
 
-	return
+	return leechers, nil
 }
 
 // PeerList returns a list of peers on this torrent, for tracker announce

@@ -32,18 +32,18 @@ func TestFileRecord(t *testing.T) {
 		t.Fatalf("Failed to load mock file")
 	}
 
-	// Verify positive number of completed on file
-	if file.Completed() < 0 {
+	// Verify completed is functional
+	if _, err := file.Completed(); err != nil {
 		t.Fatalf("Failed to fetch file completed")
 	}
 
-	// Verify positive number of seeders on file
-	if file.Seeders() < 0 {
+	// Verify seeders is functional
+	if _, err := file.Seeders(); err != nil {
 		t.Fatalf("Failed to fetch file seeders")
 	}
 
-	// Verify positive number of leechers on file
-	if file.Leechers() < 0 {
+	// Verify leechers is functional
+	if _, err := file.Leechers(); err != nil {
 		t.Fatalf("Failed to fetch file leechers")
 	}
 

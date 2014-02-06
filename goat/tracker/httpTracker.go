@@ -30,10 +30,21 @@ type AnnounceResponse struct {
 func (h HTTPTracker) Announce(query url.Values, file data.FileRecord) []byte {
 	// Generate response struct
 	announce := AnnounceResponse{
-		Complete:    file.Seeders(),
-		Incomplete:  file.Leechers(),
 		Interval:    common.Static.Config.Interval,
 		MinInterval: common.Static.Config.Interval / 2,
+	}
+
+	// Get seeders count on file
+	var err error
+	announce.Complete, err = file.Seeders()
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	// Get leechers count on file
+	announce.Incomplete, err = file.Leechers()
+	if err != nil {
+		log.Println(err.Error())
 	}
 
 	// Check for numwant parameter, return up to that number of peers
@@ -127,10 +138,25 @@ func (h HTTPTracker) Scrape(files []data.FileRecord) []byte {
 	// Iterate all files
 	for _, file := range files {
 		// Generate scrapeFile struct
-		fileInfo := scrapeFile{
-			Complete:   file.Seeders(),
-			Downloaded: file.Completed(),
-			Incomplete: file.Leechers(),
+		fileInfo := scrapeFile{}
+		var err error
+
+		// Seeders count
+		fileInfo.Complete, err = file.Seeders()
+		if err != nil {
+			log.Println(err.Error())
+		}
+
+		// Completion count
+		fileInfo.Downloaded, err = file.Completed()
+		if err != nil {
+			log.Println(err.Error())
+		}
+
+		// Leechers count
+		fileInfo.Incomplete, err = file.Leechers()
+		if err != nil {
+			log.Println(err.Error())
 		}
 
 		// Add hash and file info to map

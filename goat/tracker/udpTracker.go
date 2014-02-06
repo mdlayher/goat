@@ -24,9 +24,20 @@ func (u UDPTracker) Announce(query url.Values, file data.FileRecord) []byte {
 		Action:   1,
 		TransID:  u.TransID,
 		Interval: uint32(common.Static.Config.Interval),
-		Leechers: uint32(file.Leechers()),
-		Seeders:  uint32(file.Seeders()),
 	}
+
+	// Calculate file seeders and leechers
+	seeders, err := file.Seeders()
+	if err != nil {
+		log.Println(err.Error())
+	}
+	announce.Seeders = uint32(seeders)
+
+	leechers, err := file.Leechers()
+	if err != nil {
+		log.Println(err.Error())
+	}
+	announce.Leechers = uint32(leechers)
 
 	// Convert to UDP byte buffer
 	announceBuf, err := announce.MarshalBinary()
@@ -93,13 +104,26 @@ func (u UDPTracker) Scrape(files []data.FileRecord) []byte {
 		stat := udp.ScrapeStats{}
 
 		// Seeders
-		stat.Seeders = uint32(file.Seeders())
+		var err error
+		seeders, err := file.Seeders()
+		if err != nil {
+			log.Println(err.Error())
+		}
+		stat.Seeders = uint32(seeders)
 
 		// Completed
-		stat.Completed = uint32(file.Completed())
+		completed, err := file.Completed()
+		if err != nil {
+			log.Println(err.Error())
+		}
+		stat.Completed = uint32(completed)
 
 		// Leechers
-		stat.Leechers = uint32(file.Leechers())
+		leechers, err := file.Leechers()
+		if err != nil {
+			log.Println(err.Error())
+		}
+		stat.Leechers = uint32(leechers)
 
 		// Append to slice
 		stats = append(stats[:], stat)
