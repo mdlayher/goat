@@ -592,6 +592,11 @@ func (db *qlw) SaveScrapeLog(s ScrapeLog) (err error) {
 
 // DeleteUserRecord deletes an AnnounceLog using a defined ID and column for query
 func (db *qlw) DeleteUserRecord(id interface{}, col string) (err error) {
+	// Prevent error cannot convert 1 (type int) to type int64
+	if value, ok := id.(int); ok {
+		id = int64(value)
+	}
+
 	_, _, err = qlQuery(db, "user_delete_"+col, true, id)
 	return
 }

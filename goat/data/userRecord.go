@@ -17,7 +17,7 @@ type UserRecord struct {
 }
 
 // Create a UserRecord, using defined parameters
-func (u UserRecord) Create(username string, torrentLimit int) UserRecord {
+func (u *UserRecord) Create(username string, torrentLimit int) error {
 	// Set username and torrent limit
 	u.Username = username
 	u.TorrentLimit = torrentLimit
@@ -25,12 +25,11 @@ func (u UserRecord) Create(username string, torrentLimit int) UserRecord {
 	// Randomly generate a new passkey
 	sha := sha1.New()
 	if _, err := sha.Write([]byte(common.RandString())); err != nil {
-		log.Println(err.Error())
-		return UserRecord{}
+		return err
 	}
 
 	u.Passkey = fmt.Sprintf("%x", sha.Sum(nil))
-	return u
+	return nil
 }
 
 // Delete UserRecord from storage
