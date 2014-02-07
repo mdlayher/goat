@@ -40,7 +40,11 @@ func Announce(tracker TorrentTracker, user data.UserRecord, query url.Values) []
 	}
 
 	// Request to store announce
-	go announce.Save()
+	go func(announce *data.AnnounceLog) {
+		if err := announce.Save(); err != nil {
+			log.Println(err.Error())
+		}
+	}(announce)
 
 	// Only report event when needed
 	event := ""

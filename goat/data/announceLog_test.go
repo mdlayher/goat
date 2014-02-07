@@ -68,9 +68,8 @@ func TestAnnounceLog(t *testing.T) {
 	}
 
 	// Verify announce can be loaded using hex info hash
-	announce2 := new(AnnounceLog)
-	err = announce2.Load("6465616462656566303030303030303030303030", "info_hash")
-	if err != nil || announce2 == nil {
+	announce2, err := new(AnnounceLog).Load("6465616462656566303030303030303030303030", "info_hash")
+	if err != nil || announce2 == (AnnounceLog{}) {
 		t.Fatal("Failed to load AnnounceLog: %s", err.Error())
 	}
 

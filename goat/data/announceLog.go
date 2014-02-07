@@ -47,28 +47,27 @@ func (a AnnounceLog) Save() error {
 }
 
 // Load AnnounceLog from storage
-func (a *AnnounceLog) Load(ID interface{}, col string) error {
+func (a AnnounceLog) Load(ID interface{}, col string) (AnnounceLog, error) {
+	a = AnnounceLog{}
+
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		return err
+		return a, err
 	}
 
 	// Load AnnounceLog
-	temp, err := db.LoadAnnounceLog(ID, col)
+	a, err = db.LoadAnnounceLog(ID, col)
 	if err != nil {
-		return err
+		return a, err
 	}
-
-	// Replace values with database values
-	a = &temp
 
 	// Close database connection
 	if err := db.Close(); err != nil {
-		return err
+		return a, err
 	}
 
-	return nil
+	return a, err
 }
 
 // Delete AnnounceLog from storage
