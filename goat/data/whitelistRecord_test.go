@@ -20,7 +20,7 @@ func TestWhitelistRecord(t *testing.T) {
 
 	// Generate mock WhitelistRecord
 	whitelist := WhitelistRecord{
-		Client: "goat_test",
+		Client:   "goat_test",
 		Approved: true,
 	}
 
