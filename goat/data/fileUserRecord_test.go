@@ -13,7 +13,10 @@ func TestFileUserRecord(t *testing.T) {
 	log.Println("TestFileUserRecord()")
 
 	// Load config
-	config := common.LoadConfig()
+	config, err := common.LoadConfig()
+	if err != nil {
+		t.Fatalf("Could not load configuration: %s", err.Error())
+	}
 	common.Static.Config = config
 
 	// Generate mock FileUserRecord
@@ -36,7 +39,7 @@ func TestFileUserRecord(t *testing.T) {
 	}
 
 	// Load mock fileUser
-	fileUser, err := fileUser.Load(fileUser.FileID, fileUser.UserID, fileUser.IP)
+	fileUser, err = fileUser.Load(fileUser.FileID, fileUser.UserID, fileUser.IP)
 	if fileUser == (FileUserRecord{}) || err != nil {
 		t.Fatalf("Failed to load mock fileUser: %s", err.Error())
 	}

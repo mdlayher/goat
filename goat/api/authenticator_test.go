@@ -17,7 +17,10 @@ func TestBasicAuthenticator(t *testing.T) {
 	log.Println("TestBasicAuthenticator()")
 
 	// Load config
-	config := common.LoadConfig()
+	config, err := common.LoadConfig()
+	if err != nil {
+		t.Fatalf("Could not load configuration: %s", err.Error())
+	}
 	common.Static.Config = config
 
 	// Generate mock user
@@ -33,7 +36,7 @@ func TestBasicAuthenticator(t *testing.T) {
 	}
 
 	// Load mock user to fetch ID
-	user, err := user.Load(user.Username, "username")
+	user, err = user.Load(user.Username, "username")
 	if user == (data.UserRecord{}) || err != nil {
 		t.Fatalf("Failed to load mock user: %s", err.Error())
 	}

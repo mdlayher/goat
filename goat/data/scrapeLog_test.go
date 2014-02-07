@@ -13,7 +13,10 @@ func TestScrapeLog(t *testing.T) {
 	log.Println("TestScrapeLog()")
 
 	// Load config
-	config := common.LoadConfig()
+	config, err := common.LoadConfig()
+	if err != nil {
+		t.Fatalf("Could not load configuration: %s", err.Error())
+	}
 	common.Static.Config = config
 
 	// Generate fake scrape query
@@ -23,7 +26,7 @@ func TestScrapeLog(t *testing.T) {
 
 	// Generate struct from query
 	scrape := new(ScrapeLog)
-	err := scrape.FromValues(query)
+	err = scrape.FromValues(query)
 	if err != nil {
 		t.Fatalf("Failed to create scrape from values: %s", err.Error())
 	}

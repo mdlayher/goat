@@ -12,7 +12,10 @@ func TestWhitelistRecord(t *testing.T) {
 	log.Println("TestWhitelistRecord()")
 
 	// Load config
-	config := common.LoadConfig()
+	config, err := common.LoadConfig()
+	if err != nil {
+		t.Fatalf("Could not load configuration: %s", err.Error())
+	}
 	common.Static.Config = config
 
 	// Generate mock WhitelistRecord
@@ -27,7 +30,7 @@ func TestWhitelistRecord(t *testing.T) {
 	}
 
 	// Load mock whitelist to fetch ID
-	whitelist, err := whitelist.Load(whitelist.Client, "client")
+	whitelist, err = whitelist.Load(whitelist.Client, "client")
 	if whitelist == (WhitelistRecord{}) || err != nil {
 		t.Fatalf("Failed to load mock whitelist: %s", err.Error())
 	}

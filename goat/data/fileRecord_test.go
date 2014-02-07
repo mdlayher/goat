@@ -12,7 +12,10 @@ func TestFileRecord(t *testing.T) {
 	log.Println("TestFileRecord()")
 
 	// Load config
-	config := common.LoadConfig()
+	config, err := common.LoadConfig()
+	if err != nil {
+		t.Fatalf("Could not load configuration: %s", err.Error())
+	}
 	common.Static.Config = config
 
 	// Generate mock FileRecord
@@ -27,7 +30,7 @@ func TestFileRecord(t *testing.T) {
 	}
 
 	// Load mock file to fetch ID
-	file, err := file.Load(file.InfoHash, "info_hash")
+	file, err = file.Load(file.InfoHash, "info_hash")
 	if file == (FileRecord{}) || err != nil {
 		t.Fatalf("Failed to load mock file: %s", err.Error())
 	}

@@ -50,7 +50,7 @@ type Conf struct {
 }
 
 // LoadConfig loads configuration
-func LoadConfig() Conf {
+func LoadConfig() (Conf, error) {
 	// Configuration path
 	var path string
 	config := "config.json"
@@ -121,16 +121,14 @@ func LoadConfig() Conf {
 	c := Conf{}
 	configFile, err := os.Open(path + config)
 	if err != nil {
-		log.Println("Failed to open config.json")
-		return Conf{}
+		return Conf{}, err
 	}
 
 	// Decode JSON
 	err = json.NewDecoder(configFile).Decode(&c)
 	if err != nil {
-		log.Println("Could not parse config.json")
-		return Conf{}
+		return Conf{}, err
 	}
 
-	return c
+	return c, nil
 }

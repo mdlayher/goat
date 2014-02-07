@@ -37,8 +37,9 @@ func Manager(killChan chan bool, exitChan chan int) {
 	}
 
 	// Load configuration
-	config := common.LoadConfig()
-	if config == (common.Conf{}) {
+	config, err := common.LoadConfig()
+	if config == (common.Conf{}) || err != nil {
+		log.Println(err.Error())
 		panic("Cannot load configuration, panicking")
 	}
 	common.Static.Config = config

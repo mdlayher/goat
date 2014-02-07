@@ -16,7 +16,10 @@ func TestUDPAnnounce(t *testing.T) {
 	log.Println("TestUDPAnnounce()")
 
 	// Load config
-	config := common.LoadConfig()
+	config, err := common.LoadConfig()
+	if err != nil {
+		t.Fatalf("Could not load configuration: %s", err.Error())
+	}
 	common.Static.Config = config
 
 	// Generate mock data.FileRecord
@@ -46,7 +49,7 @@ func TestUDPAnnounce(t *testing.T) {
 
 	// Decode response
 	announce := new(udp.AnnounceResponse)
-	err := announce.UnmarshalBinary(res)
+	err = announce.UnmarshalBinary(res)
 	if err != nil {
 		t.Fatalf("Failed to decode UDP announce response")
 	}

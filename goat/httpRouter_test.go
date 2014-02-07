@@ -29,7 +29,10 @@ func TestHTTPRouter(t *testing.T) {
 	log.Println("TestHTTPRouter()")
 
 	// Load config
-	config := common.LoadConfig()
+	config, err := common.LoadConfig()
+	if err != nil {
+		t.Fatalf("Could not load configuration: %s", err.Error())
+	}
 	common.Static.Config = config
 
 	// Generate mock data.FileRecord
@@ -73,7 +76,7 @@ func TestHTTPRouter(t *testing.T) {
 	}
 
 	// Delete mock file2
-	err := file.Delete()
+	err = file.Delete()
 	err2 := file2.Delete()
 	if err != nil || err2 != nil {
 		t.Fatalf("Failed to delete mock file : %s %s", err.Error(), err2.Error())

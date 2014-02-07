@@ -18,7 +18,10 @@ func TestHTTPAnnounce(t *testing.T) {
 	log.Println("TestHTTPAnnounce()")
 
 	// Load config
-	config := common.LoadConfig()
+	config, err := common.LoadConfig()
+	if err != nil {
+		t.Fatalf("Could not load configuration: %s", err.Error())
+	}
 	common.Static.Config = config
 
 	// Generate mock data.FileRecord

@@ -13,7 +13,10 @@ func TestAnnounceLog(t *testing.T) {
 	log.Println("TestAnnounceLog()")
 
 	// Load config
-	config := common.LoadConfig()
+	config, err := common.LoadConfig()
+	if err != nil {
+		t.Fatalf("Could not load configuration: %s", err.Error())
+	}
 	common.Static.Config = config
 
 	// Generate fake announce query
@@ -27,7 +30,7 @@ func TestAnnounceLog(t *testing.T) {
 
 	// Generate struct from query
 	announce := new(AnnounceLog)
-	err := announce.FromValues(query)
+	err = announce.FromValues(query)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
