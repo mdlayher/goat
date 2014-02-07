@@ -22,7 +22,11 @@ func TestScrapeLog(t *testing.T) {
 	query.Set("ip", "127.0.0.1")
 
 	// Generate struct from query
-	scrape := new(ScrapeLog).FromValues(query)
+	scrape := new(ScrapeLog)
+	err := scrape.FromValues(query)
+	if err != nil {
+		t.Fatalf("Failed to create scrape from values: %s", err.Error())
+	}
 
 	// Verify proper hex encode of info hash
 	if scrape.InfoHash != "6465616462656566303030303030303030303030" {
@@ -35,14 +39,14 @@ func TestScrapeLog(t *testing.T) {
 	}
 
 	// Verify scrape can be saved
-	if !scrape.Save() {
-		t.Fatalf("Failed to save ScrapeLog")
+	if err := scrape.Save(); err != nil {
+		t.Fatalf("Failed to save ScrapeLog: %s", err.Error())
 	}
 
 	// Verify scrape can be loaded using hex info hash
-	scrape2 := scrape.Load("6465616462656566303030303030303030303030", "info_hash")
-	if scrape2 == (ScrapeLog{}) {
-		t.Fatal("Failed to load ScrapeLog")
+	scrape2, err := scrape.Load("6465616462656566303030303030303030303030", "info_hash")
+	if scrape2 == (ScrapeLog{}) || err != nil {
+		t.Fatal("Failed to load ScrapeLog: %s", err.Error())
 	}
 
 	// Verify scrape is the same as previous one
@@ -51,7 +55,7 @@ func TestScrapeLog(t *testing.T) {
 	}
 
 	// Verify scrape can be deleted
-	if !scrape2.Delete() {
-		t.Fatalf("Failed to delete ScrapeLog")
+	if err := scrape2.Delete(); err != nil {
+		t.Fatalf("Failed to delete ScrapeLog: %s", err.Error())
 	}
 }

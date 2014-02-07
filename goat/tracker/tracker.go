@@ -194,13 +194,18 @@ func Scrape(tracker TorrentTracker, query url.Values) []byte {
 		localQuery.Set("info_hash", infoHash)
 
 		// Store scrape information in struct
-		scrape := new(data.ScrapeLog).FromValues(localQuery)
-		if scrape == (data.ScrapeLog{}) {
+		scrape := new(data.ScrapeLog)
+		err := scrape.FromValues(localQuery)
+		if err != nil {
 			return tracker.Error("Malformed scrape")
 		}
 
 		// Request to store scrape
-		go scrape.Save()
+		go func(scrape *data.ScrapeLog) {
+			if err := scrape.Save(); err != nil {
+				log.Println(err.Error())
+			}
+		}(scrape)
 
 		log.Printf("scrape: [%s %s] %s", tracker.Protocol(), scrape.IP, scrape.InfoHash)
 

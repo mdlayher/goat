@@ -3,7 +3,7 @@ package data
 import (
 	"database/sql"
 	"encoding/hex"
-	"log"
+	"errors"
 	"net/url"
 	"time"
 )
@@ -19,80 +19,78 @@ type ScrapeLog struct {
 }
 
 // Delete ScrapeLog from storage
-func (s ScrapeLog) Delete() bool {
+func (s ScrapeLog) Delete() error {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		log.Println(err.Error())
-		return false
+		return err
 	}
 
 	// Delete ScrapeLog
 	if err = db.DeleteScrapeLog(s.ID, "id"); err != nil {
-		log.Println(err.Error())
-		return false
+		return err
 	}
 
+	// Close database connection
 	if err := db.Close(); err != nil {
-		log.Println(err.Error())
+		return err
 	}
 
-	return true
+	return nil
 }
 
 // Save ScrapeLog to storage
-func (s ScrapeLog) Save() bool {
+func (s ScrapeLog) Save() error {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		log.Println(err.Error())
-		return false
+		return err
 	}
 
 	// Save ScrapeLog
 	if err := db.SaveScrapeLog(s); err != nil {
-		log.Println(err.Error())
-		return false
+		return err
 	}
 
+	// Close database connection
 	if err := db.Close(); err != nil {
-		log.Println(err.Error())
+		return err
 	}
 
-	return true
+	return nil
 }
 
 // Load ScrapeLog from storage
-func (s ScrapeLog) Load(id interface{}, col string) ScrapeLog {
+func (s ScrapeLog) Load(id interface{}, col string) (ScrapeLog, error) {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		log.Println(err.Error())
-		return s
+		return ScrapeLog{}, err
 	}
 
 	// Load ScrapeLog
 	s, err = db.LoadScrapeLog(id, col)
 	if err != nil && err != sql.ErrNoRows {
-		log.Println(err.Error())
-		return ScrapeLog{}
+		return ScrapeLog{}, err
 	}
 
+	// Close database connection
 	if err := db.Close(); err != nil {
-		log.Println(err.Error())
+		return ScrapeLog{}, err
 	}
 
-	return s
+	return s, nil
 }
 
 // FromValues generates a ScrapeLog struct from a url.Values map
-func (s ScrapeLog) FromValues(query url.Values) ScrapeLog {
-	s = ScrapeLog{}
-
+func (s *ScrapeLog) FromValues(query url.Values) error {
 	// Required parameters
 
-	// info_hash
+	// info_hash (20 characters, 40 characters after hex encode)
 	s.InfoHash = hex.EncodeToString([]byte(query.Get("info_hash")))
+	if len(s.InfoHash) != 40 {
+		return errors.New("info_hash must be exactly 20 characters")
+	}
 
 	// passkey
 	s.Passkey = query.Get("passkey")
@@ -110,6 +108,5 @@ func (s ScrapeLog) FromValues(query url.Values) ScrapeLog {
 		s.UDP = false
 	}
 
-	// Return the created scrape
-	return s
+	return nil
 }
