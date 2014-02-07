@@ -1,9 +1,5 @@
 package data
 
-import (
-	"log"
-)
-
 // WhitelistRecord represents a whitelist entry
 type WhitelistRecord struct {
 	ID       int
@@ -11,46 +7,64 @@ type WhitelistRecord struct {
 	Approved bool
 }
 
-// Save WhitelistRecord to storage
-func (w WhitelistRecord) Save() bool {
+// Delete WhitelistRecord from storage
+func (w WhitelistRecord) Delete() error {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		log.Println(err.Error())
-		return false
+		return err
 	}
 
-	// Save WhitelistRecord
-	if err := db.SaveWhitelistRecord(w); err != nil {
-		log.Println(err.Error())
-		return false
+	// Delete WhitelistRecord
+	if err = db.DeleteWhitelistRecord(w.Client, "client"); err != nil {
+		return err
 	}
 
+	// Close database connection
 	if err := db.Close(); err != nil {
-		log.Println(err.Error())
+		return err
 	}
 
-	return true
+	return nil
 }
 
 // Load WhitelistRecord from storage
-func (w WhitelistRecord) Load(id interface{}, col string) WhitelistRecord {
+func (w WhitelistRecord) Load(id interface{}, col string) (WhitelistRecord, error) {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		log.Println(err.Error())
-		return w
+		return WhitelistRecord{}, err
 	}
 
 	// Load WhitelistRecord using specified column
 	if w, err = db.LoadWhitelistRecord(id, col); err != nil {
-		log.Println(err.Error())
-		return WhitelistRecord{}
+		return WhitelistRecord{}, err
 	}
 
 	if err := db.Close(); err != nil {
-		log.Println(err.Error())
+		return WhitelistRecord{}, err
 	}
 
-	return w
+	return w, nil
+}
+
+// Save WhitelistRecord to storage
+func (w WhitelistRecord) Save() error {
+	// Open database connection
+	db, err := DBConnect()
+	if err != nil {
+		return err
+	}
+
+	// Save WhitelistRecord
+	if err := db.SaveWhitelistRecord(w); err != nil {
+		return err
+	}
+
+	// Close database connection
+	if err := db.Close(); err != nil {
+		return err
+	}
+
+	return nil
 }

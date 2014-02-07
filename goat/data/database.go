@@ -83,6 +83,7 @@ type dbModel interface {
 	GetUserLeeching(int) (int, error)
 
 	// --- WhitelistRecord.go ---
+	DeleteWhitelistRecord(interface{}, string) error
 	LoadWhitelistRecord(interface{}, string) (WhitelistRecord, error)
 	SaveWhitelistRecord(WhitelistRecord) error
 }

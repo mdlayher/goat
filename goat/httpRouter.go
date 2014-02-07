@@ -135,7 +135,11 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// If configured, verify that torrent client is on whitelist
 	if common.Static.Config.Whitelist {
-		whitelist := new(data.WhitelistRecord).Load(client, "client")
+		whitelist, err := new(data.WhitelistRecord).Load(client, "client")
+		if err != nil {
+			log.Println(err.Error())
+		}
+
 		if whitelist == (data.WhitelistRecord{}) || !whitelist.Approved {
 			if _, err := w.Write(httpTracker.Error("Your client is not whitelisted")); err != nil {
 				log.Println(err.Error())
@@ -153,7 +157,12 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 
 				log.Printf("whitelist: detected new client '%s', awaiting manual approval", client)
 
-				go whitelist.Save()
+				// Save whitelist record asynchronously
+				go func(whitelist data.WhitelistRecord) {
+					if err := whitelist.Save(); err != nil {
+						log.Println(err.Error())
+					}
+				}(whitelist)
 			}
 
 			return

@@ -499,6 +499,14 @@ func (db *dbw) GetUserLeeching(uid int) (int, error) {
 
 // --- WhitelistRecord.go ---
 
+// DeleteWhitelistRecord deletes a WhitelistRecord using a defined ID and column
+func (db *dbw) DeleteWhitelistRecord(id interface{}, col string) error {
+	tx := db.MustBegin()
+	tx.Execl("DELETE FROM whitelist WHERE `"+col+"` = ?", id)
+
+	return tx.Commit()
+}
+
 // LoadWhitelistRecord loads a WhitelistRecord using a defined ID and column for query
 func (db *dbw) LoadWhitelistRecord(id interface{}, col string) (WhitelistRecord, error) {
 	query := "SELECT * FROM whitelist WHERE `" + col + "`=?;"

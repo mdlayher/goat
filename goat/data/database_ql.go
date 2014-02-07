@@ -102,6 +102,7 @@ var (
 		"user_leeching":           "SELECT count(user_id) AS leeching FROM files_users WHERE user_id==$1 && active==true && completed==false && left>0",
 
 		// WhitelistRecord
+		"whitelist_delete_client": "DELETE FROM whitelist WHERE client==$1",
 		"whitelist_load_id":       "SELECT id(),client,approved FROM whitelist WHERE id()==$1",
 		"whitelist_load_client":   "SELECT id(),client,approved FROM whitelist WHERE client==$1",
 		"whitelist_load_approved": "SELECT id(),client,approved FROM whitelist WHERE approved==$1",
@@ -663,6 +664,12 @@ func (db *qlw) GetUserLeeching(uid int) (int, error) {
 }
 
 // --- WhitelistRecord.go ---
+
+// DeleteWhitelistRecord deletes a WhitelistRecord using a defined column and ID
+func (db *qlw) DeleteWhitelistRecord(id interface{}, col string) (err error) {
+	_, _, err = qlQuery(db, "whitelist_delete_"+col, true, id)
+	return
+}
 
 // LoadWhitelistRecord loads a WhitelistRecord using a defined ID and column for query
 func (db *qlw) LoadWhitelistRecord(id interface{}, col string) (WhitelistRecord, error) {
