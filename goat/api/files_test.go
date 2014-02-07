@@ -24,21 +24,27 @@ func TestGetFilesJSON(t *testing.T) {
 	}
 
 	// Save mock file
-	if !file.Save() {
-		t.Fatalf("Failed to save mock file")
+	if err := file.Save(); err != nil {
+		t.Fatalf("Failed to save mock file: %s", err.Error())
 	}
 
 	// Load mock file to fetch ID
-	file = file.Load(file.InfoHash, "info_hash")
-	if file == (data.FileRecord{}) {
-		t.Fatalf("Failed to load mock file")
+	file, err := file.Load(file.InfoHash, "info_hash")
+	if file == (data.FileRecord{}) || err != nil {
+		t.Fatalf("Failed to load mock file: %s", err.Error())
 	}
 
 	// Request output JSON from API for this file
-	var file2 data.FileRecord
-	err := json.Unmarshal(getFilesJSON(file.ID), &file2)
+	res, err := getFilesJSON(file.ID)
 	if err != nil {
-		t.Fatalf("Failed to unmarshal result JSON for single file")
+		t.Fatalf("Failed to retrieve files JSON: %s", err.Error())
+	}
+
+	// Unmarshal output JSON
+	var file2 data.FileRecord
+	err = json.Unmarshal(res, &file2)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal result JSON for single file: %s", err.Error())
 	}
 
 	// Verify objects are the same
@@ -47,10 +53,16 @@ func TestGetFilesJSON(t *testing.T) {
 	}
 
 	// Request output JSON from API for all files
-	var allFiles []data.FileRecord
-	err = json.Unmarshal(getFilesJSON(-1), &allFiles)
+	res, err = getFilesJSON(-1)
 	if err != nil {
-		t.Fatalf("Failed to unmarshal result JSON for all files")
+		t.Fatalf("Failed to retrieve all files JSON: %s", err.Error())
+	}
+
+	// Unmarshal all output JSON
+	var allFiles []data.FileRecord
+	err = json.Unmarshal(res, &allFiles)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal result JSON for all files: %s", err.Error())
 	}
 
 	// Verify known file is in result set
@@ -66,7 +78,7 @@ func TestGetFilesJSON(t *testing.T) {
 	}
 
 	// Delete mock file
-	if !file.Delete() {
-		t.Fatalf("Failed to delete mock file")
+	if err := file.Delete(); err != nil {
+		t.Fatalf("Failed to delete mock file: %s", err.Error())
 	}
 }

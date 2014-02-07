@@ -15,14 +15,20 @@ func TestGetStatusJSON(t *testing.T) {
 	// Get status directly
 	status, err := common.GetServerStatus()
 	if err != nil {
-		t.Fatalf("Failed to fetch server status")
+		t.Fatalf("Failed to fetch server status: %s", err.Error())
 	}
 
 	// Request output JSON from API for this status
-	var status2 common.ServerStatus
-	err = json.Unmarshal(getStatusJSON(), &status2)
+	res, err := getStatusJSON()
 	if err != nil {
-		t.Fatalf("Failed to unmarshal result JSON")
+		t.Fatalf("Failed to fetch status JSON: %s", err.Error())
+	}
+
+	// Unmarshal result JSON
+	var status2 common.ServerStatus
+	err = json.Unmarshal(res, &status2)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal result JSON: %s", err.Error())
 	}
 
 	// Verify objects are the same

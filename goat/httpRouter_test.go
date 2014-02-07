@@ -39,8 +39,8 @@ func TestHTTPRouter(t *testing.T) {
 	}
 
 	// Save mock file
-	if !file.Save() {
-		t.Fatalf("Failed to save mock file")
+	if err := file.Save(); err != nil {
+		t.Fatalf("Failed to save mock file: %s", err.Error())
 	}
 
 	// Generate mock data.FileRecord
@@ -50,8 +50,8 @@ func TestHTTPRouter(t *testing.T) {
 	}
 
 	// Save mock file
-	if !file2.Save() {
-		t.Fatalf("Failed to save mock file")
+	if err := file2.Save(); err != nil {
+		t.Fatalf("Failed to save mock file: %s", err.Error())
 	}
 
 	// Iterate all HTTP tests
@@ -73,7 +73,9 @@ func TestHTTPRouter(t *testing.T) {
 	}
 
 	// Delete mock file2
-	if !file.Delete() || !file2.Delete() {
-		t.Fatalf("Failed to delete mock file")
+	err := file.Delete()
+	err2 := file2.Delete()
+	if err != nil || err2 != nil {
+		t.Fatalf("Failed to delete mock file : %s %s", err.Error(), err2.Error())
 	}
 }

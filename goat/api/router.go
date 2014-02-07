@@ -46,20 +46,27 @@ func Router(w http.ResponseWriter, r *http.Request) {
 		ID = i
 	}
 
-	// Response buffer
+	// Response buffer, error
 	res := make([]byte, 0)
+	var err error
 
 	// Choose API method
 	switch urlArr[2] {
 	// Files on tracker
 	case "files":
-		res = getFilesJSON(ID)
+		res, err = getFilesJSON(ID)
 	// Server status
 	case "status":
-		res = getStatusJSON()
+		res, err = getStatusJSON()
 	// Return error response
 	default:
 		http.Error(w, ErrorResponse("Undefined API call"), 404)
+		return
+	}
+
+	// Check for errors, return 500
+	if err != nil {
+		http.Error(w, ErrorResponse("API could not generate response"), 500)
 		return
 	}
 

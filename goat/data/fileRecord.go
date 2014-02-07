@@ -2,7 +2,6 @@ package data
 
 import (
 	"encoding/json"
-	"log"
 	"time"
 
 	"github.com/mdlayher/goat/goat/common"
@@ -37,7 +36,7 @@ type peerInfo struct {
 }
 
 // ToJSON converts a FileRecord to a jsonFileRecord struct
-func (f FileRecord) ToJSON() []byte {
+func (f FileRecord) ToJSON() ([]byte, error) {
 	// Convert all standard fields to the JSON equivalent struct
 	j := jsonFileRecord{}
 	j.ID = f.ID
@@ -53,27 +52,26 @@ func (f FileRecord) ToJSON() []byte {
 	var err error
 	j.Completed, err = f.Completed()
 	if err != nil {
-		j.Completed = 0
+		return nil, err
 	}
 
 	j.Seeders, err = f.Seeders()
 	if err != nil {
-		j.Seeders = 0
+		return nil, err
 	}
 
 	j.Leechers, err = f.Leechers()
 	if err != nil {
-		j.Leechers = 0
+		return nil, err
 	}
 
 	// Marshal into JSON
 	out, err := json.Marshal(j)
 	if err != nil {
-		log.Println(err.Error())
-		return nil
+		return nil, err
 	}
 
-	return out
+	return out, nil
 }
 
 // FileRecordRepository is used to contain methods to load multiple FileRecord structs
@@ -81,69 +79,66 @@ type FileRecordRepository struct {
 }
 
 // Delete FileRecord from storage
-func (f FileRecord) Delete() bool {
+func (f FileRecord) Delete() error {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		log.Println(err.Error())
-		return false
+		return err
 	}
 
 	// Delete FileRecord
 	if err = db.DeleteFileRecord(f.InfoHash, "info_hash"); err != nil {
-		log.Println(err.Error())
-		return false
+		return err
 	}
 
+	// Close database connection
 	if err := db.Close(); err != nil {
-		log.Println(err.Error())
+		return err
 	}
 
-	return true
+	return nil
 }
 
 // Save FileRecord to storage
-func (f FileRecord) Save() bool {
+func (f FileRecord) Save() error {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		log.Println(err.Error())
-		return false
+		return err
 	}
 
 	// Save FileRecord
 	if err := db.SaveFileRecord(f); err != nil {
-		log.Println(err.Error())
-		return false
+		return err
 	}
 
+	// Close database connection
 	if err := db.Close(); err != nil {
-		log.Println(err.Error())
+		return err
 	}
 
-	return true
+	return nil
 }
 
 // Load FileRecord from storage
-func (f FileRecord) Load(id interface{}, col string) FileRecord {
+func (f FileRecord) Load(id interface{}, col string) (FileRecord, error) {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		log.Println(err.Error())
-		return f
+		return FileRecord{}, err
 	}
 
 	// Load FileRecord by column
 	if f, err = db.LoadFileRecord(id, col); err != nil {
-		log.Println(err.Error())
-		return FileRecord{}
+		return FileRecord{}, err
 	}
 
+	// Close database connection
 	if err := db.Close(); err != nil {
-		log.Println(err.Error())
+		return FileRecord{}, err
 	}
 
-	return f
+	return f, nil
 }
 
 // CompactPeerList returns a packed byte array of peers who are active on this file
@@ -174,60 +169,66 @@ func (f FileRecord) CompactPeerList(numwant int, http bool) ([]byte, error) {
 }
 
 // Completed returns the number of completions, active or not, on this file
-func (f FileRecord) Completed() (completed int, err error) {
+func (f FileRecord) Completed() (int, error) {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		return
+		return 0, err
 	}
 
 	// Retrieve number of file completions
-	if completed, err = db.CountFileRecordCompleted(f.ID); err != nil {
-		return
+	completed, err := db.CountFileRecordCompleted(f.ID)
+	if err != nil {
+		return 0, err
 	}
 
+	// Close database connection
 	if err := db.Close(); err != nil {
-		log.Println(err.Error())
+		return 0, err
 	}
 
 	return completed, nil
 }
 
 // Seeders returns the number of seeders on this file
-func (f FileRecord) Seeders() (seeders int, err error) {
+func (f FileRecord) Seeders() (int, error) {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		return
+		return 0, err
 	}
 
 	// Return number of active seeders
-	if seeders, err = db.CountFileRecordSeeders(f.ID); err != nil {
-		return
+	seeders, err := db.CountFileRecordSeeders(f.ID)
+	if err != nil {
+		return 0, err
 	}
 
+	// Close database connection
 	if err := db.Close(); err != nil {
-		log.Println(err.Error())
+		return 0, err
 	}
 
 	return seeders, nil
 }
 
 // Leechers returns the number of leechers on this file
-func (f FileRecord) Leechers() (leechers int, err error) {
+func (f FileRecord) Leechers() (int, error) {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		return
+		return 0, err
 	}
 
 	// Return number of active leechers
-	if leechers, err = db.CountFileRecordLeechers(f.ID); err != nil {
-		return
+	leechers, err := db.CountFileRecordLeechers(f.ID)
+	if err != nil {
+		return 0, err
 	}
 
+	// Close database connection
 	if err := db.Close(); err != nil {
-		log.Println(err.Error())
+		return 0, err
 	}
 
 	return leechers, nil
@@ -249,45 +250,39 @@ func (f FileRecord) PeerList(numwant int, http bool) ([]Peer, error) {
 		return peers, err
 	}
 
+	// Close database connection
 	if err := db.Close(); err != nil {
-		log.Println(err.Error())
+		return peers, err
 	}
 
 	return peers, nil
 }
 
 // PeerReaper reaps peers who have not recently announced on this torrent, and mark them inactive
-func (f FileRecord) PeerReaper() bool {
+func (f FileRecord) PeerReaper() (int, error) {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		log.Println(err.Error())
-		return false
+		return 0, err
 	}
 
 	// Retrieve list of inactive users (have not announced in just above maximum interval)
 	users, err := db.GetInactiveUserInfo(f.ID, time.Duration(int64(common.Static.Config.Interval))*time.Second+60)
 	if err != nil {
-		log.Println(err.Error())
-		return false
+		return 0, err
 	}
 
 	// Mark those users inactive on this file
 	if err := db.MarkFileUsersInactive(f.ID, users); err != nil {
-		log.Println(err.Error())
-		return false
+		return 0, err
 	}
 
-	// Print number of peers reaped
-	if count := len(users); count > 0 {
-		log.Printf("reaper: reaped %d peer(s) on file %d\n", count, f.ID)
-	}
-
+	// Close database connection
 	if err := db.Close(); err != nil {
-		log.Println(err.Error())
+		return 0, err
 	}
 
-	return true
+	return len(users), nil
 }
 
 // Users loads all FileUserRecord structs associated with this FileRecord struct
@@ -296,22 +291,25 @@ func (f FileRecord) Users() []FileUserRecord {
 }
 
 // All loads all FileRecord structs from storage
-func (f FileRecordRepository) All() (files []FileRecord) {
+func (f FileRecordRepository) All() ([]FileRecord, error) {
+	files := make([]FileRecord, 0)
+
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		log.Println(err.Error())
-		return
+		return files, err
 	}
 
 	// Retrieve all files
-	if files, err = db.GetAllFileRecords(); err != nil {
-		log.Println(err.Error())
+	files, err = db.GetAllFileRecords()
+	if err != nil {
+		return files, err
 	}
 
+	// Close database connection
 	if err := db.Close(); err != nil {
-		log.Println(err.Error())
+		return files, err
 	}
 
-	return files
+	return files, nil
 }

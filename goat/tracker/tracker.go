@@ -55,15 +55,26 @@ func Announce(tracker TorrentTracker, user data.UserRecord, query url.Values) []
 	log.Printf("announce: [%s %s:%d] %s%s", tracker.Protocol(), announce.IP, announce.Port, event, announce.InfoHash)
 
 	// Check for a matching file via info_hash
-	file := new(data.FileRecord).Load(announce.InfoHash, "info_hash")
+	file, err := new(data.FileRecord).Load(announce.InfoHash, "info_hash")
+	if err != nil {
+		log.Println(err.Error())
+		return tracker.Error(ErrAnnounceFailure.Error())
+	}
+
+	// Torrent is currently unregistered
 	if file == (data.FileRecord{}) {
-		// Torrent is not currently registered
 		log.Printf("tracker: detected new file, awaiting manual approval [hash: %s]", announce.InfoHash)
 
 		// Create an entry in file table for this hash, but mark it as unverified
 		file.InfoHash = announce.InfoHash
 		file.Verified = false
-		go file.Save()
+
+		// Save file asynchronously
+		go func(file data.FileRecord) {
+			if err := file.Save(); err != nil {
+				log.Println(err.Error())
+			}
+		}(file)
 
 		// Report error
 		return tracker.Error("Unregistered torrent")
@@ -74,8 +85,19 @@ func Announce(tracker TorrentTracker, user data.UserRecord, query url.Values) []
 		return tracker.Error("Unverified torrent")
 	}
 
-	// Launch peer reaper to remove old peers from this file
-	go file.PeerReaper()
+	// Launch peer reaper asynchronously to remove old peers from this file
+	go func(file data.FileRecord) {
+		// Start peer reaper
+		count, err := file.PeerReaper()
+		if err != nil {
+			log.Println(err.Error())
+		}
+
+		// Report peers reaped
+		if count > 0 {
+			log.Println("peerReaper: reaped %d peers on file ID: %d", count, file.ID)
+		}
+	}(file)
 
 	// If UDP tracker, we cannot reliably detect user, so we announce anonymously
 	if _, ok := tracker.(UDPTracker); ok {
@@ -145,8 +167,10 @@ func Announce(tracker TorrentTracker, user data.UserRecord, query url.Values) []
 		}
 	}
 
-	// Update file/user relationship record
-	go fileUser.Save()
+	// Update file/user relationship record asynchronously
+	go func(fileUser data.FileUserRecord) {
+		go fileUser.Save()
+	}(fileUser)
 
 	// Create announce
 	return tracker.Announce(query, file)
@@ -175,9 +199,14 @@ func Scrape(tracker TorrentTracker, query url.Values) []byte {
 		log.Printf("scrape: [%s %s] %s", tracker.Protocol(), scrape.IP, scrape.InfoHash)
 
 		// Check for a matching file via info_hash
-		file := new(data.FileRecord).Load(scrape.InfoHash, "info_hash")
+		file, err := new(data.FileRecord).Load(scrape.InfoHash, "info_hash")
+		if err != nil {
+			log.Println(err.Error())
+			return tracker.Error(ErrScrapeFailure.Error())
+		}
+
+		// Torrent is not currently registered
 		if file == (data.FileRecord{}) {
-			// Torrent is not currently registered
 			return tracker.Error("Unregistered torrent")
 		}
 
@@ -186,8 +215,19 @@ func Scrape(tracker TorrentTracker, query url.Values) []byte {
 			return tracker.Error("Unverified torrent")
 		}
 
-		// Launch peer reaper to remove old peers from this file
-		go file.PeerReaper()
+		// Launch peer reaper asynchronously to remove old peers from this file
+		go func(file data.FileRecord) {
+			// Start peer reaper
+			count, err := file.PeerReaper()
+			if err != nil {
+				log.Println(err.Error())
+			}
+
+			// Report peers reaped
+			if count > 0 {
+				log.Println("peerReaper: reaped %d peers on file ID: %d", count, file.ID)
+			}
+		}(file)
 
 		// File is valid, add it to list to be scraped
 		scrapeFiles = append(scrapeFiles[:], file)

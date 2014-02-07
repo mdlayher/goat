@@ -2,27 +2,24 @@ package api
 
 import (
 	"encoding/json"
-	"log"
 
 	"github.com/mdlayher/goat/goat/common"
 )
 
 // getStatusJSON returns a JSON representation of server status
-func getStatusJSON() []byte {
+func getStatusJSON() ([]byte, error) {
 	// Retrieve status
 	status, err := common.GetServerStatus()
 	if err != nil {
-		log.Println(err.Error())
-		return nil
+		return nil, err
 	}
 
 	// Marshal into JSON from request
 	res, err := json.Marshal(status)
 	if err != nil {
-		log.Println(err.Error())
-		return nil
+		return nil, err
 	}
 
 	// Return status
-	return res
+	return res, nil
 }

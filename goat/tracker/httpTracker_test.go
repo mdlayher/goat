@@ -28,8 +28,8 @@ func TestHTTPAnnounce(t *testing.T) {
 	}
 
 	// Save mock file
-	if !file.Save() {
-		t.Fatalf("Failed to save mock file")
+	if err := file.Save(); err != nil {
+		t.Fatalf("Failed to save mock file: %s", err.Error())
 	}
 
 	// Generate fake announce query
@@ -53,8 +53,8 @@ func TestHTTPAnnounce(t *testing.T) {
 	}
 
 	// Delete mock file
-	if !file.Delete() {
-		t.Fatalf("Failed to delete mock file")
+	if err := file.Delete(); err != nil {
+		t.Fatalf("Failed to delete mock file: %s", err.Error())
 	}
 }
 
@@ -85,8 +85,8 @@ func TestHTTPTrackerScrape(t *testing.T) {
 	}
 
 	// Save mock file
-	if !file.Save() {
-		t.Fatalf("Failed to save mock file")
+	if err := file.Save(); err != nil {
+		t.Fatalf("Failed to save mock file: %s", err.Error())
 	}
 
 	// Store file in slice
@@ -105,7 +105,7 @@ func TestHTTPTrackerScrape(t *testing.T) {
 	}
 
 	// Delete mock file
-	if !file.Delete() {
-		t.Fatalf("Failed to delete mock file")
+	if err := file.Delete(); err != nil {
+		t.Fatalf("Failed to delete mock file: %s", err.Error())
 	}
 }

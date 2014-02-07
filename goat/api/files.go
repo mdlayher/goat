@@ -2,25 +2,40 @@ package api
 
 import (
 	"encoding/json"
-	"log"
 
 	"github.com/mdlayher/goat/goat/data"
 )
 
 // getFilesJSON returns a JSON representation of one or more data.FileRecords
-func getFilesJSON(ID int) []byte {
+func getFilesJSON(ID int) ([]byte, error) {
 	// Check for a valid integer ID
 	if ID > 0 {
 		// Load file
-		return new(data.FileRecord).Load(ID, "id").ToJSON()
+		file, err := new(data.FileRecord).Load(ID, "id")
+		if err != nil {
+			return nil, err
+		}
+
+		// Create JSON represenation
+		res, err := file.ToJSON()
+		if err != nil {
+			return nil, err
+		}
+
+		return res, nil
+	}
+
+	// Load all files
+	files, err := new(data.FileRecordRepository).All()
+	if err != nil {
+		return nil, err
 	}
 
 	// Marshal into JSON
-	res, err := json.Marshal(new(data.FileRecordRepository).All())
+	res, err := json.Marshal(files)
 	if err != nil {
-		log.Println(err.Error())
-		return nil
+		return nil, err
 	}
 
-	return res
+	return res, err
 }

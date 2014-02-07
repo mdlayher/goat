@@ -25,8 +25,8 @@ func TestUDPRouter(t *testing.T) {
 	}
 
 	// Save mock file
-	if !file.Save() {
-		t.Fatalf("Failed to save mock file")
+	if err := file.Save(); err != nil {
+		t.Fatalf("Failed to save mock file: %s", err.Error())
 	}
 
 	// Fake UDP address
@@ -154,7 +154,7 @@ func TestUDPRouter(t *testing.T) {
 	log.Println(scrapeRes)
 
 	// Delete mock file
-	if !file.Delete() {
-		t.Fatalf("Failed to delete mock file")
+	if err := file.Delete(); err != nil {
+		t.Fatalf("Failed to delete mock file: %s", err.Error())
 	}
 }

@@ -22,14 +22,14 @@ func TestFileRecord(t *testing.T) {
 	}
 
 	// Save mock file
-	if !file.Save() {
-		t.Fatalf("Failed to save mock file")
+	if err := file.Save(); err != nil {
+		t.Fatalf("Failed to save mock file: %s", err.Error())
 	}
 
 	// Load mock file to fetch ID
-	file = file.Load(file.InfoHash, "info_hash")
-	if file == (FileRecord{}) {
-		t.Fatalf("Failed to load mock file")
+	file, err := file.Load(file.InfoHash, "info_hash")
+	if file == (FileRecord{}) || err != nil {
+		t.Fatalf("Failed to load mock file: %s", err.Error())
 	}
 
 	// Verify completed is functional
@@ -48,7 +48,7 @@ func TestFileRecord(t *testing.T) {
 	}
 
 	// Delete mock file
-	if !file.Delete() {
-		t.Fatalf("Failed to delete mock file")
+	if err := file.Delete(); err != nil {
+		t.Fatalf("Failed to delete mock file: %s", err.Error())
 	}
 }

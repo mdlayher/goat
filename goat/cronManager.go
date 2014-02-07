@@ -39,21 +39,37 @@ func cronPeerReaper() {
 	log.Println("cronPeerReaper: starting")
 
 	// Load all files
-	files := new(data.FileRecordRepository).All()
+	files, err := new(data.FileRecordRepository).All()
+	if err != nil {
+		log.Println(err.Error())
+		log.Println("cronPeerReaper: failed to load list of files")
+		return
+	}
+
 	if len(files) == 0 {
 		log.Println("cronPeerReaper: no files found")
 		return
 	}
 
+	// Sum of peers reaped
+	total := 0
+
 	// Iterate all files
 	for _, f := range files {
 		// Reap peers on each
-		if !f.PeerReaper() {
+		count, err := f.PeerReaper()
+		if err != nil {
 			log.Println("cronPeerReaper: failed to reap peers on file ID:", f.ID)
+		}
+
+		// Sum peers reaped
+		if count > 0 {
+			total += count
+			log.Printf("cronPeerReaper: reaped %d peers on file ID: %d", f.ID)
 		}
 	}
 
-	log.Println("cronPeerReaper: complete")
+	log.Printf("cronPeerReaper: complete, reaped %d peers on %d files", total, len(files))
 }
 
 // cronPrintCurrentStatus logs the regular status check banner
