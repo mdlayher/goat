@@ -3,7 +3,6 @@ package data
 import (
 	"crypto/sha1"
 	"fmt"
-	"log"
 
 	"github.com/mdlayher/goat/goat/common"
 )
@@ -33,70 +32,67 @@ func (u *UserRecord) Create(username string, torrentLimit int) error {
 }
 
 // Delete UserRecord from storage
-func (u UserRecord) Delete() bool {
+func (u UserRecord) Delete() error {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		log.Println(err.Error())
-		return false
+		return err
 	}
 
 	// Delete UserRecord
 	if err = db.DeleteUserRecord(u.ID, "id"); err != nil {
-		log.Println(err.Error())
-		return false
+		return err
 	}
 
+	// Close database connection
 	if err := db.Close(); err != nil {
-		log.Println(err.Error())
+		return err
 	}
 
-	return true
+	return nil
 }
 
 // Save UserRecord to storage
-func (u UserRecord) Save() bool {
+func (u UserRecord) Save() error {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		log.Println(err.Error())
-		return false
+		return err
 	}
 
 	// Save UserRecord
 	if err := db.SaveUserRecord(u); err != nil {
-		log.Println(err.Error())
-		return false
+		return err
 	}
 
+	// Close database connection
 	if err := db.Close(); err != nil {
-		log.Println(err.Error())
+		return err
 	}
 
-	return true
+	return nil
 }
 
 // Load UserRecord from storage
-func (u UserRecord) Load(id interface{}, col string) UserRecord {
+func (u UserRecord) Load(id interface{}, col string) (UserRecord, error) {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		log.Println(err.Error())
-		return u
+		return UserRecord{}, err
 	}
 
 	// Load UserRecord by specified column
 	u, err = db.LoadUserRecord(id, col)
 	if err != nil {
-		log.Println(err.Error())
-		return UserRecord{}
+		return UserRecord{}, err
 	}
 
+	// Close database connection
 	if err := db.Close(); err != nil {
-		log.Println(err.Error())
+		return UserRecord{}, err
 	}
 
-	return u
+	return u, nil
 }
 
 // Uploaded loads this user's total upload
@@ -113,8 +109,9 @@ func (u UserRecord) Uploaded() (int64, error) {
 		return 0, err
 	}
 
+	// Close database connection
 	if err := db.Close(); err != nil {
-		log.Println(err.Error())
+		return 0, err
 	}
 
 	return uploaded, nil
@@ -134,8 +131,9 @@ func (u UserRecord) Downloaded() (int64, error) {
 		return 0, err
 	}
 
+	// Close database connection
 	if err := db.Close(); err != nil {
-		log.Println(err.Error())
+		return 0, err
 	}
 
 	return downloaded, nil
@@ -155,8 +153,9 @@ func (u UserRecord) Seeding() (int, error) {
 		return 0, err
 	}
 
+	// Close database connection
 	if err := db.Close(); err != nil {
-		log.Println(err.Error())
+		return 0, err
 	}
 
 	return seeding, nil
@@ -176,8 +175,9 @@ func (u UserRecord) Leeching() (int, error) {
 		return 0, err
 	}
 
+	// Close database connection
 	if err := db.Close(); err != nil {
-		log.Println(err.Error())
+		return 0, err
 	}
 
 	return leeching, nil

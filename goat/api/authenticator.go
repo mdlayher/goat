@@ -48,8 +48,8 @@ func (a BasicAuthenticator) Auth(r *http.Request) bool {
 	credentials := strings.Split(string(buf), ":")
 
 	// Load user by username, verify user exists
-	user := new(data.UserRecord).Load(credentials[0], "username")
-	if user == (data.UserRecord{}) {
+	user, err := new(data.UserRecord).Load(credentials[0], "username")
+	if err != nil || user == (data.UserRecord{}) {
 		return false
 	}
 

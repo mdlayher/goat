@@ -27,14 +27,14 @@ func TestUserRecord(t *testing.T) {
 	}
 
 	// Verify user can be saved
-	if !user.Save() {
-		t.Fatalf("Failed to save UserRecord")
+	if err := user.Save(); err != nil {
+		t.Fatalf("Failed to save UserRecord: %s", err.Error())
 	}
 
 	// Verify user can be loaded using username
-	user2 := user.Load("test", "username")
-	if user2 == (UserRecord{}) {
-		t.Fatal("Failed to load UserRecord")
+	user2, err := user.Load("test", "username")
+	if user2 == (UserRecord{}) || err != nil {
+		t.Fatal("Failed to load UserRecord: %s", err.Error())
 	}
 
 	// Verify user is the same as previous one
@@ -43,7 +43,7 @@ func TestUserRecord(t *testing.T) {
 	}
 
 	// Verify user can be deleted
-	if !user2.Delete() {
-		t.Fatalf("Failed to delete UserRecord")
+	if err := user2.Delete(); err != nil {
+		t.Fatalf("Failed to delete UserRecord: %s", err.Error())
 	}
 }

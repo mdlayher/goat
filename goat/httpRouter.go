@@ -182,8 +182,12 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate passkey if needed
-	user := new(data.UserRecord).Load(passkey, "passkey")
-	if common.Static.Config.Passkey && user == (data.UserRecord{}) {
+	user, err := new(data.UserRecord).Load(passkey, "passkey")
+	if err != nil || (common.Static.Config.Passkey && user == (data.UserRecord{})) {
+		if err != nil {
+			log.Println(err.Error())
+		}
+
 		if _, err := w.Write(httpTracker.Error("Invalid passkey")); err != nil {
 			log.Println(err.Error())
 		}
