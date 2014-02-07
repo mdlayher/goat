@@ -105,7 +105,11 @@ func Announce(tracker TorrentTracker, user data.UserRecord, query url.Values) []
 	}
 
 	// Check existing record for this user with this file and this IP
-	fileUser := new(data.FileUserRecord).Load(file.ID, user.ID, query.Get("ip"))
+	fileUser, err := new(data.FileUserRecord).Load(file.ID, user.ID, query.Get("ip"))
+	if err != nil {
+		log.Println(err.Error())
+		return tracker.Error(ErrAnnounceFailure.Error())
+	}
 
 	// New user, starting torrent
 	if fileUser == (data.FileUserRecord{}) {
@@ -169,7 +173,9 @@ func Announce(tracker TorrentTracker, user data.UserRecord, query url.Values) []
 
 	// Update file/user relationship record asynchronously
 	go func(fileUser data.FileUserRecord) {
-		go fileUser.Save()
+		if err := fileUser.Save(); err != nil {
+			log.Println(err.Error())
+		}
 	}(fileUser)
 
 	// Create announce

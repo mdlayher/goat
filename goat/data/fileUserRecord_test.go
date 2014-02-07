@@ -31,18 +31,18 @@ func TestFileUserRecord(t *testing.T) {
 	}
 
 	// Save mock fileUser
-	if !fileUser.Save() {
-		t.Fatalf("Failed to save mock fileUser")
+	if err := fileUser.Save(); err != nil {
+		t.Fatalf("Failed to save mock fileUser: %s", err.Error())
 	}
 
 	// Load mock fileUser
-	fileUser = fileUser.Load(fileUser.FileID, fileUser.UserID, fileUser.IP)
-	if fileUser == (FileUserRecord{}) {
-		t.Fatalf("Failed to load mock fileUser")
+	fileUser, err := fileUser.Load(fileUser.FileID, fileUser.UserID, fileUser.IP)
+	if fileUser == (FileUserRecord{}) || err != nil {
+		t.Fatalf("Failed to load mock fileUser: %s", err.Error())
 	}
 
 	// Delete mock fileUser
-	if !fileUser.Delete() {
-		t.Fatalf("Failed to delete mock fileUser")
+	if err := fileUser.Delete(); err != nil {
+		t.Fatalf("Failed to delete mock fileUser: %s", err.Error())
 	}
 }

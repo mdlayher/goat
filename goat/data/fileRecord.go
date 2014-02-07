@@ -46,10 +46,13 @@ func (f FileRecord) ToJSON() ([]byte, error) {
 	j.UpdateTime = f.UpdateTime
 
 	// Load in FileUserRecords associated with this file
-	j.FileUsers = f.Users()
+	var err error
+	j.FileUsers, err = f.Users()
+	if err != nil {
+		return nil, err
+	}
 
 	// Load counts for completions, seeding, leeching
-	var err error
 	j.Completed, err = f.Completed()
 	if err != nil {
 		return nil, err
@@ -286,7 +289,7 @@ func (f FileRecord) PeerReaper() (int, error) {
 }
 
 // Users loads all FileUserRecord structs associated with this FileRecord struct
-func (f FileRecord) Users() []FileUserRecord {
+func (f FileRecord) Users() ([]FileUserRecord, error) {
 	return new(FileUserRecordRepository).Select(f.ID, "file_id")
 }
 
