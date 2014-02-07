@@ -17,6 +17,11 @@ type Peer struct {
 func (p Peer) MarshalBinary() ([]byte, error) {
 	res := bytes.NewBuffer(make([]byte, 0))
 
+	// Check for empty IP
+	if p.IP == "" {
+		return nil, nil
+	}
+
 	// IP (uint32)
 	if err := binary.Write(res, binary.BigEndian, binary.BigEndian.Uint32((net.ParseIP(p.IP).To4()))); err != nil {
 		return nil, err

@@ -30,7 +30,7 @@ func TestUDPRouter(t *testing.T) {
 	}
 
 	// Fake UDP address
-	addr, err := net.ResolveUDPAddr("udp", ":0")
+	addr, err := net.ResolveUDPAddr("udp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("Failed to create fake UDP address")
 	}
