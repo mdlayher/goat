@@ -63,23 +63,19 @@ func TestAnnounceLog(t *testing.T) {
 	}
 
 	// Verify announce can be saved
-	if !announce.Save() {
-		t.Fatalf("Failed to save AnnounceLog")
+	if err := announce.Save(); err != nil {
+		t.Fatalf("Failed to save AnnounceLog: %s", err.Error())
 	}
 
 	// Verify announce can be loaded using hex info hash
-	announce2 := announce.Load("6465616462656566303030303030303030303030", "info_hash")
-	if announce2 == (AnnounceLog{}) {
-		t.Fatal("Failed to load AnnounceLog")
-	}
-
-	// Verify announce is the same as previous one
-	if announce.InfoHash != announce2.InfoHash {
-		t.Fatalf("announce.InfoHash, expected %s, got %s", announce.InfoHash, announce2.InfoHash)
+	announce2 := new(AnnounceLog)
+	err = announce2.Load("6465616462656566303030303030303030303030", "info_hash")
+	if err != nil || announce2 == nil {
+		t.Fatal("Failed to load AnnounceLog: %s", err.Error())
 	}
 
 	// Verify announce can be deleted
-	if !announce2.Delete() {
-		t.Fatalf("Failed to delete AnnounceLog")
+	if err := announce2.Delete(); err != nil {
+		t.Fatalf("Failed to delete AnnounceLog: %s", err.Error())
 	}
 }

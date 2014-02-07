@@ -3,7 +3,6 @@ package data
 import (
 	"encoding/hex"
 	"errors"
-	"log"
 	"net/url"
 	"strconv"
 	"time"
@@ -27,69 +26,70 @@ type AnnounceLog struct {
 }
 
 // Save AnnounceLog to storage
-func (a AnnounceLog) Save() bool {
+func (a AnnounceLog) Save() error {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		log.Println(err.Error())
-		return false
+		return err
 	}
 
 	// Save AnnounceLog
 	if err := db.SaveAnnounceLog(a); err != nil {
-		log.Println(err.Error())
-		return false
+		return err
 	}
 
+	// Close database connection
 	if err := db.Close(); err != nil {
-		log.Println(err.Error())
+		return err
 	}
 
-	return true
+	return nil
 }
 
 // Load AnnounceLog from storage
-func (a AnnounceLog) Load(ID interface{}, col string) AnnounceLog {
+func (a *AnnounceLog) Load(ID interface{}, col string) error {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		log.Println(err.Error())
-		return AnnounceLog{}
+		return err
 	}
 
 	// Load AnnounceLog
-	if a, err = db.LoadAnnounceLog(ID, col); err != nil {
-		log.Println(err.Error())
-		return AnnounceLog{}
+	temp, err := db.LoadAnnounceLog(ID, col)
+	if err != nil {
+		return err
 	}
 
+	// Replace values with database values
+	a = &temp
+
+	// Close database connection
 	if err := db.Close(); err != nil {
-		log.Println(err.Error())
+		return err
 	}
 
-	return a
+	return nil
 }
 
 // Delete AnnounceLog from storage
-func (a AnnounceLog) Delete() bool {
+func (a AnnounceLog) Delete() error {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		log.Println(err.Error())
-		return false
+		return err
 	}
 
 	// Delete AnnounceLog
 	if err = db.DeleteAnnounceLog(a.ID, "id"); err != nil {
-		log.Println(err.Error())
-		return false
+		return err
 	}
 
+	// Close database connection
 	if err := db.Close(); err != nil {
-		log.Println(err.Error())
+		return err
 	}
 
-	return true
+	return nil
 }
 
 // FromValues generates an AnnounceLog struct from a url.Values map
