@@ -33,8 +33,9 @@ type TorrentTracker interface {
 // Announce generates and triggers a tracker announces request
 func Announce(tracker TorrentTracker, user data.UserRecord, query url.Values) []byte {
 	// Store announce information in struct
-	announce := new(data.AnnounceLog).FromValues(query)
-	if announce == (data.AnnounceLog{}) {
+	announce := new(data.AnnounceLog)
+	err := announce.FromValues(query)
+	if err != nil {
 		return tracker.Error("Malformed announce")
 	}
 

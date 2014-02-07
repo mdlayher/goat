@@ -2,6 +2,7 @@ package data
 
 import (
 	"encoding/hex"
+	"errors"
 	"log"
 	"net/url"
 	"strconv"
@@ -92,13 +93,14 @@ func (a AnnounceLog) Delete() bool {
 }
 
 // FromValues generates an AnnounceLog struct from a url.Values map
-func (a AnnounceLog) FromValues(query url.Values) AnnounceLog {
-	a = AnnounceLog{}
-
+func (a *AnnounceLog) FromValues(query url.Values) error {
 	// Required parameters
 
-	// info_hash
+	// info_hash (20 characters, 40 characters after hex encode)
 	a.InfoHash = hex.EncodeToString([]byte(query.Get("info_hash")))
+	if len(a.InfoHash) != 40 {
+		return errors.New("info_hash must be exactly 20 characters")
+	}
 
 	// passkey
 	a.Passkey = query.Get("passkey")
@@ -119,32 +121,28 @@ func (a AnnounceLog) FromValues(query url.Values) AnnounceLog {
 	// port
 	port, err := strconv.Atoi(query.Get("port"))
 	if err != nil {
-		log.Println(err.Error())
-		return AnnounceLog{}
+		return errors.New("invalid integer parameter: port")
 	}
 	a.Port = port
 
 	// uploaded
 	uploaded, err := strconv.ParseInt(query.Get("uploaded"), 10, 64)
 	if err != nil {
-		log.Println(err.Error())
-		return AnnounceLog{}
+		return errors.New("invalid integer parameter: uploaded")
 	}
 	a.Uploaded = uploaded
 
 	// downloaded
 	downloaded, err := strconv.ParseInt(query.Get("downloaded"), 10, 64)
 	if err != nil {
-		log.Println(err.Error())
-		return AnnounceLog{}
+		return errors.New("invalid integer parameter: downloaded")
 	}
 	a.Downloaded = downloaded
 
 	// left
 	left, err := strconv.ParseInt(query.Get("left"), 10, 64)
 	if err != nil {
-		log.Println(err.Error())
-		return AnnounceLog{}
+		return errors.New("invalid integer parameter: left")
 	}
 	a.Left = left
 
@@ -161,6 +159,5 @@ func (a AnnounceLog) FromValues(query url.Values) AnnounceLog {
 	// Current UNIX timestamp
 	a.Time = time.Now().Unix()
 
-	// Return the created announce
-	return a
+	return nil
 }
