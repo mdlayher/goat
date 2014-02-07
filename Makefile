@@ -13,12 +13,6 @@ fmt:
 	go fmt github.com/mdlayher/goat/goat/data/udp
 	go fmt github.com/mdlayher/goat/goat/tracker
 	golint .
-	golint goat
-	golint goat/api
-	golint goat/common
-	golint goat/data
-	golint goat/data/udp
-	golint goat/tracker
 	errcheck goat
 	errcheck goat/api
 	errcheck goat/common
