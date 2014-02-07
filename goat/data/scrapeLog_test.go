@@ -18,15 +18,15 @@ func TestScrapeLog(t *testing.T) {
 
 	// Generate fake scrape query
 	query := url.Values{}
-	query.Set("info_hash", "deadbeef")
+	query.Set("info_hash", "deadbeef000000000000")
 	query.Set("ip", "127.0.0.1")
 
 	// Generate struct from query
 	scrape := new(ScrapeLog).FromValues(query)
 
 	// Verify proper hex encode of info hash
-	if scrape.InfoHash != "6465616462656566" {
-		t.Fatalf("InfoHash, expected \"6465616462656566\", got %s", scrape.InfoHash)
+	if scrape.InfoHash != "6465616462656566303030303030303030303030" {
+		t.Fatalf("InfoHash, expected \"6465616462656566303030303030303030303030\", got %s", scrape.InfoHash)
 	}
 
 	// Verify same IP
@@ -40,7 +40,7 @@ func TestScrapeLog(t *testing.T) {
 	}
 
 	// Verify scrape can be loaded using hex info hash
-	scrape2 := scrape.Load("6465616462656566", "info_hash")
+	scrape2 := scrape.Load("6465616462656566303030303030303030303030", "info_hash")
 	if scrape2 == (ScrapeLog{}) {
 		t.Fatal("Failed to load ScrapeLog")
 	}

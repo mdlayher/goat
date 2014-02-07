@@ -34,7 +34,7 @@ func TestHTTPRouter(t *testing.T) {
 
 	// Generate mock data.FileRecord
 	file := data.FileRecord{
-		InfoHash: "6465616462656566",
+		InfoHash: "6465616462656566303030303030303030303030",
 		Verified: true,
 	}
 

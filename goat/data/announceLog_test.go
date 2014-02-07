@@ -18,7 +18,7 @@ func TestAnnounceLog(t *testing.T) {
 
 	// Generate fake announce query
 	query := url.Values{}
-	query.Set("info_hash", "deadbeef")
+	query.Set("info_hash", "deadbeef000000000000")
 	query.Set("ip", "127.0.0.1")
 	query.Set("port", "5000")
 	query.Set("uploaded", "0")
@@ -26,11 +26,15 @@ func TestAnnounceLog(t *testing.T) {
 	query.Set("left", "0")
 
 	// Generate struct from query
-	announce := new(AnnounceLog).FromValues(query)
+	announce := new(AnnounceLog)
+	err := announce.FromValues(query)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
 
 	// Verify proper hex encode of info hash
-	if announce.InfoHash != "6465616462656566" {
-		t.Fatalf("InfoHash, expected \"6465616462656566\", got %s", announce.InfoHash)
+	if announce.InfoHash != "6465616462656566303030303030303030303030" {
+		t.Fatalf("InfoHash, expected \"6465616462656566303030303030303030303030\", got %s", announce.InfoHash)
 	}
 
 	// Verify same IP
@@ -64,7 +68,7 @@ func TestAnnounceLog(t *testing.T) {
 	}
 
 	// Verify announce can be loaded using hex info hash
-	announce2 := announce.Load("6465616462656566", "info_hash")
+	announce2 := announce.Load("6465616462656566303030303030303030303030", "info_hash")
 	if announce2 == (AnnounceLog{}) {
 		t.Fatal("Failed to load AnnounceLog")
 	}
