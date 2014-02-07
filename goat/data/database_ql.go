@@ -187,7 +187,6 @@ func init() {
 	// Generate connection string using configuration
 	DBCloseFunc = func() {
 		if nil != qlwdb {
-			log.Println("Closing ql database")
 			qlwdb.Close()
 		}
 	}

@@ -123,7 +123,7 @@ func Manager(killChan chan bool, exitChan chan int) {
 				<-udpRecvChan
 			}
 
-			log.Println("Closing database connection")
+			log.Println("Closing database:", data.DBName())
 			data.DBCloseFunc()
 
 			// Report that program should exit gracefully
