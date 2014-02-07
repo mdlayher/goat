@@ -54,14 +54,14 @@ func TestBasicAuthenticator(t *testing.T) {
 	}
 
 	// Save mock API key
-	if !key.Save() {
-		t.Fatalf("Failed to save mock data.APIKey")
+	if err := key.Save(); err != nil {
+		t.Fatalf("Failed to save mock data.APIKey: %s", err.Error())
 	}
 
 	// Load mock data.APIKey to fetch ID
-	key = key.Load(key.Key, "key")
-	if key == (data.APIKey{}) {
-		t.Fatalf("Failed to load mock data.APIKey")
+	key, err := key.Load(key.Key, "key")
+	if err != nil || key == (data.APIKey{}) {
+		t.Fatalf("Failed to load mock data.APIKey: %s", err.Error())
 	}
 
 	// Generate mock HTTP request
@@ -83,7 +83,7 @@ func TestBasicAuthenticator(t *testing.T) {
 	}
 
 	// Delete mock API key
-	if !key.Delete() {
-		t.Fatalf("Failed to delete mock data.APIKey")
+	if err := key.Delete(); err != nil {
+		t.Fatalf("Failed to delete mock data.APIKey: %s", err.Error())
 	}
 }

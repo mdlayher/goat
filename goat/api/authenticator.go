@@ -54,8 +54,8 @@ func (a BasicAuthenticator) Auth(r *http.Request) bool {
 	}
 
 	// Load user's API key
-	key := new(data.APIKey).Load(user.ID, "user_id")
-	if key == (data.APIKey{}) {
+	key, err := new(data.APIKey).Load(user.ID, "user_id")
+	if err != nil || key == (data.APIKey{}) {
 		return false
 	}
 

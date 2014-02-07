@@ -1,9 +1,5 @@
 package data
 
-import (
-	"log"
-)
-
 // APIKey represents a user's API key
 type APIKey struct {
 	ID     int
@@ -13,69 +9,67 @@ type APIKey struct {
 }
 
 // Delete APIKey from storage
-func (a APIKey) Delete() bool {
+func (a APIKey) Delete() error {
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		log.Println(err.Error())
-		return false
+		return err
 	}
 
 	// Delete APIKey
 	if err = db.DeleteAPIKey(a.Key, "key"); err != nil {
-		log.Println(err.Error())
-		return false
+		return err
 	}
 
 	// Close database connection
 	if err := db.Close(); err != nil {
-		log.Println(err.Error())
+		return err
 	}
 
-	return true
+	return nil
 }
 
-// Save APIKey to storage
-func (a APIKey) Save() bool {
+// Load APIKey from storage
+func (a APIKey) Load(id interface{}, col string) (APIKey, error) {
+	a = APIKey{}
+
 	// Open database connection
 	db, err := DBConnect()
 	if err != nil {
-		log.Println(err.Error())
-		return false
+		return a, err
+	}
+
+	// Load APIKey
+	a, err = db.LoadAPIKey(id, col)
+	if err != nil {
+		return a, err
+	}
+
+	// Close database connection
+	if err := db.Close(); err != nil {
+		return a, err
+	}
+
+	return a, nil
+}
+
+// Save APIKey to storage
+func (a APIKey) Save() error {
+	// Open database connection
+	db, err := DBConnect()
+	if err != nil {
+		return err
 	}
 
 	// Save APIKey
 	if err := db.SaveAPIKey(a); err != nil {
-		log.Println(err.Error())
-		return false
+		return err
 	}
 
 	// Close database connection
 	if err := db.Close(); err != nil {
-		log.Println(err.Error())
+		return err
 	}
 
-	return true
-}
-
-// Load APIKey from storage
-func (a APIKey) Load(id interface{}, col string) (key APIKey) {
-	// Open database connection
-	db, err := DBConnect()
-	if err != nil {
-		log.Println(err.Error())
-		return
-	}
-
-	// Load APIKey
-	if key, err = db.LoadAPIKey(id, col); err != nil {
-		log.Println(err.Error())
-	}
-
-	// Close database connection
-	if err := db.Close(); err != nil {
-		log.Println(err.Error())
-	}
-
-	return
+	return nil
 }

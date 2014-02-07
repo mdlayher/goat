@@ -23,14 +23,14 @@ func TestAPIKey(t *testing.T) {
 	}
 
 	// Verify key can be saved
-	if !key.Save() {
-		t.Fatalf("Failed to save keyLog")
+	if err := key.Save(); err != nil {
+		t.Fatalf("Failed to save APIKey: %s", err.Error())
 	}
 
 	// Verify key can be loaded using matching key
-	key2 := key.Load(key.Key, "key")
-	if key2 == (APIKey{}) {
-		t.Fatal("Failed to load APIKey")
+	key2, err := key.Load(key.Key, "key")
+	if err != nil || key2 == (APIKey{}) {
+		t.Fatal("Failed to load APIKey: %s", err.Error())
 	}
 
 	// Verify key is the same as previous one
@@ -39,7 +39,7 @@ func TestAPIKey(t *testing.T) {
 	}
 
 	// Verify key can be deleted
-	if !key2.Delete() {
-		t.Fatalf("Failed to delete APIKey")
+	if err := key2.Delete(); err != nil {
+		t.Fatalf("Failed to delete APIKey: %s", err.Error())
 	}
 }
