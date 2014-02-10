@@ -12,19 +12,19 @@ func TestAnnounceRequest(t *testing.T) {
 
 	// Generate mock AnnounceRequest
 	announce := AnnounceRequest{
-		ConnID: 1,
-		Action: 1,
-		TransID: 1,
-		InfoHash: []byte("abcdef0123456789abcd"),
-		PeerID: []byte("abcdef0123456789abcd"),
+		ConnID:     1,
+		Action:     1,
+		TransID:    1,
+		InfoHash:   []byte("abcdef0123456789abcd"),
+		PeerID:     []byte("abcdef0123456789abcd"),
 		Downloaded: 0,
-		Left: 0,
-		Uploaded: 0,
-		Event: 0,
-		IP: 1234,
-		Key: 1234,
-		Numwant: 50,
-		Port: 8080,
+		Left:       0,
+		Uploaded:   0,
+		Event:      0,
+		IP:         1234,
+		Key:        1234,
+		Numwant:    50,
+		Port:       8080,
 	}
 
 	// Marshal to binary representation

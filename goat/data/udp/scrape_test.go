@@ -12,9 +12,9 @@ func TestScrapeRequest(t *testing.T) {
 
 	// Generate mock ScrapeRequest
 	scrape := ScrapeRequest{
-		ConnID: 1,
-		Action: 2,
-		TransID: 1,
+		ConnID:     1,
+		Action:     2,
+		TransID:    1,
 		InfoHashes: [][]byte{[]byte("abcdef0123456789abcd"), []byte("0123456789abcdef0123")},
 	}
 

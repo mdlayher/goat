@@ -11,9 +11,9 @@ func TestErrorResponse(t *testing.T) {
 
 	// Generate mock ErrorResponse
 	errRes := ErrorResponse{
-		Action: 3,
+		Action:  3,
 		TransID: 1,
-		Error: "Testing",
+		Error:   "Testing",
 	}
 
 	// Marshal to binary representation

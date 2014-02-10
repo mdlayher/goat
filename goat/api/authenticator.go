@@ -44,17 +44,11 @@ func (a BasicAuthenticator) Auth(r *http.Request) bool {
 		return false
 	}
 
-	// Split into username/password
+	// Split into user ID/password
 	credentials := strings.Split(string(buf), ":")
 
-	// Load user by username, verify user exists
-	user, err := new(data.UserRecord).Load(credentials[0], "username")
-	if err != nil || user == (data.UserRecord{}) {
-		return false
-	}
-
-	// Load user's API key
-	key, err := new(data.APIKey).Load(user.ID, "user_id")
+	// Load API key for specified user ID
+	key, err := new(data.APIKey).Load(credentials[0], "user_id")
 	if err != nil || key == (data.APIKey{}) {
 		return false
 	}

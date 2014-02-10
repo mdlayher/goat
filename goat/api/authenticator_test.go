@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"testing"
 
 	"github.com/mdlayher/goat/goat/common"
@@ -70,7 +71,7 @@ func TestBasicAuthenticator(t *testing.T) {
 	// Generate mock HTTP request
 	r := http.Request{}
 	headers := map[string][]string{
-		"Authorization": {"Basic " + base64.URLEncoding.EncodeToString([]byte(user.Username+":"+pass))},
+		"Authorization": {"Basic " + base64.URLEncoding.EncodeToString([]byte(strconv.Itoa(user.ID)+":"+pass))},
 	}
 	r.Header = headers
 

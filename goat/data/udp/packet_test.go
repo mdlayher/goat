@@ -11,8 +11,8 @@ func TestPacket(t *testing.T) {
 
 	// Generate mock Packet
 	packet := Packet{
-		ConnID: 1,
-		Action: 0,
+		ConnID:  1,
+		Action:  0,
 		TransID: 1,
 	}
 
