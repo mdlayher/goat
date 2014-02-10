@@ -3,20 +3,11 @@ package data
 import (
 	"log"
 	"testing"
-
-	"github.com/mdlayher/goat/goat/common"
 )
 
-// TestPeer verifies that Peer creation, methods, save, load, and delete work properly
+// TestPeer verifies that Peer binary marshal and unmarshal work properly
 func TestPeer(t *testing.T) {
 	log.Println("TestPeer()")
-
-	// Load config
-	config, err := common.LoadConfig()
-	if err != nil {
-		t.Fatalf("Could not load configuration: %s", err.Error())
-	}
-	common.Static.Config = config
 
 	// Generate mock peer
 	peer := Peer{
