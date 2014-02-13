@@ -65,7 +65,7 @@ func cronPeerReaper() {
 		// Sum peers reaped
 		if count > 0 {
 			total += count
-			log.Printf("cronPeerReaper: reaped %d peers on file ID: %d", f.ID)
+			log.Printf("cronPeerReaper: reaped %d peers on file ID: %d", count, f.ID)
 		}
 	}
 
