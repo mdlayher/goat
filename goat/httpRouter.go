@@ -75,8 +75,14 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 			atomic.AddInt64(&common.Static.API.Total, 1)
 
 			// API authentication
-			auth := new(api.BasicAuthenticator).Auth(r)
-			if !auth {
+			auth, err := new(api.BasicAuthenticator).Auth(r)
+
+			// Check for API failure
+			if err != nil {
+				http.Error(w, api.ErrorResponse("API failure"), 500)
+				return
+			} else if !auth {
+				// Authentication failure
 				http.Error(w, api.ErrorResponse("Authentication failed"), 401)
 				return
 			}
