@@ -66,33 +66,53 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 		// Output JSON
 		w.Header().Add("Content-Type", "application/json")
 
-		// API enabled
-		if common.Static.Config.API {
-			// Count incoming connections
-			atomic.AddInt64(&common.Static.API.Minute, 1)
-			atomic.AddInt64(&common.Static.API.HalfHour, 1)
-			atomic.AddInt64(&common.Static.API.Hour, 1)
-			atomic.AddInt64(&common.Static.API.Total, 1)
-
-			// API authentication
-			auth, err := new(api.BasicAuthenticator).Auth(r)
-
-			// Check for API failure
-			if err != nil {
-				http.Error(w, api.ErrorResponse("API failure"), 500)
-				return
-			} else if !auth {
-				// Authentication failure
-				http.Error(w, api.ErrorResponse("Authentication failed"), 401)
-				return
-			}
-
-			// Handle API calls, output JSON
-			api.Router(w, r)
+		// Check if API enabled
+		if !common.Static.Config.API {
+			http.Error(w, api.ErrorResponse("API is currently disabled"), 503)
 			return
 		}
 
-		http.Error(w, api.ErrorResponse("API is currently disabled"), 503)
+		// Count incoming connections
+		atomic.AddInt64(&common.Static.API.Minute, 1)
+		atomic.AddInt64(&common.Static.API.HalfHour, 1)
+		atomic.AddInt64(&common.Static.API.Hour, 1)
+		atomic.AddInt64(&common.Static.API.Total, 1)
+
+		// API authentication
+		var apiAuth api.APIAuthenticator
+
+		// For login, make use of HTTP Basic + bcrypt authenticator
+		if r.Method == "POST" && urlArr[2] == "login" {
+			apiAuth = new(api.BasicAuthenticator)
+		} else {
+			// For all other calls, use HMAC authenticator
+			apiAuth = new(api.HMACAuthenticator)
+		}
+
+		// Attempt authentication
+		auth, err := apiAuth.Auth(r)
+
+		// Check for API failure
+		if err != nil {
+			log.Println(err.Error())
+			http.Error(w, api.ErrorResponse("API failure"), 500)
+			return
+		} else if !auth {
+			// Authentication failure
+			http.Error(w, api.ErrorResponse("Authentication failed"), 401)
+			return
+		}
+
+		// Attempt to retrieve session details from authenticator
+		session, err := apiAuth.Session()
+		if err != nil {
+			log.Println(err.Error())
+			http.Error(w, api.ErrorResponse("API session failure"), 500)
+			return
+		}
+
+		// Handle API calls, output JSON
+		api.Router(w, r, session)
 		return
 	}
 

@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/mdlayher/goat/goat/data"
 )
 
 // Error represents an error response from the API
@@ -16,7 +18,7 @@ type Error struct {
 }
 
 // Router handles the routing of HTTP API requests
-func Router(w http.ResponseWriter, r *http.Request) {
+func Router(w http.ResponseWriter, r *http.Request, session data.UserRecord) {
 	// API allows the following HTTP methods:
 	//   - GET: read-only access to data
 	//   - POST: create a new item via an API endpoint
@@ -87,8 +89,18 @@ func Router(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// HTTP POST
-	if r.Method == "POST" {
+	// Special case: POST /api/login
+	if r.Method == "POST" && apiMethod == "login" {
+		// Generate a session for this user
+		var err error
+		res, err = postLogin(session)
+		if err != nil {
+			log.Println(err.Error())
+			http.Error(w, ErrorResponse("API failure: POST /api/login"), 500)
+			return
+		}
+	} else if r.Method == "POST" {
+		// HTTP POST
 		// Attempt to read the request body
 		body, readErr := ioutil.ReadAll(r.Body)
 		if readErr != nil {

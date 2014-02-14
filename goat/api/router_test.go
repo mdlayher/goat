@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/mdlayher/goat/goat/data"
 )
 
 // Table driven tests to iterate over and test the API router
@@ -40,7 +42,7 @@ func TestRouter(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		// Invoke API router
-		Router(w, r)
+		Router(w, r, data.UserRecord{})
 
 		// Validate input
 		if w.Code != test.code {
