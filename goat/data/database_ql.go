@@ -89,14 +89,15 @@ var (
 		"scrapelog_insert":         "INSERT INTO scrape_log VALUES ($1, $2, $3, now())",
 
 		// UserRecord
-		"user_delete_id":          "DELETE FROM users WHERE id()==$1",
-		"user_load_all":           "SELECT id(),username,passkey,torrent_limit FROM users",
-		"user_load_id":            "SELECT id(),username,passkey,torrent_limit FROM users WHERE id()==$1",
-		"user_load_username":      "SELECT id(),username,passkey,torrent_limit FROM users WHERE username==$1",
-		"user_load_passkey":       "SELECT id(),username,passkey,torrent_limit FROM users WHERE passkey==$1",
-		"user_load_torrent_limit": "SELECT id(),username,passkey,torrent_limit FROM users WHERE torrent_limit==$1",
-		"user_insert":             "INSERT INTO users VALUES($1, $2, $3)",
-		"user_update":             "UPDATE users username=$2, passkey=$3, torrent_limit=$4 WHERE id()==$1",
+		"user_delete_username":    "DELETE FROM users WHERE username==$1",
+		"user_load_all":           "SELECT id(),username,password,passkey,torrent_limit FROM users",
+		"user_load_id":            "SELECT id(),username,password,passkey,torrent_limit FROM users WHERE id()==$1",
+		"user_load_username":      "SELECT id(),username,password,passkey,torrent_limit FROM users WHERE username==$1",
+		"user_load_password":      "SELECT id(),username,password,passkey,torrent_limit FROM users WHERE password==$1",
+		"user_load_passkey":       "SELECT id(),username,password,passkey,torrent_limit FROM users WHERE passkey==$1",
+		"user_load_torrent_limit": "SELECT id(),username,password,passkey,torrent_limit FROM users WHERE torrent_limit==$1",
+		"user_insert":             "INSERT INTO users VALUES($1, $2, $3, $4)",
+		"user_update":             "UPDATE users username=$2, password=$3, passkey=$4, torrent_limit=$5 WHERE id()==$1",
 		"user_uploaded":           "SELECT sum(uploaded) AS uploaded FROM files_users WHERE user_id==$1",
 		"user_downloaded":         "SELECT sum(downloaded) AS downloaded FROM files_users WHERE user_id==$1",
 		"user_seeding":            "SELECT count(user_id) AS seeding FROM files_users WHERE user_id==$1 && active==true && completed==true && left==0",
@@ -471,7 +472,7 @@ func (db *qlw) GetAllFileRecords() (files []FileRecord, err error) {
 
 // --- FileUserRecord.go ---
 
-// DeleteUserRecord deletes an AnnounceLog using a file ID, user ID, and IP triple
+// DeleteFileUserRecord deletes an AnnounceLog using a file ID, user ID, and IP triple
 func (db *qlw) DeleteFileUserRecord(fid, uid int, ip string) (err error) {
 	_, _, err = qlQuery(db, "fileuser_delete", true, int64(fid), int64(uid), ip)
 	return
@@ -615,8 +616,9 @@ func (db *qlw) LoadUserRecord(id interface{}, col string) (UserRecord, error) {
 		result = UserRecord{
 			ID:           int(data[0].(int64)),
 			Username:     data[1].(string),
-			Passkey:      data[2].(string),
-			TorrentLimit: int(data[3].(int64)),
+			Password:     data[2].(string),
+			Passkey:      data[3].(string),
+			TorrentLimit: int(data[4].(int64)),
 		}
 
 		return false, nil
@@ -630,13 +632,13 @@ func (db *qlw) SaveUserRecord(u UserRecord) (err error) {
 	if user, e := db.LoadUserRecord(int64(u.ID), "id"); (user == UserRecord{}) {
 		if nil == e {
 			_, _, err = qlQuery(db, "user_insert", true,
-				u.Username, u.Passkey, int64(u.TorrentLimit))
+				u.Username, u.Password, u.Passkey, int64(u.TorrentLimit))
 		} else {
 			err = e
 		}
 	} else {
 		_, _, err = qlQuery(db, "user_update", true,
-			int64(user.ID), u.Username, u.Passkey, int64(u.TorrentLimit))
+			int64(user.ID), u.Username, u.Password, u.Passkey, int64(u.TorrentLimit))
 	}
 
 	return
@@ -671,8 +673,9 @@ func (db *qlw) GetAllUserRecords() (users []UserRecord, err error) {
 			users = append(users, UserRecord{
 				ID:           int(data[0].(int64)),
 				Username:     data[1].(string),
-				Passkey:      data[2].(string),
-				TorrentLimit: int(data[3].(int64)),
+				Password:     data[2].(string),
+				Passkey:      data[3].(string),
+				TorrentLimit: int(data[4].(int64)),
 			})
 
 			return true, nil

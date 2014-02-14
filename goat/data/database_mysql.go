@@ -434,13 +434,13 @@ func (db *dbw) LoadUserRecord(id interface{}, col string) (UserRecord, error) {
 // SaveUserRecord saves a UserRecord to the database
 func (db *dbw) SaveUserRecord(u UserRecord) error {
 	query := "INSERT INTO users " +
-		"(`username`, `passkey`, `torrent_limit`) " +
-		"VALUES (?, ?, ?) " +
+		"(`username`, `password`, `passkey`, `torrent_limit`) " +
+		"VALUES (?, ?, ?, ?) " +
 		"ON DUPLICATE KEY UPDATE " +
-		"`username`=values(`username`), `passkey`=values(`passkey`), `torrent_limit`=values(`torrent_limit`);"
+		"`username`=values(`username`), `password`=values(`password`), `passkey`=values(`passkey`), `torrent_limit`=values(`torrent_limit`);"
 
 	tx := db.MustBegin()
-	tx.Execl(query, u.Username, u.Passkey, u.TorrentLimit)
+	tx.Execl(query, u.Username, u.Password, u.Passkey, u.TorrentLimit)
 
 	return tx.Commit()
 }

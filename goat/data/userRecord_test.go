@@ -20,7 +20,7 @@ func TestUserRecord(t *testing.T) {
 
 	// Create a user
 	user := new(UserRecord)
-	if err := user.Create("test", 100); err != nil {
+	if err := user.Create("test", "test", 100); err != nil {
 		t.Fatalf("Failed to create UserRecord")
 	}
 

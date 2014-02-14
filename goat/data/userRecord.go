@@ -4,15 +4,17 @@ import (
 	"crypto/sha1"
 	"fmt"
 
+	"code.google.com/p/go.crypto/bcrypt"
 	"github.com/mdlayher/goat/goat/common"
 )
 
 // UserRecord represents a user on the tracker
 type UserRecord struct {
-	ID           int
-	Username     string
-	Passkey      string
-	TorrentLimit int `db:"torrent_limit"`
+	ID           int    `json:"id"`
+	Username     string `json:"username"`
+	Password     string `json:"password"`
+	Passkey      string `json:"passkey"`
+	TorrentLimit int    `db:"torrent_limit" json:"torrentLimit"`
 }
 
 // UserRecordRepository is used to contain methods to load multiple UserRecord structs
@@ -38,18 +40,25 @@ func (u UserRecord) ToJSON() (JSONUserRecord, error) {
 }
 
 // Create a UserRecord, using defined parameters
-func (u *UserRecord) Create(username string, torrentLimit int) error {
+func (u *UserRecord) Create(username string, password string, torrentLimit int) error {
 	// Set username and torrent limit
 	u.Username = username
 	u.TorrentLimit = torrentLimit
+
+	// Generate password hash using bcrypt
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), 12)
+	if err != nil {
+		return err
+	}
+	u.Password = string(hash)
 
 	// Randomly generate a new passkey
 	sha := sha1.New()
 	if _, err := sha.Write([]byte(common.RandString())); err != nil {
 		return err
 	}
-
 	u.Passkey = fmt.Sprintf("%x", sha.Sum(nil))
+
 	return nil
 }
 
@@ -62,7 +71,7 @@ func (u UserRecord) Delete() error {
 	}
 
 	// Delete UserRecord
-	if err = db.DeleteUserRecord(u.ID, "id"); err != nil {
+	if err = db.DeleteUserRecord(u.Username, "username"); err != nil {
 		return err
 	}
 

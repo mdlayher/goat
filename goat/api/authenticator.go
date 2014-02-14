@@ -1,13 +1,11 @@
 package api
 
 import (
-	"crypto/sha1"
-	"crypto/subtle"
 	"encoding/base64"
-	"fmt"
 	"net/http"
 	"strings"
 
+	"code.google.com/p/go.crypto/bcrypt"
 	"github.com/mdlayher/goat/goat/data"
 )
 
@@ -16,11 +14,11 @@ type APIAuthenticator interface {
 	Auth(*http.Request) (bool, error)
 }
 
-// BasicAuthenticator uses the HTTP Basic authentication scheme
+// BasicAuthenticator uses the HTTP Basic with bcrypt authentication scheme
 type BasicAuthenticator struct {
 }
 
-// Auth handles validation of HTTP Basic authentication
+// Auth handles validation of HTTP Basic with bcrypt authentication, used for user login
 func (a BasicAuthenticator) Auth(r *http.Request) (bool, error) {
 	// Retrieve Authorization header
 	auth := r.Header.Get("Authorization")
@@ -42,28 +40,25 @@ func (a BasicAuthenticator) Auth(r *http.Request) (bool, error) {
 		return false, err
 	}
 
-	// Split into user ID/password
+	// Split into username/password
 	credentials := strings.Split(string(buf), ":")
 
-	// Load API key for specified user ID
-	key, err := new(data.APIKey).Load(credentials[0], "user_id")
-	if err != nil || key == (data.APIKey{}) {
+	// Load user by username
+	user, err := new(data.UserRecord).Load(credentials[0], "username")
+	if err != nil || user == (data.UserRecord{}) {
 		return false, err
 	}
 
-	// Hash input password
-	sha := sha1.New()
-	if _, err = sha.Write([]byte(credentials[1] + key.Salt)); err != nil {
+	// Compare input password with bcrypt password, checking for errors
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(credentials[1]))
+	if err != nil && err != bcrypt.ErrMismatchedHashAndPassword {
 		return false, err
 	}
-	hash := fmt.Sprintf("%x", sha.Sum(nil))
 
-	// Verify hashes match, using timing-attack resistant method
-	// If function returns 1, hashes match
-	return subtle.ConstantTimeCompare([]byte(hash), []byte(key.Key)) == 1, nil
+	return true, nil
 }
 
-// HMACAuthenticator uses the HMAC-SHA1 authentication scheme
+// HMACAuthenticator uses the HMAC-SHA1 authentication scheme, used for API authentication
 type HMACAuthenticator struct {
 }
 

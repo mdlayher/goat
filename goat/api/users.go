@@ -15,13 +15,13 @@ func postUsersJSON(body []byte) (string, error) {
 	}
 
 	// Check for valid input
-	if jsonUser.Username == "" || jsonUser.TorrentLimit == 0 {
-		return "Missing required parameters: username, torrentLimit", nil
+	if jsonUser.Username == "" || jsonUser.Password == "" || jsonUser.TorrentLimit == 0 {
+		return "Missing required parameters: username, password, torrentLimit", nil
 	}
 
 	// Create user from input
 	user := new(data.UserRecord)
-	if err := user.Create(jsonUser.Username, jsonUser.TorrentLimit); err != nil {
+	if err := user.Create(jsonUser.Username, jsonUser.Password, jsonUser.TorrentLimit); err != nil {
 		return "", err
 	}
 
