@@ -3,6 +3,7 @@ package api
 import (
 	"compress/gzip"
 	"encoding/json"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -36,51 +37,96 @@ func Router(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check for an ID
-	ID := -1
-	if len(urlArr) == 4 {
-		i, err := strconv.Atoi(urlArr[3])
-		if err != nil || i < 1 {
-			http.Error(w, ErrorResponse("Invalid integer ID"), 400)
+	// API method
+	apiMethod := urlArr[2]
+
+	// Response buffer
+	res := make([]byte, 0)
+
+	// HTTP GET
+	if r.Method == "GET" {
+		// Default value retrieves all records
+		ID := -1
+
+		// Check for an ID
+		if len(urlArr) == 4 {
+			i, err := strconv.Atoi(urlArr[3])
+			if err != nil || i < 1 {
+				http.Error(w, ErrorResponse("Invalid integer ID"), 400)
+				return
+			}
+
+			ID = i
+		}
+
+		// Check for error
+		var err error
+
+		// Choose API method
+		switch apiMethod {
+		// Files on tracker
+		case "files":
+			res, err = getFilesJSON(ID)
+		// Server status
+		case "status":
+			res, err = getStatusJSON()
+		// Users registered to tracker
+		case "users":
+			res, err = getUsersJSON(ID)
+		// Return error response
+		default:
+			http.Error(w, ErrorResponse("Undefined API call: GET /api/"+apiMethod), 404)
 			return
 		}
 
-		ID = i
+		// Check for server error
+		if err != nil {
+			log.Println(err.Error())
+			http.Error(w, ErrorResponse("API failure: GET /api/"+apiMethod), 500)
+			return
+		}
 	}
 
-	// Response buffer, error
-	res := []byte(ErrorResponse("Undefined API call: " + r.Method + " " + urlArr[2]))
-	var err error
+	// HTTP POST
+	if r.Method == "POST" {
+		// Attempt to read the request body
+		body, readErr := ioutil.ReadAll(r.Body)
+		if readErr != nil {
+			http.Error(w, ErrorResponse("Malformed request body"), 400)
+		}
 
-	// Choose API method
-	switch urlArr[2] {
-	// Files on tracker
-	case "files":
-		// GET
-		if r.Method == "GET" {
-			res, err = getFilesJSON(ID)
-		}
-	// Server status
-	case "status":
-		// GET
-		if r.Method == "GET" {
-			res, err = getStatusJSON()
-		}
-	// Users registered to tracker
-	case "users":
-		// GET
-		if r.Method == "GET" {
-			res, err = getUsersJSON(ID)
-		}
-	// Return error response
-	default:
-		http.Error(w, ErrorResponse("Undefined API call"), 404)
-		return
-	}
+		// Check for client string and server error
+		// Note: client error is string to satisfy golint and for client error consistency
+		var clientErr string
+		var serverErr error
 
-	// Check for errors, return 500
-	if err != nil {
-		http.Error(w, ErrorResponse("API could not generate response"), 500)
+		// Choose API method
+		switch apiMethod {
+		// Users registered to tracker
+		case "users":
+			// Attempt to create user from JSON
+			clientErr, serverErr = postUsersJSON(body)
+		// Return error response
+		default:
+			http.Error(w, ErrorResponse("Undefined API call: POST /api/"+apiMethod), 404)
+			return
+		}
+
+		// Check for client string error
+		if clientErr != "" {
+			http.Error(w, ErrorResponse(clientErr), 400)
+			return
+		}
+
+		// Check for server error
+		if serverErr != nil {
+			log.Println(serverErr.Error())
+			http.Error(w, ErrorResponse("API failure: POST /api/"+apiMethod), 500)
+			return
+		}
+
+		// Return HTTP 204 on success
+		http.Error(w, "", 204)
 		return
 	}
 
