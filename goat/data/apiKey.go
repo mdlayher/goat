@@ -1,11 +1,51 @@
 package data
 
+import (
+	"crypto/sha1"
+	"fmt"
+	"time"
+
+	"github.com/mdlayher/goat/goat/common"
+)
+
 // APIKey represents a user's API key
 type APIKey struct {
 	ID     int
 	UserID int `db:"user_id"`
 	Key    string
-	Salt   string
+	Expire int64
+}
+
+// JSONAPIKey represents output APIKey JSON for API
+type JSONAPIKey struct {
+	UserID int    `json:"userId"`
+	Key    string `json:"key"`
+}
+
+// ToJSON converts an APIKey to a JSONAPIKey struct
+func (a APIKey) ToJSON() (JSONAPIKey, error) {
+	j := JSONAPIKey{}
+	j.UserID = a.UserID
+	j.Key = a.Key
+
+	return j, nil
+}
+
+// Create a new APIKey
+func (a *APIKey) Create(userID int) error {
+	a.UserID = userID
+
+	// Generate API key using a random SHA1 hash
+	sha := sha1.New()
+	if _, err := sha.Write([]byte(common.RandString())); err != nil {
+		return err
+	}
+	a.Key = fmt.Sprintf("%x", sha.Sum(nil))
+
+	// Set key to expire one week from now
+	a.Expire = time.Now().Add(7 * 24 * time.Hour).Unix()
+
+	return nil
 }
 
 // Delete APIKey from storage

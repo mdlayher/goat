@@ -19,10 +19,9 @@ func TestAPIKey(t *testing.T) {
 	common.Static.Config = config
 
 	// Generate mock APIKey
-	key := APIKey{
-		UserID: 1,
-		Key:    "deadbeef",
-		Salt:   "test",
+	key := new(APIKey)
+	if err := key.Create(1); err != nil {
+		t.Fatalf("Failed to create mock APIKey: %s", err.Error())
 	}
 
 	// Verify key can be saved
@@ -37,8 +36,8 @@ func TestAPIKey(t *testing.T) {
 	}
 
 	// Verify key is the same as previous one
-	if key.Salt != key2.Salt {
-		t.Fatalf("key.Salt, expected %s, got %s", key.Salt, key2.Salt)
+	if key.Key != key2.Key {
+		t.Fatalf("key.Key, expected %s, got %s", key.Key, key2.Key)
 	}
 
 	// Verify key can be deleted

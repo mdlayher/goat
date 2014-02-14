@@ -48,11 +48,11 @@ var (
 		// APIKey
 		"apikey_delete_id":    "DELETE FROM api_keys WHERE id()==$1",
 		"apikey_delete_key":   "DELETE FROM api_keys WHERE key==$1",
-		"apikey_load_id":      "SELECT id(),user_id,key,salt FROM api_keys WHERE id()==$1",
-		"apikey_load_user_id": "SELECT id(),user_id,key,salt FROM api_keys WHERE user_id==$1",
-		"apikey_load_key":     "SELECT id(),user_id,key,salt FROM api_keys WHERE key==$1",
+		"apikey_load_id":      "SELECT id(),user_id,key,expire FROM api_keys WHERE id()==$1",
+		"apikey_load_user_id": "SELECT id(),user_id,key,expire FROM api_keys WHERE user_id==$1",
+		"apikey_load_key":     "SELECT id(),user_id,key,expire FROM api_keys WHERE key==$1",
 		"apikey_insert":       "INSERT INTO api_keys VALUES ($1, $2, $3)",
-		"apikey_update":       "UPDATE api_keys key=$2,salt=$3 WHERE id()==$1",
+		"apikey_update":       "UPDATE api_keys key=$2,expire=$3 WHERE id()==$1",
 
 		// FileRecord
 		"filerecord_delete_id":          "DELETE FROM files WHERE id()==$1",
@@ -300,7 +300,7 @@ func (db *qlw) LoadAPIKey(id interface{}, col string) (APIKey, error) {
 			ID:     int(data[0].(int64)),
 			UserID: int(data[1].(int64)),
 			Key:    data[2].(string),
-			Salt:   data[3].(string),
+			Expire: data[3].(int64),
 		}
 
 		return false, nil
@@ -312,9 +312,9 @@ func (db *qlw) LoadAPIKey(id interface{}, col string) (APIKey, error) {
 // SaveApiKey saves an apiKey to the database
 func (db *qlw) SaveAPIKey(key APIKey) (err error) {
 	if k, _ := db.LoadAPIKey(key.ID, "id"); (k == APIKey{}) && err == nil {
-		_, _, err = qlQuery(db, "apikey_insert", true, int64(key.UserID), key.Key, key.Salt)
+		_, _, err = qlQuery(db, "apikey_insert", true, int64(key.UserID), key.Key, key.Expire)
 	} else {
-		_, _, err = qlQuery(db, "apikey_update", true, int64(k.ID), key.Key, key.Salt)
+		_, _, err = qlQuery(db, "apikey_update", true, int64(k.ID), key.Key, key.Expire)
 	}
 
 	return
