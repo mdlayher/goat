@@ -90,6 +90,7 @@ var (
 
 		// UserRecord
 		"user_delete_id":          "DELETE FROM users WHERE id()==$1",
+		"user_load_all":           "SELECT id(),username,passkey,torrent_limit FROM users",
 		"user_load_id":            "SELECT id(),username,passkey,torrent_limit FROM users WHERE id()==$1",
 		"user_load_username":      "SELECT id(),username,passkey,torrent_limit FROM users WHERE username==$1",
 		"user_load_passkey":       "SELECT id(),username,passkey,torrent_limit FROM users WHERE passkey==$1",
@@ -661,6 +662,24 @@ func (db *qlw) GetUserSeeding(uid int) (int, error) {
 func (db *qlw) GetUserLeeching(uid int) (int, error) {
 	i, err := qlQueryI64(db, "user_leeching", uid)
 	return int(i), err
+}
+
+// GetAllUserRecords returns a list of all UserRecords known to the database
+func (db *qlw) GetAllUserRecords() (users []UserRecord, err error) {
+	if rs, _, err := qlQuery(db, "user_load_all", false); err == nil && len(rs) > 0 {
+		err = rs[0].Do(false, func(data []interface{}) (bool, error) {
+			users = append(users, UserRecord{
+				ID:           int(data[0].(int64)),
+				Username:     data[1].(string),
+				Passkey:      data[2].(string),
+				TorrentLimit: int(data[3].(int64)),
+			})
+
+			return true, nil
+		})
+	}
+
+	return
 }
 
 // --- WhitelistRecord.go ---

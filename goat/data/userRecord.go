@@ -15,6 +15,28 @@ type UserRecord struct {
 	TorrentLimit int `db:"torrent_limit"`
 }
 
+// UserRecordRepository is used to contain methods to load multiple UserRecord structs
+type UserRecordRepository struct {
+}
+
+// JSONUserRecord represents output UserRecord JSON for API
+type JSONUserRecord struct {
+	ID           int    `json:"id"`
+	Username     string `json:"username"`
+	TorrentLimit int    `json:"torrentLimit"`
+}
+
+// ToJSON converts a UserRecord to a JSONUserRecord struct
+func (u UserRecord) ToJSON() (JSONUserRecord, error) {
+	// Convert standard fields to JSON equivalent struct
+	j := JSONUserRecord{}
+	j.ID = u.ID
+	j.Username = u.Username
+	j.TorrentLimit = u.TorrentLimit
+
+	return j, nil
+}
+
 // Create a UserRecord, using defined parameters
 func (u *UserRecord) Create(username string, torrentLimit int) error {
 	// Set username and torrent limit
@@ -181,4 +203,28 @@ func (u UserRecord) Leeching() (int, error) {
 	}
 
 	return leeching, nil
+}
+
+// All loads all UserRecord structs from storage
+func (u UserRecordRepository) All() ([]UserRecord, error) {
+	users := make([]UserRecord, 0)
+
+	// Open database connection
+	db, err := DBConnect()
+	if err != nil {
+		return users, err
+	}
+
+	// Retrieve all users
+	users, err = db.GetAllUserRecords()
+	if err != nil {
+		return users, err
+	}
+
+	// Close database connection
+	if err := db.Close(); err != nil {
+		return users, err
+	}
+
+	return users, nil
 }

@@ -13,13 +13,15 @@ var apiTests = []struct {
 	url    string
 	code   int
 }{
-	{"POST", "/api/", 405},
 	{"GET", "/api/", 404},
 	{"GET", "/api/files/a", 400},
 	{"GET", "/api/abcdef", 404},
 	{"GET", "/api/files", 200},
 	{"GET", "/api/files/1", 200},
 	{"GET", "/api/status", 200},
+	{"GET", "/api/users", 200},
+	{"GET", "/api/users/1", 200},
+	{"PUT", "/api/", 405},
 }
 
 // TestRouter verifies that the API router is working properly

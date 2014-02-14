@@ -17,7 +17,13 @@ func getFilesJSON(ID int) ([]byte, error) {
 		}
 
 		// Create JSON represenation
-		res, err := file.ToJSON()
+		jsonFile, err := file.ToJSON()
+		if err != nil {
+			return nil, err
+		}
+
+		// Marshal into JSON
+		res, err := json.Marshal(jsonFile)
 		if err != nil {
 			return nil, err
 		}

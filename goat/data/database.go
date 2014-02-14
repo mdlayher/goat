@@ -81,6 +81,7 @@ type dbModel interface {
 	GetUserDownloaded(int) (int64, error)
 	GetUserSeeding(int) (int, error)
 	GetUserLeeching(int) (int, error)
+	GetAllUserRecords() ([]UserRecord, error)
 
 	// --- WhitelistRecord.go ---
 	DeleteWhitelistRecord(interface{}, string) error

@@ -1,7 +1,6 @@
 package data
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/mdlayher/goat/goat/common"
@@ -16,8 +15,12 @@ type FileRecord struct {
 	UpdateTime int64  `db:"update_time" json:"updateTime"`
 }
 
-// jsonFileRecord represents output FileRecord JSON for API
-type jsonFileRecord struct {
+// FileRecordRepository is used to contain methods to load multiple FileRecord structs
+type FileRecordRepository struct {
+}
+
+// JSONFileRecord represents output FileRecord JSON for API
+type JSONFileRecord struct {
 	ID         int              `json:"id"`
 	InfoHash   string           `json:"infoHash"`
 	Verified   bool             `json:"verified"`
@@ -35,10 +38,10 @@ type peerInfo struct {
 	IP     string
 }
 
-// ToJSON converts a FileRecord to a jsonFileRecord struct
-func (f FileRecord) ToJSON() ([]byte, error) {
+// ToJSON converts a FileRecord to a JSONFileRecord struct
+func (f FileRecord) ToJSON() (JSONFileRecord, error) {
 	// Convert all standard fields to the JSON equivalent struct
-	j := jsonFileRecord{}
+	j := JSONFileRecord{}
 	j.ID = f.ID
 	j.InfoHash = f.InfoHash
 	j.Verified = f.Verified
@@ -49,36 +52,26 @@ func (f FileRecord) ToJSON() ([]byte, error) {
 	var err error
 	j.FileUsers, err = f.Users()
 	if err != nil {
-		return nil, err
+		return JSONFileRecord{}, err
 	}
 
 	// Load counts for completions, seeding, leeching
 	j.Completed, err = f.Completed()
 	if err != nil {
-		return nil, err
+		return JSONFileRecord{}, err
 	}
 
 	j.Seeders, err = f.Seeders()
 	if err != nil {
-		return nil, err
+		return JSONFileRecord{}, err
 	}
 
 	j.Leechers, err = f.Leechers()
 	if err != nil {
-		return nil, err
+		return JSONFileRecord{}, err
 	}
 
-	// Marshal into JSON
-	out, err := json.Marshal(j)
-	if err != nil {
-		return nil, err
-	}
-
-	return out, nil
-}
-
-// FileRecordRepository is used to contain methods to load multiple FileRecord structs
-type FileRecordRepository struct {
+	return j, nil
 }
 
 // Delete FileRecord from storage

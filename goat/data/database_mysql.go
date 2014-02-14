@@ -497,6 +497,26 @@ func (db *dbw) GetUserLeeching(uid int) (int, error) {
 	return result.Leeching, nil
 }
 
+// GetAllUserRecords returns a list of all UserRecords known to the database
+func (db *dbw) GetAllUserRecords() ([]UserRecord, error) {
+	rows, err := db.Queryx("SELECT * FROM users")
+	users, user := []UserRecord{}, UserRecord{}
+
+	if err != nil && err != sql.ErrNoRows {
+		return users, err
+	}
+
+	for rows.Next() {
+		if err = rows.StructScan(&user); err != nil {
+			break
+		}
+
+		users = append(users[:], user)
+	}
+
+	return users, nil
+}
+
 // --- WhitelistRecord.go ---
 
 // DeleteWhitelistRecord deletes a WhitelistRecord using a defined ID and column

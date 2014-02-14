@@ -16,8 +16,10 @@ type Error struct {
 
 // Router handles the routing of HTTP API requests
 func Router(w http.ResponseWriter, r *http.Request) {
-	// API is read-only, at least for the time being
-	if r.Method != "GET" {
+	// API allows the following HTTP methods:
+	//   - GET: read-only access to data
+	//   - POST: create a new item via an API endpoint
+	if r.Method != "GET" && r.Method != "POST" {
 		http.Error(w, ErrorResponse("Method not allowed"), 405)
 		return
 	}
@@ -47,17 +49,29 @@ func Router(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Response buffer, error
-	res := make([]byte, 0)
+	res := []byte(ErrorResponse("Undefined API call: " + r.Method + " " + urlArr[2]))
 	var err error
 
 	// Choose API method
 	switch urlArr[2] {
 	// Files on tracker
 	case "files":
-		res, err = getFilesJSON(ID)
+		// GET
+		if r.Method == "GET" {
+			res, err = getFilesJSON(ID)
+		}
 	// Server status
 	case "status":
-		res, err = getStatusJSON()
+		// GET
+		if r.Method == "GET" {
+			res, err = getStatusJSON()
+		}
+	// Users registered to tracker
+	case "users":
+		// GET
+		if r.Method == "GET" {
+			res, err = getUsersJSON(ID)
+		}
 	// Return error response
 	default:
 		http.Error(w, ErrorResponse("Undefined API call"), 404)
