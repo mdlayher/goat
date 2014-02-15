@@ -17,7 +17,7 @@ import (
 
 // APIAuthenticator interface which defines methods required to implement an authentication method
 type APIAuthenticator interface {
-	Auth(*http.Request) (bool, error)
+	Auth(*http.Request) (error, error)
 	Session() (data.UserRecord, error)
 }
 
@@ -25,19 +25,19 @@ type APIAuthenticator interface {
 func basicCredentials(header string) (string, string, error) {
 	// No header provided
 	if header == "" {
-		return "", "", errors.New("basicCredentials: empty header provided")
+		return "", "", errors.New("empty HTTP Basic header")
 	}
 
 	// Ensure format is valid
 	basic := strings.Split(header, " ")
 	if basic[0] != "Basic" {
-		return "", "", errors.New("basicCredentials: invalid header format")
+		return "", "", errors.New("invalid HTTP Basic header")
 	}
 
 	// Decode base64'd user:password pair
 	buf, err := base64.URLEncoding.DecodeString(basic[1])
 	if err != nil {
-		return "", "", errors.New("basicCredentials: invalid header format")
+		return "", "", errors.New("invalid HTTP Basic header")
 	}
 
 	// Split into username/password
@@ -51,28 +51,28 @@ type BasicAuthenticator struct {
 }
 
 // Auth handles validation of HTTP Basic with bcrypt authentication, used for user login
-func (a *BasicAuthenticator) Auth(r *http.Request) (bool, error) {
+func (a *BasicAuthenticator) Auth(r *http.Request) (error, error) {
 	// Fetch credentials from HTTP Basic auth
 	username, password, err := basicCredentials(r.Header.Get("Authorization"))
 	if err != nil {
-		return false, err
+		return err, nil
 	}
 
 	// Load user by username
 	user, err := new(data.UserRecord).Load(username, "username")
 	if err != nil || user == (data.UserRecord{}) {
-		return false, err
+		return errors.New("no such user"), err
 	}
 
 	// Compare input password with bcrypt password, checking for errors
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil && err != bcrypt.ErrMismatchedHashAndPassword {
-		return false, err
+		return errors.New("invalid password"), err
 	}
 
 	// Store user for session
 	a.session = user
-	return true, nil
+	return nil, nil
 }
 
 // Session attempts to return the user whose session was authenticated via this authenticator
@@ -90,27 +90,24 @@ type HMACAuthenticator struct {
 }
 
 // Auth handles validation of HMAC-SHA1 authentication
-func (a *HMACAuthenticator) Auth(r *http.Request) (bool, error) {
+func (a *HMACAuthenticator) Auth(r *http.Request) (error, error) {
 	// Check for Authorization header
 	auth := r.Header.Get("Authorization")
 	if auth == "" {
 		// Check for X-Goat-Authorization header override
 		auth = r.Header.Get("X-Goat-Authorization")
-		if auth == "" {
-			return false, nil
-		}
 	}
 
 	// Fetch credentials from HTTP Basic auth
 	pubkey, apiSignature, err := basicCredentials(auth)
 	if err != nil {
-		return false, err
+		return err, nil
 	}
 
 	// Load API key by pubkey
 	key, err := new(data.APIKey).Load(pubkey, "pubkey")
 	if err != nil || key == (data.APIKey{}) {
-		return false, err
+		return errors.New("no such public key"), err
 	}
 
 	// Check if key is expired, delete it if it is
@@ -121,7 +118,7 @@ func (a *HMACAuthenticator) Auth(r *http.Request) (bool, error) {
 			}
 		}(key)
 
-		return false, nil
+		return errors.New("expired API key"), nil
 	}
 
 	// Generate API signature string
@@ -130,13 +127,13 @@ func (a *HMACAuthenticator) Auth(r *http.Request) (bool, error) {
 	// Calculate HMAC-SHA1 signature from string, using API secret
 	mac := hmac.New(sha1.New, []byte(key.Secret))
 	if _, err := mac.Write([]byte(signString)); err != nil {
-		return false, err
+		return nil, err
 	}
 	expected := fmt.Sprintf("%x", mac.Sum(nil))
 
 	// Verify that HMAC signature is correct
 	if !hmac.Equal([]byte(apiSignature), []byte(expected)) {
-		return false, nil
+		return errors.New("invalid API signature"), nil
 	}
 
 	// Update API key expiration time
@@ -150,12 +147,12 @@ func (a *HMACAuthenticator) Auth(r *http.Request) (bool, error) {
 	// Load user by user ID
 	user, err := new(data.UserRecord).Load(key.UserID, "id")
 	if err != nil || user == (data.UserRecord{}) {
-		return false, err
+		return errors.New("no such user"), err
 	}
 
 	// Store user for session
 	a.session = user
-	return true, nil
+	return nil, nil
 }
 
 // Session attempts to return the user whose session was authenticated via this authenticator

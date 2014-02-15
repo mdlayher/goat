@@ -90,16 +90,23 @@ func parseHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Attempt authentication
-		auth, err := apiAuth.Auth(r)
+		clientErr, serverErr := apiAuth.Auth(r)
 
-		// Check for API failure
-		if err != nil {
-			log.Println(err.Error())
-			http.Error(w, api.ErrorResponse("API failure"), 500)
+		// Check for client error
+		if clientErr != nil {
+			// Check for additional server error
+			if serverErr != nil {
+				log.Println(serverErr.Error())
+			}
+
+			http.Error(w, api.ErrorResponse("Authentication failed: "+clientErr.Error()), 401)
 			return
-		} else if !auth {
-			// Authentication failure
-			http.Error(w, api.ErrorResponse("Authentication failed"), 401)
+		}
+
+		// Check for server error
+		if serverErr != nil {
+			log.Println(serverErr.Error())
+			http.Error(w, api.ErrorResponse("API failure"), 500)
 			return
 		}
 
