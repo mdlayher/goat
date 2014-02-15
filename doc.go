@@ -56,30 +56,51 @@ completely independent process.
 It should be noted that the API is only enabled when configured, and when a HTTP or
 HTTPS listener is enabled.  Without a transport mechanism, the API will be inaccessible.
 
-Currently, the API is read-only, and only allows use of the HTTP GET method.  This
-may change in the future, but as of now, it doesn't make any sense to modify tracker
-parameters without doing a proper announce or scrape via BitTorrent client.
+The API features several modes of authentication, including HTTP Basic for login and
+HMAC-SHA1 other calls.  Upon logging into the API using HTTP Basic with a username
+and password pair, an API public key and secret will be generated.  The public key
+is used as the username for HTTP Basic authentication, and the secret key is used
+to calculate a HMAC-SHA1 signature for the password.
 
-The API will feature several modes of authentication, including HTTP Basic and
-HMAC-SHA1.  For the time being, only HTTP Basic is implemented.  This method makes
-use of a username/password pair using the user's username, and an API key as the
-password.
+The current pseudocode format of the HMAC-SHA1 signature is as follows:
+
+	signString = UserID-HTTPMethod-HTTPResource
+	ex: 1-GET-/api/status
+
+	signature = hmac_sha1(signString, apiSecret)
+
+When the public key and API signature are sent via HTTP Basic, the server will
+verify the signature.  Successful authentication will allow access to the API.
 
 API Calls
 
 This list contains all API calls currently recognized by goat.  Each call must be
 authenticated using the aforementioned methods.
 
+	POST /api/login
+
+	$curl --user username:password http://localhost:8080/api/login
+	{
+		"userId": 1,
+		"pubkey": "abcdef0123456789",
+		"secret": "0123456789abcdef",
+		"expire": 1389737644
+	}
+
+Request an API public key and secret key for this user.  The public key, user ID,
+and secret key are used to authenticate further API calls.  The expire time indicates
+when this key is set to expire.  Further API calls will extend the expiration time.
+
 	GET /api/files
 
-	$ curl --user username:password http://localhost:8080/api/files
+	$ curl --user pubkey:signature http://localhost:8080/api/files
 	[
 		{
-			"id":1,
-			"infoHash":"abcdef0123456789",
-			"verified":true,
-			"createTime":1389737644,
-			"updateTime":1389737644
+			"id": 1,
+			"infoHash": "abcdef0123456789",
+			"verified": true,
+			"createTime": 1389737644,
+			"updateTime": 1389737644
 		}
 	]
 
@@ -88,28 +109,28 @@ to reduce strain on database, and to provide a more general overview.
 
 	GET /api/files/:id
 
-	$ curl --user username:password http://localhost:8080/api/files/1
+	$ curl --user pubkey:signature http://localhost:8080/api/files/1
 	{
-		"id":1,
-		"infoHash":"abcdef0123456789",
-		"verified":true,
-		"createTime":1389737644,
-		"updateTime":1389737644,
-		"completed":0,
-		"seeders":0,
-		"leechers":0,
+		"id": 1,
+		"infoHash": "abcdef0123456789",
+		"verified": true,
+		"createTime": 1389737644,
+		"updateTime": 1389737644,
+		"completed": 0,
+		"seeders": 0,
+		"leechers": 0,
 		"fileUsers": [
 			{
-				"fileId":1,
-				"userId":1,
-				"ip":"8.8.8.8",
-				"active":true,
-				"completed":false,
-				"announced":1,
-				"uploaded":0,
-				"downloaded":0,
-				"left":0,
-				"time":1389983002
+				"fileId": 1,
+				"userId": 1,
+				"ip": "8.8.8.8",
+				"active": true,
+				"completed": false,
+				"announced": 1,
+				"uploaded": 0,
+				"downloaded": 0,
+				"left": 0,
+				"time": 1389983002
 			}
 		]
 	}
@@ -120,22 +141,34 @@ associated with a given file.
 
 	GET /api/status
 
-	$ curl --user username:password http://localhost:8080/api/status
+	$ curl --user pubkey:signature http://localhost:8080/api/status
 	{
-		"pid":27796,
-		"hostname":"goat",
-		"platform":"linux",
-		"architecture":"amd64",
-		"numCpu":4,
-		"numGoroutine":14,
-		"memoryMb":1.03678,
+		"pid": 27796,
+		"hostname": "goat",
+		"platform": "linux",
+		"architecture": "amd64",
+		"numCpu": 4,
+		"numGoroutine": 14,
+		"memoryMb": 1.03678,
+		"maintenance": false,
+		"status": "",
+		"api": {
+			"minute": 1
+			"halfHour": 2,
+			"hour": 3,
+			"total": 4
+		},
 		"http": {
-			"current":1,
-			"total":11
+			"minute": 1
+			"halfHour": 2,
+			"hour": 3,
+			"total": 4
 		},
 		"udp": {
-			"current":1,
-			"total":2
+			"minute": 1
+			"halfHour": 2,
+			"hour": 3,
+			"total": 4
 		}
 	}
 
