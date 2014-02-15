@@ -62,14 +62,24 @@ and password pair, an API public key and secret will be generated.  The public k
 is used as the username for HTTP Basic authentication, and the secret key is used
 to calculate a HMAC-SHA1 signature for the password.
 
+As part of API signature generation, a random nonce value must be generated and added
+to the request.  It is added to the password portion of the HTTP Basic request, and
+also to the string which is used to create the signature.  Nonce values must be changed
+on every request, or the request will fail.
+
 The current pseudocode format of the HMAC-SHA1 signature is as follows:
 
-	signString = UserID-HTTPMethod-HTTPResource
-	ex: 1-GET-/api/status
+	signString = UserID-Nonce-HTTPMethod-HTTPResource
+	ex: 1-0123abc-GET-/api/status
 
 	signature = hmac_sha1(signString, apiSecret)
 
-When the public key and API signature are sent via HTTP Basic, the server will
+The proper format for a HTTP Basic request is as follows:
+
+	Authorization: Basic pubkey:nonce/signature
+	ex: Authorization: Basic abcdef0123456789:0123abc/0123abcd4567ef89
+
+When the public key, nonce, and API signature are sent via HTTP Basic, the server will
 verify the signature.  Successful authentication will allow access to the API.
 
 API Calls
@@ -93,7 +103,7 @@ when this key is set to expire.  Further API calls will extend the expiration ti
 
 	GET /api/files
 
-	$ curl --user pubkey:signature http://localhost:8080/api/files
+	$ curl --user pubkey:nonce/signature http://localhost:8080/api/files
 	[
 		{
 			"id": 1,
@@ -109,7 +119,7 @@ to reduce strain on database, and to provide a more general overview.
 
 	GET /api/files/:id
 
-	$ curl --user pubkey:signature http://localhost:8080/api/files/1
+	$ curl --user pubkey:nonce/signature http://localhost:8080/api/files/1
 	{
 		"id": 1,
 		"infoHash": "abcdef0123456789",
@@ -141,7 +151,7 @@ associated with a given file.
 
 	GET /api/status
 
-	$ curl --user pubkey:signature http://localhost:8080/api/status
+	$ curl --user pubkey:nonce/signature http://localhost:8080/api/status
 	{
 		"pid": 27796,
 		"hostname": "goat",
