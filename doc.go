@@ -76,8 +76,8 @@ The current pseudocode format of the HMAC-SHA1 signature is as follows:
 
 The proper format for a HTTP Basic request is as follows:
 
-	Authorization: Basic pubkey:nonce/signature
-	ex: Authorization: Basic abcdef0123456789:0123abc/0123abcd4567ef89
+	Authorization: Basic base64(pubkey:nonce/signature)
+	ex: Authorization: Basic base64(abcdef0123456789:0123abc/0123abcd4567ef89)
 
 When the public key, nonce, and API signature are sent via HTTP Basic, the server will
 verify the signature.  Successful authentication will allow access to the API.
