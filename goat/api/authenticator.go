@@ -15,6 +15,9 @@ import (
 	"github.com/mdlayher/goat/goat/data"
 )
 
+// usedNonces is a map containing the used nonce values recently
+var usedNonces = map[string]int{}
+
 // APIAuthenticator interface which defines methods required to implement an authentication method
 type APIAuthenticator interface {
 	Auth(*http.Request) (error, error)
@@ -99,10 +102,31 @@ func (a *HMACAuthenticator) Auth(r *http.Request) (error, error) {
 	}
 
 	// Fetch credentials from HTTP Basic auth
-	pubkey, apiSignature, err := basicCredentials(auth)
+	pubkey, credentials, err := basicCredentials(auth)
 	if err != nil {
 		return err, nil
 	}
+
+	// Split credentials into nonce and API signature
+	pair := strings.Split(credentials, "/")
+	if _, ok := pair[1]; !ok {
+		return errors.New("no nonce value"), nil
+	}
+
+	nonce := pair[0]
+	apiSignature := pair[1]
+
+	// Check if nonce previously used, to prevent replay attacks
+	if _, ok := usedNonces[nonce]; ok {
+		return errors.New("repeated API request"), nil
+	}
+
+	// Set nonce into map, set it to expire in 2 minutes to conserve memory
+	usedNonces[nonce] = 1
+	go func(nonce string) {
+		<-time.After(2 * time.Minute)
+		delete(usedNonces, nonce)
+	}(nonce)
 
 	// Load API key by pubkey
 	key, err := new(data.APIKey).Load(pubkey, "pubkey")
