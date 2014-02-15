@@ -12,21 +12,26 @@ import (
 type APIKey struct {
 	ID     int
 	UserID int `db:"user_id"`
-	Key    string
+	Pubkey string
+	Secret string
 	Expire int64
 }
 
 // JSONAPIKey represents output APIKey JSON for API
 type JSONAPIKey struct {
 	UserID int    `json:"userId"`
-	Key    string `json:"key"`
+	Pubkey string `json:"pubkey"`
+	Secret string `json:"secret"`
+	Expire int64 `json:"expire"`
 }
 
 // ToJSON converts an APIKey to a JSONAPIKey struct
 func (a APIKey) ToJSON() (JSONAPIKey, error) {
 	j := JSONAPIKey{}
 	j.UserID = a.UserID
-	j.Key = a.Key
+	j.Pubkey = a.Pubkey
+	j.Secret = a.Secret
+	j.Expire = a.Expire
 
 	return j, nil
 }
@@ -35,12 +40,19 @@ func (a APIKey) ToJSON() (JSONAPIKey, error) {
 func (a *APIKey) Create(userID int) error {
 	a.UserID = userID
 
-	// Generate API key using a random SHA1 hash
+	// Generate API pubkey using a random SHA1 hash
 	sha := sha1.New()
 	if _, err := sha.Write([]byte(common.RandString())); err != nil {
 		return err
 	}
-	a.Key = fmt.Sprintf("%x", sha.Sum(nil))
+	a.Pubkey = fmt.Sprintf("%x", sha.Sum(nil))
+
+	// Generate API secret using a random SHA1 hash
+	sha2 := sha1.New()
+	if _, err := sha2.Write([]byte(common.RandString())); err != nil {
+		return err
+	}
+	a.Secret = fmt.Sprintf("%x", sha2.Sum(nil))
 
 	// Set key to expire one week from now
 	a.Expire = time.Now().Add(7 * 24 * time.Hour).Unix()
@@ -57,7 +69,7 @@ func (a APIKey) Delete() error {
 	}
 
 	// Delete APIKey
-	if err = db.DeleteAPIKey(a.Key, "key"); err != nil {
+	if err = db.DeleteAPIKey(a.Pubkey, "pubkey"); err != nil {
 		return err
 	}
 

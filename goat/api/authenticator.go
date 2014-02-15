@@ -1,10 +1,15 @@
 package api
 
 import (
+	"crypto/hmac"
+	"crypto/sha1"
 	"encoding/base64"
 	"errors"
+	"fmt"
+	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"code.google.com/p/go.crypto/bcrypt"
 	"github.com/mdlayher/goat/goat/data"
@@ -47,6 +52,7 @@ type BasicAuthenticator struct {
 
 // Auth handles validation of HTTP Basic with bcrypt authentication, used for user login
 func (a *BasicAuthenticator) Auth(r *http.Request) (bool, error) {
+	// Fetch credentials from HTTP Basic auth
 	username, password, err := basicCredentials(r.Header.Get("Authorization"))
 	if err != nil {
 		return false, err
@@ -85,6 +91,70 @@ type HMACAuthenticator struct {
 
 // Auth handles validation of HMAC-SHA1 authentication
 func (a *HMACAuthenticator) Auth(r *http.Request) (bool, error) {
+	// Check for Authorization header
+	auth := r.Header.Get("Authorization")
+	if auth == "" {
+		// Check for X-Goat-Authorization header override
+		auth = r.Header.Get("X-Goat-Authorization")
+		if auth == "" {
+			return false, nil
+		}
+	}
+
+	// Fetch credentials from HTTP Basic auth
+	pubkey, apiSignature, err := basicCredentials(auth)
+	if err != nil {
+		return false, err
+	}
+
+	// Load API key by pubkey
+	key, err := new(data.APIKey).Load(pubkey, "pubkey")
+	if err != nil || key == (data.APIKey{}) {
+		return false, err
+	}
+
+	// Check if key is expired, delete it if it is
+	if key.Expire <= time.Now().Unix() {
+		go func(key data.APIKey) {
+			if err := key.Delete(); err != nil {
+				log.Println(err.Error())
+			}
+		}(key)
+
+		return false, nil
+	}
+
+	// Generate API signature string
+	signString := fmt.Sprintf("%d-%s-%s", key.UserID, r.Method, r.URL.Path)
+
+	// Calculate HMAC-SHA1 signature from string, using API secret
+	mac := hmac.New(sha1.New, []byte(key.Secret))
+	if _, err := mac.Write([]byte(signString)); err != nil {
+		return false, err
+	}
+	expected := fmt.Sprintf("%x", mac.Sum(nil))
+
+	// Verify that HMAC signature is correct
+	if !hmac.Equal([]byte(apiSignature), []byte(expected)) {
+		return false, nil
+	}
+
+	// Update API key expiration time
+	key.Expire = time.Now().Add(7 * 24 * time.Hour).Unix()
+	go func(key data.APIKey) {
+		if err := key.Save(); err != nil {
+			log.Println(err.Error())
+		}
+	}(key)
+
+	// Load user by user ID
+	user, err := new(data.UserRecord).Load(key.UserID, "id")
+	if err != nil || user == (data.UserRecord{}) {
+		return false, err
+	}
+
+	// Store user for session
+	a.session = user
 	return true, nil
 }
 

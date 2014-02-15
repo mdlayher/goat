@@ -29,15 +29,15 @@ func TestAPIKey(t *testing.T) {
 		t.Fatalf("Failed to save APIKey: %s", err.Error())
 	}
 
-	// Verify key can be loaded using matching key
-	key2, err := key.Load(key.Key, "key")
+	// Verify key can be loaded using matching pubkey
+	key2, err := key.Load(key.Pubkey, "pubkey")
 	if err != nil || key2 == (APIKey{}) {
 		t.Fatal("Failed to load APIKey: %s", err.Error())
 	}
 
 	// Verify key is the same as previous one
-	if key.Key != key2.Key {
-		t.Fatalf("key.Key, expected %s, got %s", key.Key, key2.Key)
+	if key.Pubkey != key2.Pubkey {
+		t.Fatalf("key.Pubkey, expected %s, got %s", key.Pubkey, key2.Pubkey)
 	}
 
 	// Verify key can be deleted
