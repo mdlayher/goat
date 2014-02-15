@@ -89,7 +89,7 @@ authenticated using the aforementioned methods.
 
 	POST /api/login
 
-	$ curl --user username:password http://localhost:8080/api/login
+	$ curl -X POST --user username:password http://localhost:8080/api/login
 	{
 		"userId": 1,
 		"pubkey": "abcdef0123456789",
