@@ -109,7 +109,7 @@ func (a *HMACAuthenticator) Auth(r *http.Request) (error, error) {
 
 	// Split credentials into nonce and API signature
 	pair := strings.Split(credentials, "/")
-	if _, ok := pair[1]; !ok {
+	if len(pair) < 2 {
 		return errors.New("no nonce value"), nil
 	}
 
@@ -146,7 +146,7 @@ func (a *HMACAuthenticator) Auth(r *http.Request) (error, error) {
 	}
 
 	// Generate API signature string
-	signString := fmt.Sprintf("%d-%s-%s", key.UserID, r.Method, r.URL.Path)
+	signString := fmt.Sprintf("%d-%s-%s-%s", key.UserID, nonce, r.Method, r.URL.Path)
 
 	// Calculate HMAC-SHA1 signature from string, using API secret
 	mac := hmac.New(sha1.New, []byte(key.Secret))
