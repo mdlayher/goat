@@ -24,6 +24,21 @@ type APIAuthenticator interface {
 	Session() (data.UserRecord, error)
 }
 
+// apiSignature generates a HMAC-SHA1 signature for use with the API
+func apiSignature(userID int, nonce string, method string, resource string, secret string) (string, error) {
+	// Generate API signature string
+	signString := fmt.Sprintf("%d-%s-%s-%s", userID, nonce, method, resource)
+
+	// Calculate HMAC-SHA1 signature from string, using API secret
+	mac := hmac.New(sha1.New, []byte(secret))
+	if _, err := mac.Write([]byte(signString)); err != nil {
+		return "", err
+	}
+
+	// Return hex signature
+	return fmt.Sprintf("%x", mac.Sum(nil)), nil
+}
+
 // basicCredentials returns HTTP Basic authentication credentials from a header
 func basicCredentials(header string) (string, string, error) {
 	// No header provided
@@ -114,7 +129,7 @@ func (a *HMACAuthenticator) Auth(r *http.Request) (error, error) {
 	}
 
 	nonce := pair[0]
-	apiSignature := pair[1]
+	signature := pair[1]
 
 	// Check if nonce previously used, to prevent replay attacks
 	if _, ok := usedNonces[nonce]; ok {
@@ -145,18 +160,14 @@ func (a *HMACAuthenticator) Auth(r *http.Request) (error, error) {
 		return errors.New("expired API key"), nil
 	}
 
-	// Generate API signature string
-	signString := fmt.Sprintf("%d-%s-%s-%s", key.UserID, nonce, r.Method, r.URL.Path)
-
-	// Calculate HMAC-SHA1 signature from string, using API secret
-	mac := hmac.New(sha1.New, []byte(key.Secret))
-	if _, err := mac.Write([]byte(signString)); err != nil {
-		return nil, err
+	// Generate API signature
+	expected, err := apiSignature(key.UserID, nonce, r.Method, r.URL.Path, key.Secret)
+	if err != nil {
+		return nil, errors.New("failed to generate API signature")
 	}
-	expected := fmt.Sprintf("%x", mac.Sum(nil))
 
 	// Verify that HMAC signature is correct
-	if !hmac.Equal([]byte(apiSignature), []byte(expected)) {
+	if !hmac.Equal([]byte(signature), []byte(expected)) {
 		return errors.New("invalid API signature"), nil
 	}
 
