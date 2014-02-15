@@ -248,7 +248,7 @@ describing the settings available to the user.
 			"Host": "localhost:6379",
 
 			// Password: optional, the password used to connect to Redis
-			// note: if left blank, goat will not attempt to authenticate to Redis
+			// note: if blank, goat will not attempt to authenticate to Redis
 			"Password": ""
 		}
 	}
