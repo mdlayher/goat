@@ -22,7 +22,7 @@ type JSONAPIKey struct {
 	UserID int    `json:"userId"`
 	Pubkey string `json:"pubkey"`
 	Secret string `json:"secret"`
-	Expire int64 `json:"expire"`
+	Expire int64  `json:"expire"`
 }
 
 // ToJSON converts an APIKey to a JSONAPIKey struct
