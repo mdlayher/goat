@@ -105,10 +105,6 @@ func (db *dbw) DeleteAPIKey(id interface{}, col string) error {
 	tx := db.MustBegin()
 	tx.Execl("DELETE FROM api_keys WHERE `"+col+"` = ?", id)
 
-	if err := db.Close(); err != nil {
-		log.Println(err.Error())
-	}
-
 	return tx.Commit()
 }
 
