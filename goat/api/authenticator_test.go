@@ -40,9 +40,13 @@ func TestBasicAuthenticator(t *testing.T) {
 	r.Header = headers
 
 	// Perform authentication request
-	auth, err := new(BasicAuthenticator).Auth(&r)
-	if !auth || err != nil {
-		t.Fatalf("Failed to authenticate using BasicAuthenticator: %s", err.Error())
+	clientErr, serverErr := new(BasicAuthenticator).Auth(&r)
+	if clientErr != nil {
+		t.Fatalf("Failed to authenticate using BasicAuthenticator: client: %s", clientErr.Error())
+	}
+
+	if serverErr != nil {
+		t.Fatalf("Failed to authenticate using BasicAuthenticator: server: %s", serverErr.Error())
 	}
 
 	// Delete mock user
