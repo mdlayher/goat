@@ -21,18 +21,18 @@ func TestGetUsersJSON(t *testing.T) {
 	common.Static.Config = config
 
 	// Generate mock data.UserRecord
-	user := data.UserRecord{
-		Username:     "test",
-		TorrentLimit: 100,
+	mockUser := new(data.UserRecord)
+	if err := mockUser.Create("test", "test", 100); err != nil {
+		t.Fatalf("Failed to create mock user: %s", err.Error())
 	}
 
 	// Save mock user
-	if err := user.Save(); err != nil {
+	if err := mockUser.Save(); err != nil {
 		t.Fatalf("Failed to save mock user: %s", err.Error())
 	}
 
 	// Load mock user to fetch ID
-	user, err = user.Load(user.Username, "username")
+	user, err := mockUser.Load(mockUser.Username, "username")
 	if user == (data.UserRecord{}) || err != nil {
 		t.Fatalf("Failed to load mock user: %s", err.Error())
 	}
