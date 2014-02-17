@@ -119,7 +119,7 @@ func (u UDPTracker) Scrape(files []data.FileRecord) []byte {
 		}
 		index++
 
-		go func(f data.FileRecord, o *orderedScrape, resChan chan *orderedScrape) {
+		go func(f data.FileRecord, o *orderedScrape) {
 			// Seeders count
 			var err error
 			seeders, err := f.Seeders()
@@ -144,7 +144,7 @@ func (u UDPTracker) Scrape(files []data.FileRecord) []byte {
 
 			// Return results on channel
 			resChan <- o
-		}(f, &o, resChan)
+		}(f, &o)
 	}
 
 	// Fetch all results from channel
