@@ -15,7 +15,7 @@ import (
 // orderedScrape is used to ensure that UDP scrape results are returned in the correct order
 type orderedScrape struct {
 	Index int
-	File udp.ScrapeStats
+	File  udp.ScrapeStats
 }
 
 // UDPTracker generates responses in the UDP datagram format
@@ -115,7 +115,7 @@ func (u UDPTracker) Scrape(files []data.FileRecord) []byte {
 		// Create orderedScrape, assign index to ensure correct return order during concurrent operations
 		o := orderedScrape{
 			Index: index,
-			File: udp.ScrapeStats{},
+			File:  udp.ScrapeStats{},
 		}
 		index++
 
@@ -148,7 +148,7 @@ func (u UDPTracker) Scrape(files []data.FileRecord) []byte {
 	}
 
 	// Fetch all results from channel
-	received := 0;
+	received := 0
 	stats := make([]udp.ScrapeStats, len(files), len(files))
 	for o := range resChan {
 		stats[o.Index] = o.File
