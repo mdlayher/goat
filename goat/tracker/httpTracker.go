@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/url"
 	"strconv"
+	"sync"
 
 	"github.com/mdlayher/goat/goat/common"
 	"github.com/mdlayher/goat/goat/data"
@@ -135,33 +136,50 @@ func (h HTTPTracker) Scrape(files []data.FileRecord) []byte {
 		Files: make(map[string]scrapeFile),
 	}
 
-	// Iterate all files
-	for _, file := range files {
-		// Generate scrapeFile struct
-		fileInfo := scrapeFile{}
-		var err error
+	// WaitGroup to wait for all scrape file entries to be generated
+	var wg sync.WaitGroup
+	wg.Add(len(files))
 
-		// Seeders count
-		fileInfo.Complete, err = file.Seeders()
-		if err != nil {
-			log.Println(err.Error())
-		}
+	// Mutex for safe locking on map writes
+	var mutex sync.RWMutex
 
-		// Completion count
-		fileInfo.Downloaded, err = file.Completed()
-		if err != nil {
-			log.Println(err.Error())
-		}
+	// Iterate all files in parallel
+	for _, f := range files {
+		go func(f data.FileRecord, scrape *scrapeResponse, mutex *sync.RWMutex, wg *sync.WaitGroup) {
+			// Generate scrapeFile struct
+			fileInfo := scrapeFile{}
+			var err error
 
-		// Leechers count
-		fileInfo.Incomplete, err = file.Leechers()
-		if err != nil {
-			log.Println(err.Error())
-		}
+			// Seeders count
+			fileInfo.Complete, err = f.Seeders()
+			if err != nil {
+				log.Println(err.Error())
+			}
 
-		// Add hash and file info to map
-		scrape.Files[file.InfoHash] = fileInfo
+			// Completion count
+			fileInfo.Downloaded, err = f.Completed()
+			if err != nil {
+				log.Println(err.Error())
+			}
+
+			// Leechers count
+			fileInfo.Incomplete, err = f.Leechers()
+			if err != nil {
+				log.Println(err.Error())
+			}
+
+			// Add hash and file info to map
+			mutex.Lock()
+			scrape.Files[f.InfoHash] = fileInfo
+			mutex.Unlock()
+
+			// Inform waitgroup that this file is ready
+			wg.Done()
+		}(f, &scrape, &mutex, &wg)
 	}
+
+	// Wait for all information to be generated
+	wg.Wait()
 
 	// Marshal struct into bencode
 	buf := bytes.NewBuffer(make([]byte, 0))
