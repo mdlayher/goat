@@ -185,6 +185,41 @@ associated with a given file.
 Retrieve a variety of metrics about the current status of goat, including its PID,
 hostname, memory usage, number of HTTP/UDP hits, etc.
 
+	POST /api/users
+
+	$ curl -X POST --user pubkey:nonce/signature \
+		-d '{"username": "test", "password": "test", "torrentLimit": 10}' \
+		http://localhost:8080/api/users
+	HTTP/1.1 204 No Content
+
+Create a user with the specified username, password, and torrent limit.
+
+	GET /api/users
+
+	$ curl --user pubkey:nonce/signature http://localhost:8080/api/users
+	[
+		{
+			"id": 1,
+			"torrentLimit": 10,
+			"username": "test"
+		}
+	}
+
+Reterieve a list of all users registered to goat, including their ID, torrent limit,
+and username.
+
+	GET /api/users/:id
+
+	$ curl --user pubkey:nonce/signature http://localhost:8080/api/users
+	{
+		"id": 1,
+		"torrentLimit": 10,
+		"username": "test"
+	}
+
+Retrieve information about a single user with matching ID, including their ID, torrent
+limit, and username.
+
 Configuration
 
 goat is configured using a JSON file, which will be created under
