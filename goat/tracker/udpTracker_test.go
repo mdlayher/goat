@@ -132,6 +132,20 @@ func TestUDPTrackerScrape(t *testing.T) {
 	files := make([]data.FileRecord, 0)
 	files = append(files[:], file)
 
+	// Generate another mock data.FileRecord
+	file2 := data.FileRecord{
+		InfoHash: "6265656664656164303030303030303030303030",
+		Verified: true,
+	}
+
+	// Save mock file
+	if err := file2.Save(); err != nil {
+		t.Fatalf("Failed to save mock file: %s", err.Error())
+	}
+
+	// Store file in slice
+	files = append(files[:], file2)
+
 	// Create a UDP tracker, trigger a scrape
 	tracker := UDPTracker{TransID: uint32(1234)}
 	res := tracker.Scrape(files)
@@ -149,6 +163,8 @@ func TestUDPTrackerScrape(t *testing.T) {
 		t.Fatalf("Incorrect UDP action, expected 2")
 	}
 
+	// Verify correct file order
+
 	// Encode response, verify same as before
 	scrapeBuf, err := scrape.MarshalBinary()
 	if err != nil {
@@ -159,8 +175,12 @@ func TestUDPTrackerScrape(t *testing.T) {
 		t.Fatalf("Byte slices are not identical")
 	}
 
-	// Delete mock file
+	// Delete mock files
 	if err := file.Delete(); err != nil {
+		t.Fatalf("Failed to delete mock file: %s", err.Error())
+	}
+
+	if err := file2.Delete(); err != nil {
 		t.Fatalf("Failed to delete mock file: %s", err.Error())
 	}
 }

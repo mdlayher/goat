@@ -12,6 +12,12 @@ import (
 	"github.com/mdlayher/goat/goat/data/udp"
 )
 
+// orderedScrape is used to ensure that UDP scrape results are returned in the correct order
+type orderedScrape struct {
+	Index int
+	File udp.ScrapeStats
+}
+
 // UDPTracker generates responses in the UDP datagram format
 type UDPTracker struct {
 	TransID uint32
@@ -99,47 +105,57 @@ func (u UDPTracker) Protocol() string {
 // Scrape scrapes using UDP format
 func (u UDPTracker) Scrape(files []data.FileRecord) []byte {
 	// Buffered channel to receive UDP scrape stats structs
-	resChan := make(chan *udp.ScrapeStats, len(files))
+	resChan := make(chan *orderedScrape, len(files))
+
+	// Assign index to each file to preserve order during concurrent operations
+	index := 0
 
 	// Iterate all files in parallel
 	for _, f := range files {
-		go func(f data.FileRecord, resChan chan *udp.ScrapeStats) {
-			stat := udp.ScrapeStats{}
+		// Create orderedScrape, assign index to ensure correct return order during concurrent operations
+		o := orderedScrape{
+			Index: index,
+			File: udp.ScrapeStats{},
+		}
+		index++
 
+		go func(f data.FileRecord, o *orderedScrape, resChan chan *orderedScrape) {
 			// Seeders count
 			var err error
 			seeders, err := f.Seeders()
 			if err != nil {
 				log.Println(err.Error())
 			}
-			stat.Seeders = uint32(seeders)
+			o.File.Seeders = uint32(seeders)
 
 			// Completion count
 			completed, err := f.Completed()
 			if err != nil {
 				log.Println(err.Error())
 			}
-			stat.Completed = uint32(completed)
+			o.File.Completed = uint32(completed)
 
 			// Leechers count
 			leechers, err := f.Leechers()
 			if err != nil {
 				log.Println(err.Error())
 			}
-			stat.Leechers = uint32(leechers)
+			o.File.Leechers = uint32(leechers)
 
 			// Return results on channel
-			resChan <- &stat
-		}(f, resChan)
+			resChan <- o
+		}(f, &o, resChan)
 	}
 
 	// Fetch all results from channel
-	stats := make([]udp.ScrapeStats, 0)
-	for stat := range resChan {
-		stats = append(stats[:], *stat)
+	received := 0;
+	stats := make([]udp.ScrapeStats, len(files), len(files))
+	for o := range resChan {
+		stats[o.Index] = o.File
+		received++
 
-		// Break once all file information has been received
-		if len(stats) == len(files) {
+		// Once all file stats are received, break loop
+		if received == len(files) {
 			break
 		}
 	}
