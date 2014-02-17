@@ -98,36 +98,54 @@ func (u UDPTracker) Protocol() string {
 
 // Scrape scrapes using UDP format
 func (u UDPTracker) Scrape(files []data.FileRecord) []byte {
-	// Iterate all files, grabbing their statistics
-	stats := make([]udp.ScrapeStats, 0)
-	for _, file := range files {
-		stat := udp.ScrapeStats{}
+	// Buffered channel to receive UDP scrape stats structs
+	resChan := make(chan *udp.ScrapeStats, len(files))
 
-		// Seeders
-		var err error
-		seeders, err := file.Seeders()
-		if err != nil {
-			log.Println(err.Error())
-		}
-		stat.Seeders = uint32(seeders)
+	// Iterate all files in parallel
+	for _, f := range files {
+		go func(f data.FileRecord, resChan chan *udp.ScrapeStats) {
+			stat := udp.ScrapeStats{}
 
-		// Completed
-		completed, err := file.Completed()
-		if err != nil {
-			log.Println(err.Error())
-		}
-		stat.Completed = uint32(completed)
+			// Seeders count
+			var err error
+			seeders, err := f.Seeders()
+			if err != nil {
+				log.Println(err.Error())
+			}
+			stat.Seeders = uint32(seeders)
 
-		// Leechers
-		leechers, err := file.Leechers()
-		if err != nil {
-			log.Println(err.Error())
-		}
-		stat.Leechers = uint32(leechers)
+			// Completion count
+			completed, err := f.Completed()
+			if err != nil {
+				log.Println(err.Error())
+			}
+			stat.Completed = uint32(completed)
 
-		// Append to slice
-		stats = append(stats[:], stat)
+			// Leechers count
+			leechers, err := f.Leechers()
+			if err != nil {
+				log.Println(err.Error())
+			}
+			stat.Leechers = uint32(leechers)
+
+			// Return results on channel
+			resChan <- &stat
+		}(f, resChan)
 	}
+
+	// Fetch all results from channel
+	stats := make([]udp.ScrapeStats, 0)
+	for stat := range resChan {
+		stats = append(stats[:], *stat)
+
+		// Break once all file information has been received
+		if len(stats) == len(files) {
+			break
+		}
+	}
+
+	// Close response channel
+	close(resChan)
 
 	// Create UDP scrape response
 	scrape := udp.ScrapeResponse{
