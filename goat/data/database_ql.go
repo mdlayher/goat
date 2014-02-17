@@ -321,6 +321,25 @@ func (db *qlw) SaveAPIKey(key APIKey) (err error) {
 	return
 }
 
+// GetAllAPIKeys returns a list of all APIKeys known to the database
+func (db *qlw) GetAllAPIKeys() (keys []APIKey, err error) {
+	if rs, _, err := qlQuery(db, "apikey_load_all", false); err == nil && len(rs) > 0 {
+		err = rs[0].Do(false, func(data []interface{}) (bool, error) {
+			keys = append(keys, APIKey{
+				ID:     int(data[0].(int64)),
+				UserID: int(data[1].(int64)),
+				Pubkey: data[2].(string),
+				Secret: data[3].(string),
+				Expire: data[4].(int64),
+			})
+
+			return true, nil
+		})
+	}
+
+	return
+}
+
 // --- FileRecord.go ---
 
 // DeleteFileRecord deletes an AnnounceLog using a defined ID and column for query

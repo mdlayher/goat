@@ -49,6 +49,7 @@ type dbModel interface {
 	DeleteAPIKey(interface{}, string) error
 	LoadAPIKey(interface{}, string) (APIKey, error)
 	SaveAPIKey(APIKey) error
+	GetAllAPIKeys() ([]APIKey, error)
 
 	// --- FileRecord.go ---
 	DeleteFileRecord(interface{}, string) error

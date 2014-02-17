@@ -132,6 +132,27 @@ func (db *dbw) SaveAPIKey(key APIKey) error {
 	return tx.Commit()
 }
 
+// GetAllAPIKeys returns a list of all APIKeys known to the database
+func (db *dbw) GetAllAPIKeys() ([]APIKey, error) {
+	rows, err := db.Queryx("SELECT * FROM api_keys")
+	keys, key := []APIKey{}, APIKey{}
+
+	if err != nil && err != sql.ErrNoRows {
+		log.Println(err.Error())
+		return keys, err
+	}
+
+	for rows.Next() {
+		if err = rows.StructScan(&key); err != nil {
+			break
+		}
+
+		keys = append(keys[:], key)
+	}
+
+	return keys, nil
+}
+
 // --- FileRecord.go ---
 
 // DeleteFileRecord deletes an AnnounceLog using a defined ID and column

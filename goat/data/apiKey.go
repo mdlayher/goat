@@ -17,6 +17,10 @@ type APIKey struct {
 	Expire int64
 }
 
+// APIKeyRepository is used to contain methods to load multiple APIKey structs
+type APIKeyRepository struct {
+}
+
 // JSONAPIKey represents output APIKey JSON for API
 type JSONAPIKey struct {
 	UserID int    `json:"userId"`
@@ -124,4 +128,28 @@ func (a APIKey) Save() error {
 	}
 
 	return nil
+}
+
+// All loads all APIKey structs from storage
+func (a APIKeyRepository) All() ([]APIKey, error) {
+	keys := make([]APIKey, 0)
+
+	// Open database connection
+	db, err := DBConnect()
+	if err != nil {
+		return keys, err
+	}
+
+	// Retrieve all APIKeys
+	keys, err = db.GetAllAPIKeys()
+	if err != nil {
+		return keys, err
+	}
+
+	// Close database connection
+	if err := db.Close(); err != nil {
+		return keys, err
+	}
+
+	return keys, nil
 }
