@@ -13,10 +13,11 @@ import (
 
 	"code.google.com/p/go.crypto/bcrypt"
 	"github.com/mdlayher/goat/goat/data"
+	"github.com/willf/bloom"
 )
 
-// usedNonces is a map containing the used nonce values recently
-var usedNonces = map[string]int{}
+// nonceFilter is a bloom filter containing nonce values we have seen previously
+var nonceFilter = bloom.New(20000, 5)
 
 // APIAuthenticator interface which defines methods required to implement an authentication method
 type APIAuthenticator interface {
@@ -131,17 +132,11 @@ func (a *HMACAuthenticator) Auth(r *http.Request) (error, error) {
 	nonce := pair[0]
 	signature := pair[1]
 
-	// Check if nonce previously used, to prevent replay attacks
-	if _, ok := usedNonces[nonce]; ok {
+	// Check if nonce previously used, add it if it is not, to prevent replay attacks
+	// note: bloom filter may report false positives, but better safe than sorry
+	if nonceFilter.TestAndAdd([]byte(nonce)) {
 		return errors.New("repeated API request"), nil
 	}
-
-	// Set nonce into map, set it to expire in 2 minutes to conserve memory
-	usedNonces[nonce] = 1
-	go func(nonce string) {
-		<-time.After(2 * time.Minute)
-		delete(usedNonces, nonce)
-	}(nonce)
 
 	// Load API key by pubkey
 	key, err := new(data.APIKey).Load(pubkey, "pubkey")
