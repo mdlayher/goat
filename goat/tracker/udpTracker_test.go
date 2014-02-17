@@ -163,8 +163,6 @@ func TestUDPTrackerScrape(t *testing.T) {
 		t.Fatalf("Incorrect UDP action, expected 2")
 	}
 
-	// Verify correct file order
-
 	// Encode response, verify same as before
 	scrapeBuf, err := scrape.MarshalBinary()
 	if err != nil {

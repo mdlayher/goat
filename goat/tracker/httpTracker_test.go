@@ -96,6 +96,20 @@ func TestHTTPTrackerScrape(t *testing.T) {
 	files := make([]data.FileRecord, 0)
 	files = append(files[:], file)
 
+	// Generate another mock data.FileRecord
+	file2 := data.FileRecord{
+		InfoHash: "6265656664656164303030303030303030303030",
+		Verified: true,
+	}
+
+	// Save mock file
+	if err := file2.Save(); err != nil {
+		t.Fatalf("Failed to save mock file: %s", err.Error())
+	}
+
+	// Store file in slice
+	files = append(files[:], file2)
+
 	// Create a HTTP tracker, trigger a scrape
 	tracker := HTTPTracker{}
 	res := tracker.Scrape(files)
@@ -106,9 +120,14 @@ func TestHTTPTrackerScrape(t *testing.T) {
 	if err := bencode.Unmarshal(bytes.NewReader(res), &scrape); err != nil {
 		t.Fatalf("Failed to unmarshal bencode scrape response")
 	}
+	log.Println(scrape)
 
-	// Delete mock file
+	// Delete mock files
 	if err := file.Delete(); err != nil {
+		t.Fatalf("Failed to delete mock file: %s", err.Error())
+	}
+
+	if err := file2.Delete(); err != nil {
 		t.Fatalf("Failed to delete mock file: %s", err.Error())
 	}
 }
