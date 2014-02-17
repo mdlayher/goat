@@ -136,6 +136,8 @@ func cronPeerReaper() {
 		}(f, &total, &wg)
 	}
 
+	// Wait for all goroutines to finish
+	wg.Wait()
 	log.Printf("cronPeerReaper: complete, reaped %d peers on %d files", total, len(files))
 }
 
