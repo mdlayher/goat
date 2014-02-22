@@ -282,19 +282,6 @@ describing the settings available to the user.
 
 			// Password: the password used to access goat's database
 			"Password": "goat"
-		},
-
-		// Redis: Redis cache configuration
-		"Redis": {
-			// Enabled: enable caching and rate limiting features using Redis
-			"Enabled": false,
-
-			// Host: the host and port of the Redis cache server
-			"Host": "localhost:6379",
-
-			// Password: optional, the password used to connect to Redis
-			// note: if blank, goat will not attempt to authenticate to Redis
-			"Password": ""
 		}
 	}
 
