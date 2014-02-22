@@ -55,14 +55,6 @@ func Manager(killChan chan bool, exitChan chan int) {
 	}
 	log.Println("Database", data.DBName(), ": OK")
 
-	// If configured, attempt redis connection
-	if common.Static.Config.Redis.Enabled {
-		if !data.RedisPing() {
-			panic("Cannot connect to Redis, panicking")
-		}
-		log.Println("Redis : OK")
-	}
-
 	// Start cron manager
 	go cronManager()
 

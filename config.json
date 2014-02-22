@@ -17,10 +17,5 @@
 		"Database": "goat",
 		"Username": "goat",
 		"Password": "goat"
-	},
-	"Redis": {
-		"Enabled": false,
-		"Host": "localhost:6379",
-		"Password": ""
 	}
 }
