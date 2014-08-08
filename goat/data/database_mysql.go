@@ -70,7 +70,7 @@ func (db *dbw) Close() error {
 // DeleteAnnounceLog deletes an AnnounceLog using a defined ID and column
 func (db *dbw) DeleteAnnounceLog(id interface{}, col string) error {
 	tx := db.MustBegin()
-	tx.Execl("DELETE FROM announce_log WHERE `"+col+"` = ?", id)
+	tx.Exec("DELETE FROM announce_log WHERE `"+col+"` = ?", id)
 
 	return tx.Commit()
 }
@@ -93,7 +93,7 @@ func (db *dbw) SaveAnnounceLog(a AnnounceLog) error {
 		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UNIX_TIMESTAMP());"
 
 	tx := db.MustBegin()
-	tx.Execl(query, a.InfoHash, a.Passkey, a.Key, a.IP, a.Port, a.UDP, a.Uploaded, a.Downloaded, a.Left, a.Event, a.Client)
+	tx.Exec(query, a.InfoHash, a.Passkey, a.Key, a.IP, a.Port, a.UDP, a.Uploaded, a.Downloaded, a.Left, a.Event, a.Client)
 
 	return tx.Commit()
 }
@@ -103,7 +103,7 @@ func (db *dbw) SaveAnnounceLog(a AnnounceLog) error {
 // DeleteAPIKey deletes an APIKey using a defined ID and column
 func (db *dbw) DeleteAPIKey(id interface{}, col string) error {
 	tx := db.MustBegin()
-	tx.Execl("DELETE FROM api_keys WHERE `"+col+"` = ?", id)
+	tx.Exec("DELETE FROM api_keys WHERE `"+col+"` = ?", id)
 
 	return tx.Commit()
 }
@@ -127,7 +127,7 @@ func (db *dbw) SaveAPIKey(key APIKey) error {
 		"`expire`=values(`expire`);"
 
 	tx := db.MustBegin()
-	tx.Execl(query, key.UserID, key.Pubkey, key.Secret, key.Expire)
+	tx.Exec(query, key.UserID, key.Pubkey, key.Secret, key.Expire)
 
 	return tx.Commit()
 }
@@ -158,7 +158,7 @@ func (db *dbw) GetAllAPIKeys() ([]APIKey, error) {
 // DeleteFileRecord deletes an AnnounceLog using a defined ID and column
 func (db *dbw) DeleteFileRecord(id interface{}, col string) error {
 	tx := db.MustBegin()
-	tx.Execl("DELETE FROM files WHERE `"+col+"` = ?", id)
+	tx.Exec("DELETE FROM files WHERE `"+col+"` = ?", id)
 
 	return tx.Commit()
 }
@@ -183,7 +183,7 @@ func (db *dbw) SaveFileRecord(f FileRecord) error {
 		"`verified`=values(`verified`), `update_time`=UNIX_TIMESTAMP();"
 
 	tx := db.MustBegin()
-	tx.Execl(query, f.InfoHash, f.Verified)
+	tx.Exec(query, f.InfoHash, f.Verified)
 
 	return tx.Commit()
 }
@@ -305,7 +305,7 @@ func (db *dbw) MarkFileUsersInactive(fid int, users []peerInfo) error {
 
 	tx := db.MustBegin()
 	for _, u := range users {
-		tx.Execl(query, fid, u.UserID, u.IP)
+		tx.Exec(query, fid, u.UserID, u.IP)
 	}
 
 	return tx.Commit()
@@ -337,7 +337,7 @@ func (db *dbw) GetAllFileRecords() ([]FileRecord, error) {
 // DeleteFileUserRecord deletes a FileUserRecord using using a file ID, user ID, and IP triple
 func (db *dbw) DeleteFileUserRecord(fid, uid int, ip string) error {
 	tx := db.MustBegin()
-	tx.Execl("DELETE FROM files_users WHERE `file_id`=? AND `user_id`=? AND `ip`=?", fid, uid, ip)
+	tx.Exec("DELETE FROM files_users WHERE `file_id`=? AND `user_id`=? AND `ip`=?", fid, uid, ip)
 
 	return tx.Commit()
 }
@@ -366,7 +366,7 @@ func (db *dbw) SaveFileUserRecord(f FileUserRecord) error {
 		"`time`=UNIX_TIMESTAMP();"
 
 	tx := db.MustBegin()
-	tx.Execl(query, f.FileID, f.UserID, f.IP, f.Active, f.Completed, f.Announced, f.Uploaded, f.Downloaded, f.Left)
+	tx.Exec(query, f.FileID, f.UserID, f.IP, f.Active, f.Completed, f.Announced, f.Uploaded, f.Downloaded, f.Left)
 
 	return tx.Commit()
 }
@@ -397,7 +397,7 @@ func (db *dbw) LoadFileUserRepository(id interface{}, col string) ([]FileUserRec
 // DeleteScrapeLog deletes a ScrapeLog using a defined ID and column
 func (db *dbw) DeleteScrapeLog(id interface{}, col string) error {
 	tx := db.MustBegin()
-	tx.Execl("DELETE FROM scrape_log WHERE `"+col+"` = ?", id)
+	tx.Exec("DELETE FROM scrape_log WHERE `"+col+"` = ?", id)
 
 	return tx.Commit()
 }
@@ -421,7 +421,7 @@ func (db *dbw) SaveScrapeLog(s ScrapeLog) error {
 		"VALUES (?, ?, ?, UNIX_TIMESTAMP());"
 
 	tx := db.MustBegin()
-	tx.Execl(query, s.InfoHash, s.Passkey, s.IP)
+	tx.Exec(query, s.InfoHash, s.Passkey, s.IP)
 
 	return tx.Commit()
 }
@@ -431,7 +431,7 @@ func (db *dbw) SaveScrapeLog(s ScrapeLog) error {
 // DeleteUserRecord deletes a UserRecord using a defined ID and column
 func (db *dbw) DeleteUserRecord(id interface{}, col string) error {
 	tx := db.MustBegin()
-	tx.Execl("DELETE FROM users WHERE `"+col+"` = ?", id)
+	tx.Exec("DELETE FROM users WHERE `"+col+"` = ?", id)
 
 	return tx.Commit()
 }
@@ -457,7 +457,7 @@ func (db *dbw) SaveUserRecord(u UserRecord) error {
 		"`username`=values(`username`), `password`=values(`password`), `passkey`=values(`passkey`), `torrent_limit`=values(`torrent_limit`);"
 
 	tx := db.MustBegin()
-	tx.Execl(query, u.Username, u.Password, u.Passkey, u.TorrentLimit)
+	tx.Exec(query, u.Username, u.Password, u.Passkey, u.TorrentLimit)
 
 	return tx.Commit()
 }
@@ -539,7 +539,7 @@ func (db *dbw) GetAllUserRecords() ([]UserRecord, error) {
 // DeleteWhitelistRecord deletes a WhitelistRecord using a defined ID and column
 func (db *dbw) DeleteWhitelistRecord(id interface{}, col string) error {
 	tx := db.MustBegin()
-	tx.Execl("DELETE FROM whitelist WHERE `"+col+"` = ?", id)
+	tx.Exec("DELETE FROM whitelist WHERE `"+col+"` = ?", id)
 
 	return tx.Commit()
 }
@@ -566,7 +566,7 @@ func (db *dbw) SaveWhitelistRecord(w WhitelistRecord) error {
 		"ON DUPLICATE KEY UPDATE `client`=`client`;"
 
 	tx := db.MustBegin()
-	tx.Execl(query, w.Client, w.Approved)
+	tx.Exec(query, w.Client, w.Approved)
 
 	return tx.Commit()
 }
